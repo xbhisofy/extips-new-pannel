@@ -2,8 +2,10 @@ import { useState } from 'react';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { Search, Zap, Star, Clock, ArrowRight } from 'lucide-react';
+import { Search, Zap, Star, Clock, ArrowRight, Lock } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import { useSubscription } from '@/hooks/useSubscription';
+import { SubscriptionCheckDialog } from '@/components/subscription/SubscriptionCheckDialog';
 import { useServices } from '@/hooks/useServices';
 import { useCurrency } from '@/hooks/useCurrency';
 import { PageMeta } from '@/components/seo/PageMeta';
@@ -23,6 +25,8 @@ export default function Services() {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('All');
   const { formatPrice } = useCurrency();
+  const { hasActiveSubscription } = useSubscription();
+  const [showSubDialog, setShowSubDialog] = useState(false);
 
   const { services } = useServices();
 
@@ -146,12 +150,24 @@ export default function Services() {
                       <p className="text-2xl font-bold gradient-text">{formatPrice(service.price)}</p>
                       <p className="text-xs text-muted-foreground">per 1000</p>
                     </div>
-                    <Link to={`/order?service=${service.id}`}>
-                      <Button variant="gradient" size="sm" className="gap-1">
-                        Order
-                        <ArrowRight className="h-4 w-4" />
+                    {hasActiveSubscription ? (
+                      <Link to={`/order?service=${service.id}`}>
+                        <Button variant="gradient" size="sm" className="gap-1">
+                          Order
+                          <ArrowRight className="h-4 w-4" />
+                        </Button>
+                      </Link>
+                    ) : (
+                      <Button
+                        variant="gradient"
+                        size="sm"
+                        className="gap-1"
+                        onClick={() => setShowSubDialog(true)}
+                      >
+                        <Lock className="h-4 w-4" />
+                        Locked
                       </Button>
-                    </Link>
+                    )}
                   </div>
 
                   <div className="mt-4 pt-4 border-t border-border text-xs text-muted-foreground">
@@ -170,6 +186,7 @@ export default function Services() {
           </div>
         )}
       </div>
+      <SubscriptionCheckDialog open={showSubDialog} onOpenChange={setShowSubDialog} />
     </DashboardLayout>
   );
 }

@@ -1,5 +1,6 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
+import { assertPaymentEligible } from '../_shared/payment-eligibility.ts'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -391,15 +392,13 @@ serve(async (req) => {
       }
       user_id = user.id
 
-      const { data: isAdminRow } = await supabase
-        .from('user_roles').select('role').eq('user_id', user_id).eq('role', 'admin').maybeSingle()
-      if (!isAdminRow) {
-        const { data: sub } = await supabase
-          .from('subscriptions').select('status, plan_type').eq('user_id', user_id).maybeSingle()
-        const active = sub && sub.status === 'active' && sub.plan_type !== 'trial' && sub.plan_type !== 'none'
-        if (!active) {
-          return new Response(JSON.stringify({ error: 'Subscription required to place orders' }), { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } })
-        }
+      // Subscription (or admin) is mandatory before any order can be created.
+      const eligibility = await assertPaymentEligible(supabase, user_id, {
+        source: 'process-engagement-order',
+        request: req,
+      })
+      if (!eligibility.ok) {
+        return new Response(JSON.stringify({ error: eligibility.error }), { status: eligibility.status, headers: { ...corsHeaders, 'Content-Type': 'application/json' } })
       }
 
       const { bundle_id: bId, link: reqLink, total_price, engagements, base_quantity, campaign_name } = body

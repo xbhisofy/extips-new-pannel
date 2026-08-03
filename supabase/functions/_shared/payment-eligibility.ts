@@ -9,22 +9,18 @@
 //      Every active row was written by a service-role webhook after the
 //      provider verified the payment — end users cannot INSERT/UPDATE this
 //      table (RLS + GRANTs restrict it to service_role).
-//   3. They have at least ONE fully verified deposit — a completed transaction
-//      of type='deposit' whose payment_method is a real gateway
-//      ('oxapay', 'razorpay_auto', 'zapupi'). Promo / referral / manual
-//      credits do NOT count as "verified payment" for placement eligibility.
 //
-// Any other user (fresh account, promo-only wallet, expired sub) is blocked
-// with a 403 before we touch the wallet or the orders tables.
+// A wallet balance / deposit alone is NOT enough — the subscription must be
+// active. Any other user (fresh account, deposit-only wallet, expired sub) is
+// blocked with a 403 before we touch the wallet or the orders tables.
 
 import { SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { recordSecurityEvent } from "./security-audit.ts";
 
 export type PaymentEligibility =
-  | { ok: true; reason: "admin" | "subscription" | "verified_deposit" }
+  | { ok: true; reason: "admin" | "subscription" }
   | { ok: false; status: 403; error: string };
 
-const VERIFIED_GATEWAYS = ["oxapay", "razorpay_auto", "zapupi"];
 const VALID_ACTIVE_PLANS = ["monthly", "yearly", "lifetime"];
 
 export async function assertPaymentEligible(
@@ -50,6 +46,8 @@ export async function assertPaymentEligible(
     .from("subscriptions")
     .select("status, plan_type, expires_at")
     .eq("user_id", userId)
+    .order("activated_at", { ascending: false, nullsFirst: false })
+    .limit(1)
     .maybeSingle();
 
   if (sub && sub.status === "active" && VALID_ACTIVE_PLANS.includes(String(sub.plan_type))) {
@@ -57,23 +55,10 @@ export async function assertPaymentEligible(
     if (notExpired) return { ok: true, reason: "subscription" };
   }
 
-  // 3. At least one completed deposit from a real payment gateway
-  const { data: verifiedDeposit } = await admin
-    .from("transactions")
-    .select("id")
-    .eq("user_id", userId)
-    .eq("type", "deposit")
-    .eq("status", "completed")
-    .in("payment_method", VERIFIED_GATEWAYS)
-    .limit(1)
-    .maybeSingle();
-
-  if (verifiedDeposit) return { ok: true, reason: "verified_deposit" };
-
   await recordSecurityEvent(admin, {
     category: "payment_gate_denied",
     source: ctx?.source ?? "payment-eligibility",
-    reason: "no active subscription and no verified deposit",
+    reason: "no active subscription",
     user_id: userId,
     http_status: 403,
     request: ctx?.request,
@@ -83,6 +68,6 @@ export async function assertPaymentEligible(
     ok: false,
     status: 403,
     error:
-      "Payment required: activate a subscription or make a verified deposit before placing orders.",
+      "Subscription required: activate a subscription before placing orders.",
   };
 }

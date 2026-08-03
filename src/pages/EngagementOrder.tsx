@@ -45,7 +45,7 @@ import {
   curveToSchedule,
   calculateQuantitiesFromCurve,
 } from "@/lib/curve-to-schedule";
-import { Loader2, Rocket, Link as LinkIcon, Wallet, RefreshCw, Brain, Percent, Eye, EyeOff } from "lucide-react";
+import { Loader2, Rocket, Link as LinkIcon, Wallet, RefreshCw, Brain, Percent, Eye, EyeOff, Lock } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import { useDebounce } from "@/hooks/useDebounce";
 import { FullOrganicConfig } from "@/lib/organic-algorithm";
@@ -1102,6 +1102,11 @@ export default function EngagementOrder() {
                     <>
                       <Loader2 className="h-4 w-4 sm:h-5 sm:w-5 animate-spin mr-2" />
                       Loading...
+                    </>
+                  ) : !isAdmin && !hasActiveSubscription ? (
+                    <>
+                      <Lock className="h-4 w-4 sm:h-5 sm:w-5 mr-2" />
+                      Subscription Required
                     </>
                   ) : (
                     <>
