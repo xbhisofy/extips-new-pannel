@@ -1,3 +1,4 @@
+import { igImageUrl } from "@/lib/igImage";
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -238,7 +239,7 @@ export default function InstagramPage() {
                 </div>
                 {a.avatar_url && (
                   <img
-                    src={`https://lvrbhgulxqdsamhdjzkw.supabase.co/functions/v1/ig-image-proxy?url=${encodeURIComponent(a.avatar_url)}`}
+                    src={igImageUrl(a.avatar_url)}
                     alt={a.username}
                     referrerPolicy="no-referrer"
                     loading="lazy"
