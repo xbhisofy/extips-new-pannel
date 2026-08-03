@@ -8,6 +8,35 @@ ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS referred_by uuid;
 ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS referral_earnings numeric NOT NULL DEFAULT 0;
 CREATE INDEX IF NOT EXISTS idx_profiles_referral_code_upper ON public.profiles ((upper(referral_code))) WHERE referral_code IS NOT NULL;
 
+-- Some hosted histories granted this RPC before its CREATE reached the VPS.
+-- Recreate the canonical, authenticated-user-only implementation first.
+CREATE OR REPLACE FUNCTION public.set_referrer_by_code(p_code text) RETURNS json
+LANGUAGE plpgsql SECURITY DEFINER SET search_path=public AS $$
+DECLARE
+  v_user_id uuid := auth.uid();
+  v_referrer_id uuid;
+BEGIN
+  IF v_user_id IS NULL THEN RAISE EXCEPTION 'Not authenticated'; END IF;
+  IF coalesce(btrim(p_code), '') = '' THEN RAISE EXCEPTION 'Referral code required'; END IF;
+
+  SELECT user_id INTO v_referrer_id
+    FROM public.profiles
+   WHERE upper(referral_code) = upper(btrim(p_code))
+   LIMIT 1;
+  IF v_referrer_id IS NULL THEN RAISE EXCEPTION 'Invalid referral code'; END IF;
+  IF v_referrer_id = v_user_id THEN RAISE EXCEPTION 'You cannot refer yourself'; END IF;
+
+  UPDATE public.profiles
+     SET referred_by = v_referrer_id, updated_at = now()
+   WHERE user_id = v_user_id AND referred_by IS NULL;
+  IF NOT FOUND THEN
+    RETURN json_build_object('success', false, 'already_set', true);
+  END IF;
+  RETURN json_build_object('success', true, 'referrer_id', v_referrer_id);
+END $$;
+REVOKE EXECUTE ON FUNCTION public.set_referrer_by_code(text) FROM PUBLIC, anon;
+GRANT EXECUTE ON FUNCTION public.set_referrer_by_code(text) TO authenticated;
+
 -- Repair services.provider_id FK prerequisites before failed historical migrations retry.
 INSERT INTO public.providers(id,name,api_url,api_key,is_active)
 SELECT DISTINCT s.provider_id,coalesce(pa.name,s.provider_id),coalesce(nullif(pa.api_url,''),'http://invalid.local'),
@@ -26,6 +55,25 @@ GRANT ALL ON public.zapupi_deposits TO service_role;
 ALTER TABLE public.zapupi_deposits ENABLE ROW LEVEL SECURITY;
 DROP POLICY IF EXISTS "Users view own zapupi deposits" ON public.zapupi_deposits;
 CREATE POLICY "Users view own zapupi deposits" ON public.zapupi_deposits FOR SELECT TO authenticated USING (auth.uid()=user_id);
+
+-- Policies from historically partially-applied migrations. Dropping only the
+-- named policy lets the original migration recreate the intended definition.
+DROP POLICY IF EXISTS "Restrict user_roles mutations to admins" ON public.user_roles;
+DROP POLICY IF EXISTS "Restrict providers to admins" ON public.providers;
+DROP POLICY IF EXISTS "Restrict provider_accounts to admins" ON public.provider_accounts;
+DROP POLICY IF EXISTS "Users manage own drip campaigns" ON public.drip_feed_campaigns;
+DROP POLICY IF EXISTS "Admins manage all drip campaigns" ON public.drip_feed_campaigns;
+DROP POLICY IF EXISTS "Users view own engagement health history" ON public.engagement_health_history;
+DROP POLICY IF EXISTS "Users insert own engagement health history" ON public.engagement_health_history;
+DROP POLICY IF EXISTS "Admins manage engagement health history" ON public.engagement_health_history;
+DROP POLICY IF EXISTS "Deny anonymous access to engagement_health_history" ON public.engagement_health_history;
+DROP POLICY IF EXISTS "Users manage their own batches" ON public.mass_order_batches;
+DROP POLICY IF EXISTS "Users manage their own batch items" ON public.mass_order_batch_items;
+DROP POLICY IF EXISTS "Users view own link events" ON public.instagram_link_events;
+DROP POLICY IF EXISTS "Admins view all link events" ON public.instagram_link_events;
+DROP POLICY IF EXISTS "oxapay_deposits_select_own_or_admin" ON public.oxapay_deposits;
+DROP POLICY IF EXISTS "oxapay_deposits_insert_own" ON public.oxapay_deposits;
+DROP POLICY IF EXISTS "oxapay_deposits_admin_update" ON public.oxapay_deposits;
 
 DROP POLICY IF EXISTS "Admins can view poll state" ON public.instagram_poll_state;
 CREATE POLICY "Admins can view poll state" ON public.instagram_poll_state FOR SELECT TO authenticated USING (public.has_role(auth.uid(),'admin'));
