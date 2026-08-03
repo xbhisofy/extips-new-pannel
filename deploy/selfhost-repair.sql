@@ -215,11 +215,21 @@ END $$;
 
 -- ============ Subscriptions repair (dedupe + unique + admin policies) ============
 DO $$ BEGIN
-  -- keep newest row per user, drop duplicates
+  -- Keep the newest row per user. Using row_number instead of ctid ordering
+  -- makes the retained subscription deterministic after a restore/import.
   DELETE FROM public.subscriptions s
-  USING public.subscriptions d
-  WHERE s.user_id = d.user_id
-    AND s.ctid < d.ctid;
+  USING (
+    SELECT ctid
+    FROM (
+      SELECT ctid, row_number() OVER (
+        PARTITION BY user_id
+        ORDER BY activated_at DESC NULLS LAST, created_at DESC NULLS LAST, ctid DESC
+      ) AS rn
+      FROM public.subscriptions
+    ) ranked
+    WHERE rn > 1
+  ) duplicates
+  WHERE s.ctid = duplicates.ctid;
 
   BEGIN
     CREATE UNIQUE INDEX IF NOT EXISTS subscriptions_user_id_key ON public.subscriptions(user_id);
@@ -245,7 +255,10 @@ DO $$ BEGIN
   DELETE FROM public.wallets a USING public.wallets b WHERE a.user_id = b.user_id AND a.ctid < b.ctid;
   BEGIN CREATE UNIQUE INDEX IF NOT EXISTS wallets_user_id_key ON public.wallets(user_id); EXCEPTION WHEN OTHERS THEN NULL; END;
 
-  DELETE FROM public.profiles a USING public.profiles b WHERE a.user_id = b.user_id AND a.ctid < b.ctid;
+  -- A partially imported database may have duplicate profile rows. Keep one
+  -- deterministic row per auth user so email lookups can never return many.
+  DELETE FROM public.profiles a USING public.profiles b
+   WHERE a.user_id = b.user_id AND a.ctid < b.ctid;
   BEGIN CREATE UNIQUE INDEX IF NOT EXISTS profiles_user_id_key ON public.profiles(user_id); EXCEPTION WHEN OTHERS THEN NULL; END;
 
   DELETE FROM public.user_roles a USING public.user_roles b WHERE a.user_id = b.user_id AND a.role = b.role AND a.ctid < b.ctid;
