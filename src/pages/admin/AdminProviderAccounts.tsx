@@ -12,7 +12,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Plus, Edit, Trash2, Key, Clock, Link as LinkIcon, ArrowLeft } from "lucide-react";
+import { Plus, Edit, Trash2, Key, Clock, Link as LinkIcon, ArrowLeft, Wallet, RefreshCw, AlertTriangle } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { useNavigate } from "react-router-dom";
 
@@ -28,6 +28,10 @@ interface ProviderAccount {
   created_at: string;
   updated_at: string;
   delivery_multiplier?: number | null;
+  balance?: number | null;
+  balance_currency?: string | null;
+  balance_checked_at?: string | null;
+  last_balance_error?: string | null;
 }
 
 interface Provider {
@@ -41,7 +45,8 @@ export default function AdminProviderAccounts() {
   const queryClient = useQueryClient();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingAccount, setEditingAccount] = useState<ProviderAccount | null>(null);
-  
+  const [checkingId, setCheckingId] = useState<string | null>(null);
+
   // Form state
   const [formData, setFormData] = useState({
     provider_id: "",
@@ -79,6 +84,31 @@ export default function AdminProviderAccounts() {
       return data as ProviderAccount[];
     },
   });
+
+  // Live balance check for one account (never disables the account —
+  // the health check only records status; disabling stays manual).
+  const checkBalance = async (account: ProviderAccount) => {
+    setCheckingId(account.id);
+    try {
+      const { data, error } = await supabase.functions.invoke("check-provider-balance", {
+        body: { account_id: account.id, source: "manual" },
+      });
+      if (error) throw error;
+      const result = (data as any)?.results?.[0];
+      if (result?.error) {
+        toast.error(`${account.name}: ${result.error}`);
+      } else {
+        toast.success(`${account.name}: ${result?.balance ?? "?"} ${result?.currency ?? ""}`);
+      }
+      await queryClient.invalidateQueries({ queryKey: ["provider-accounts"] });
+    } catch (e: any) {
+      toast.error(e.message || "Balance check failed");
+    } finally {
+      setCheckingId(null);
+    }
+  };
+
+
 
   // Create/Update mutation
   const saveMutation = useMutation({
@@ -430,6 +460,7 @@ export default function AdminProviderAccounts() {
                         <TableHead>Name</TableHead>
                         <TableHead>API Key</TableHead>
                         <TableHead>Priority</TableHead>
+                        <TableHead>Balance</TableHead>
                         <TableHead>Last Used</TableHead>
                         <TableHead>Status</TableHead>
                         <TableHead className="text-right">Actions</TableHead>
@@ -446,6 +477,29 @@ export default function AdminProviderAccounts() {
                           </TableCell>
                           <TableCell>
                             <Badge variant="outline">#{account.priority}</Badge>
+                          </TableCell>
+                          <TableCell>
+                            <div className="flex flex-col gap-0.5">
+                              <span className="text-sm font-medium flex items-center gap-1">
+                                <Wallet className="h-3 w-3 text-muted-foreground" />
+                                {account.balance != null
+                                  ? `${Number(account.balance).toFixed(2)} ${account.balance_currency || ""}`
+                                  : "—"}
+                              </span>
+                              <span className="text-xs text-muted-foreground">
+                                {account.balance_checked_at
+                                  ? `checked ${formatDistanceToNow(new Date(account.balance_checked_at), { addSuffix: true })}`
+                                  : "never checked"}
+                              </span>
+                              {account.last_balance_error && (
+                                <span className="text-xs text-destructive flex items-center gap-1">
+                                  <AlertTriangle className="h-3 w-3 shrink-0" />
+                                  <span className="truncate max-w-[180px]" title={account.last_balance_error}>
+                                    {account.last_balance_error}
+                                  </span>
+                                </span>
+                              )}
+                            </div>
                           </TableCell>
                           <TableCell>
                             {account.last_used_at ? (
@@ -467,6 +521,16 @@ export default function AdminProviderAccounts() {
                           </TableCell>
                           <TableCell className="text-right">
                             <div className="flex items-center justify-end gap-2">
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                className="gap-1"
+                                disabled={checkingId === account.id}
+                                onClick={() => checkBalance(account)}
+                              >
+                                <RefreshCw className={`h-3.5 w-3.5 ${checkingId === account.id ? "animate-spin" : ""}`} />
+                                Check balance
+                              </Button>
                               <Button
                                 variant="ghost"
                                 size="icon"

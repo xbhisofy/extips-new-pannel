@@ -234,14 +234,16 @@ serve(async (req) => {
           const errorMsg = typeof result.error === 'string' ? result.error : JSON.stringify(result.error)
           console.log(`[process-order] Provider ${provider.name} error: ${errorMsg}`)
           lastError = errorMsg
-          
-          // If this error means we should try another provider, continue
-          if (shouldTryNextProvider(errorMsg) && providerOptions.indexOf(provider) < providerOptions.length - 1) {
-            console.log(`[process-order] Trying next provider...`)
+
+          // SOFT ERROR -> always move on to the next provider in priority order.
+          // Even on the last provider we fall through to the "all providers
+          // failed" handler below, never to a hard failure with this text.
+          if (shouldTryNextProvider(errorMsg)) {
+            console.log(`[process-order] Soft error, trying next provider...`)
             continue
           }
-          
-          // Last provider or permanent error — fail the order
+
+          // HARD ERROR -> fail immediately with the exact provider text.
           await supabase.from('orders').update({ status: 'failed', error_message: errorMsg }).eq('id', order_id)
           return new Response(JSON.stringify({ success: false, error: errorMsg }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } })
         }
