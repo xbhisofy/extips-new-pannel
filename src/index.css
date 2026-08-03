@@ -19,45 +19,45 @@ input[type="number"] {
 
 @layer base {
   :root {
-    /* ════ EXTIPS BLUE — Light SaaS ════ */
-    --background: 214 100% 98%;
-    --foreground: 222 47% 11%;
+    /* ════ EXTIPS BLUE — Deep Royal (light bg, dark-blue ink) ════ */
+    --background: 210 40% 99%;
+    --foreground: 224 64% 12%;
 
     --card: 0 0% 100%;
-    --card-foreground: 222 47% 11%;
+    --card-foreground: 224 64% 12%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 222 47% 11%;
+    --popover-foreground: 224 64% 12%;
 
-    --primary: 221 83% 53%;
+    --primary: 226 78% 38%;
     --primary-foreground: 0 0% 100%;
 
-    --secondary: 214 60% 96%;
-    --secondary-foreground: 222 47% 11%;
+    --secondary: 216 45% 94%;
+    --secondary-foreground: 226 60% 18%;
 
-    --muted: 214 40% 95%;
-    --muted-foreground: 215 20% 45%;
+    --muted: 215 35% 93%;
+    --muted-foreground: 220 30% 34%;
 
-    --accent: 210 90% 60%;
+    --accent: 224 76% 44%;
     --accent-foreground: 0 0% 100%;
 
-    --success: 160 70% 40%;
+    --success: 160 72% 32%;
     --success-foreground: 0 0% 100%;
 
-    --warning: 38 92% 48%;
+    --warning: 32 92% 40%;
     --warning-foreground: 0 0% 100%;
 
-    --destructive: 0 72% 51%;
+    --destructive: 0 72% 45%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 214 32% 89%;
-    --input: 214 32% 91%;
-    --ring: 221 83% 53%;
+    --border: 216 30% 84%;
+    --input: 216 30% 86%;
+    --ring: 226 78% 38%;
 
     --radius: 1rem;
 
-    --shadow-soft: 0 4px 20px rgba(15,23,42,.08);
-    --shadow-glow: 0 0 30px rgba(37,99,235,.18);
+    --shadow-soft: 0 6px 24px rgba(15,30,70,.10);
+    --shadow-glow: 0 0 30px rgba(29,64,175,.22);
   }
 }
 
@@ -175,8 +175,8 @@ html {
   input:-webkit-autofill:focus,
   input:-webkit-autofill:active {
     -webkit-box-shadow: 0 0 0 100px hsl(0 0% 100%) inset !important;
-    -webkit-text-fill-color: hsl(222 47% 11%) !important;
-    caret-color: hsl(222 47% 11%) !important;
+    -webkit-text-fill-color: hsl(224 64% 12%) !important;
+    caret-color: hsl(224 64% 12%) !important;
     transition: background-color 5000s ease-in-out 0s;
   }
 
@@ -251,7 +251,7 @@ body .hover\:bg-white\/5:hover,
 body .bg-white\/10,
 body .hover\:bg-white\/10:hover,
 body .bg-white\/20 {
-  background-color: hsl(214 60% 96%) !important;
+  background-color: hsl(216 45% 94%) !important;
 }
 
 /* hairline borders */
@@ -263,20 +263,20 @@ body .border-white\/25 {
 }
 
 /* translucent white text -> readable dark text */
-body .text-white\/90 { color: hsl(222 47% 11%) !important; }
-body .text-white\/85 { color: hsl(222 40% 16%) !important; }
-body .text-white\/80 { color: hsl(222 30% 24%) !important; }
-body .text-white\/75 { color: hsl(220 24% 30%) !important; }
-body .text-white\/70 { color: hsl(215 22% 34%) !important; }
-body .text-white\/65 { color: hsl(215 20% 38%) !important; }
-body .text-white\/60 { color: hsl(215 18% 42%) !important; }
-body .text-white\/55 { color: hsl(215 16% 46%) !important; }
-body .text-white\/50 { color: hsl(215 16% 50%) !important; }
-body .text-white\/45 { color: hsl(215 14% 54%) !important; }
-body .text-white\/40 { color: hsl(215 14% 58%) !important; }
-body .text-white\/35 { color: hsl(215 12% 62%) !important; }
-body .text-white\/20 { color: hsl(215 12% 72%) !important; }
-body .text-white { color: hsl(222 47% 11%) !important; }
+body .text-white\/90 { color: hsl(224 64% 12%) !important; }
+body .text-white\/85 { color: hsl(224 55% 16%) !important; }
+body .text-white\/80 { color: hsl(223 45% 21%) !important; }
+body .text-white\/75 { color: hsl(222 40% 25%) !important; }
+body .text-white\/70 { color: hsl(221 36% 29%) !important; }
+body .text-white\/65 { color: hsl(220 34% 32%) !important; }
+body .text-white\/60 { color: hsl(220 32% 35%) !important; }
+body .text-white\/55 { color: hsl(220 30% 38%) !important; }
+body .text-white\/50 { color: hsl(220 28% 42%) !important; }
+body .text-white\/45 { color: hsl(220 26% 46%) !important; }
+body .text-white\/40 { color: hsl(220 24% 50%) !important; }
+body .text-white\/35 { color: hsl(220 22% 54%) !important; }
+body .text-white\/20 { color: hsl(220 20% 62%) !important; }
+body .text-white { color: hsl(224 64% 12%) !important; }
 
 
 
@@ -295,12 +295,12 @@ body [class*="bg-black"] {
 body [class*="border-white/"] { border-color: hsl(var(--border)) !important; }
 
 /* purple ambient blobs -> blue */
-body [class*="bg-purple-6"], body [class*="bg-purple-5"] { background-color: hsl(221 83% 53% / .18) !important; }
-body [class*="bg-fuchsia-6"] { background-color: hsl(205 90% 55% / .12) !important; }
-body [class*="bg-indigo-6"] { background-color: hsl(215 90% 55% / .14) !important; }
+body [class*="bg-purple-6"], body [class*="bg-purple-5"] { background-color: hsl(226 78% 45% / .14) !important; }
+body [class*="bg-fuchsia-6"] { background-color: hsl(215 80% 45% / .10) !important; }
+body [class*="bg-indigo-6"] { background-color: hsl(224 76% 44% / .12) !important; }
 
 /* Forced-white text utilities (!text-white) -> dark, except on filled surfaces */
-body [class*="text-white"] { color: hsl(222 47% 11%) !important; }
+body [class*="text-white"] { color: hsl(224 64% 12%) !important; }
 
 /* keep white only when the element ITSELF (or its direct icon/span child)
    sits on a filled colored surface */
@@ -336,7 +336,7 @@ body a[class*="bg-white"][class*="text-primary-foreground"] {
 }
 
 /* arbitrary translucent white surfaces bg-white/[0.0x] */
-body [class*="bg-white/["] { background-color: hsl(214 60% 96%) !important; }
+body [class*="bg-white/["] { background-color: hsl(216 45% 94%) !important; }
 
 /* pale accent text -> readable blue/dark tones */
 body [class*="text-purple-2"], body [class*="text-purple-3"],
