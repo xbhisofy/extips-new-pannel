@@ -1103,6 +1103,11 @@ export default function EngagementOrder() {
                       <Loader2 className="h-4 w-4 sm:h-5 sm:w-5 animate-spin mr-2" />
                       Loading...
                     </>
+                  ) : !isAdmin && !hasActiveSubscription ? (
+                    <>
+                      <Lock className="h-4 w-4 sm:h-5 sm:w-5 mr-2" />
+                      Subscription Required
+                    </>
                   ) : (
                     <>
                       <Rocket className="h-4 w-4 sm:h-5 sm:w-5 mr-2" />
