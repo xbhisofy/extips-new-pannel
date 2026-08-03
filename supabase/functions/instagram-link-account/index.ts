@@ -213,16 +213,27 @@ Deno.serve(async (req) => {
       user_id: userId, username: account.username, event_type: 'link',
     });
 
+    // Kick off the Apify scrape right away (fire-and-forget) so the user does
+    // not have to press Refresh manually — the row fills in within seconds.
+    try {
+      fetch(`${SUPABASE_URL}/functions/v1/instagram-refresh-media`, {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${SERVICE_KEY}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ account_id: account.id, source: 'auto-link' }),
+      }).catch((e) => console.warn('auto refresh trigger failed', (e as Error).message));
+    } catch (e) { console.warn('auto refresh trigger error', (e as Error).message); }
+
     return new Response(JSON.stringify({
       account,
       imported: 0,
-      importing: false,
+      importing: true,
       cached: false,
       pending_refresh: true,
-      message: 'Account linked. Click Refresh to fetch profile + posts.',
+      message: 'Account linked. Fetching profile + posts…',
     }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
+
 
 
   } catch (e) {

@@ -6,10 +6,10 @@ import { useAuth } from '@/hooks/useAuth';
 import { useSubscription } from '@/hooks/useSubscription';
 import { SubscriptionCheckDialog } from '@/components/subscription/SubscriptionCheckDialog';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
-import { Instagram, Loader2, Plus, Trash2, CheckCircle2, ShieldAlert, Lock } from 'lucide-react';
+import { Instagram, Loader2, Plus, Trash2, CheckCircle2, ShieldAlert, Lock, RefreshCw } from 'lucide-react';
 import { toast } from 'sonner';
 import { Link } from 'react-router-dom';
-import { igQueryKeys } from '@/lib/instagramCache';
+import { igQueryKeys, IG_CACHE_PREFIX } from '@/lib/instagramCache';
 
 export default function InstagramPage() {
   const { user } = useAuth();
@@ -28,7 +28,12 @@ export default function InstagramPage() {
       return data;
     },
     enabled: !!user?.id,
+    // While a freshly linked row is still being scraped, poll so the profile
+    // and post counts appear without a manual reload.
+    refetchInterval: (q) =>
+      (q.state.data as any[] | undefined)?.some((a) => a.status === 'pending_refresh') ? 4000 : false,
   });
+
 
   // Persistent 30-day link usage from audit log (survives account deletion).
   const { data: linkEvents = [] } = useQuery({
@@ -65,14 +70,37 @@ export default function InstagramPage() {
       return data;
     },
     onSuccess: (d) => {
-      toast.success(`Linked @${d.account.username} · ${d.imported} posts imported`);
+      toast.success(
+        d.pending_refresh
+          ? `Linked @${d.account.username} · fetching profile & posts…`
+          : `Linked @${d.account.username} · ${d.imported} posts imported`,
+      );
       setUsername('');
-      qc.invalidateQueries({ queryKey: igQueryKeys.accounts() });
-      qc.invalidateQueries({ queryKey: igQueryKeys.linkEvents() });
-      qc.invalidateQueries({ queryKey: igQueryKeys.postsSummary() });
+      // Keys include the user id, so invalidate the exact key (a key with an
+      // undefined id never prefix-matches it) — otherwise the list stays empty.
+      qc.invalidateQueries({ queryKey: igQueryKeys.accounts(user?.id) });
+      qc.invalidateQueries({ queryKey: igQueryKeys.linkEvents(user?.id) });
+      qc.invalidateQueries({ queryKey: [IG_CACHE_PREFIX, 'posts-summary'] });
     },
     onError: (e: Error) => toast.error(e.message),
   });
+
+  const refreshMut = useMutation({
+    mutationFn: async (accountId: string) => {
+      const { data, error } = await supabase.functions.invoke('instagram-refresh-media', {
+        body: { account_id: accountId, source: 'manual' },
+      });
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      toast.success('Refreshing from Instagram…');
+      qc.invalidateQueries({ queryKey: igQueryKeys.accounts(user?.id) });
+      setTimeout(() => qc.invalidateQueries({ queryKey: igQueryKeys.accounts(user?.id) }), 6000);
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
 
   const removeMut = useMutation({
     mutationFn: async (id: string) => {
@@ -81,8 +109,9 @@ export default function InstagramPage() {
     },
     onSuccess: () => {
       toast.success('Account removed');
-      qc.invalidateQueries({ queryKey: igQueryKeys.accounts() });
-      qc.invalidateQueries({ queryKey: igQueryKeys.postsSummary() });
+      qc.invalidateQueries({ queryKey: igQueryKeys.accounts(user?.id) });
+      qc.invalidateQueries({ queryKey: [IG_CACHE_PREFIX, 'posts-summary'] });
+
     },
   });
 
@@ -256,13 +285,26 @@ export default function InstagramPage() {
                 </div>
                 {a.full_name && <p className="text-[13px] text-white/85 truncate">{a.full_name}</p>}
                 <p className="text-[11px] text-white/75 mt-0.5">
-                  {a.followers?.toLocaleString('en-IN') ?? 0} followers · {a.posts_count ?? 0} posts
+                  {a.status === 'pending_refresh'
+                    ? 'Fetching profile & posts…'
+                    : `${a.followers?.toLocaleString('en-IN') ?? 0} followers · ${a.posts_count ?? 0} posts`}
                 </p>
               </div>
               <div className="flex items-center gap-2 shrink-0">
+                <button
+                  onClick={() => refreshMut.mutate(a.id)}
+                  disabled={refreshMut.isPending}
+                  className="w-9 h-9 rounded-lg bg-white/5 hover:bg-white/10 border border-white/10 text-white/80 flex items-center justify-center disabled:opacity-50"
+                  title="Refresh from Instagram"
+                >
+                  {refreshMut.isPending || a.status === 'pending_refresh'
+                    ? <Loader2 className="w-4 h-4 animate-spin" />
+                    : <RefreshCw className="w-4 h-4" />}
+                </button>
                 <Link to={`/my-posts?account=${encodeURIComponent(a.id)}`} className="px-3 h-9 rounded-lg text-[12px] font-semibold bg-white/5 hover:bg-white/10 border border-white/10 text-white/80 flex items-center">
                   View Posts
                 </Link>
+
                 <button
                   onClick={() => confirm(`Remove @${a.username}?`) && removeMut.mutate(a.id)}
                   className="w-9 h-9 rounded-lg bg-red-500/10 hover:bg-red-500/20 border border-red-400/20 text-red-300 flex items-center justify-center"

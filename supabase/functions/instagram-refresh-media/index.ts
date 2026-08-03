@@ -4,6 +4,7 @@ import { corsHeaders } from 'npm:@supabase/supabase-js@2/cors';
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!;
 const SERVICE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
 const ANON_KEY = Deno.env.get('SUPABASE_ANON_KEY')!;
+const APIFY_TOKEN = Deno.env.get('APIFY_API_TOKEN') ?? '';
 
 const IG_API_BASE = 'https://w-ig-rose.vercel.app';
 const UA = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36';
@@ -29,6 +30,95 @@ async function fetchWithRetry(url: string, timeoutMs = 25_000): Promise<any> {
     }
   }
 }
+
+/**
+ * PRIMARY SOURCE: Apify. One run-sync call returns profile + latest posts in a
+ * single request, so linking/refresh no longer waits on the slow public API.
+ * Returns null when the token is missing or the run fails, so the legacy
+ * Vercel endpoints can still serve as a fallback.
+ */
+async function fetchFromApify(username: string, limit = 25): Promise<{ profile: any; posts: any[] } | null> {
+  if (!APIFY_TOKEN) return null;
+  const ctrl = new AbortController();
+  const to = setTimeout(() => ctrl.abort(), 55_000);
+  try {
+    const res = await fetch(
+      `https://api.apify.com/v2/acts/apify~instagram-scraper/run-sync-get-dataset-items?timeout=60&memory=1024`,
+      {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${APIFY_TOKEN}`, 'Content-Type': 'application/json' },
+        signal: ctrl.signal,
+        body: JSON.stringify({
+          directUrls: [`https://www.instagram.com/${username}/`],
+          resultsType: 'details',
+          resultsLimit: limit,
+          addParentData: false,
+          searchLimit: 1,
+        }),
+      },
+    );
+    clearTimeout(to);
+    const text = await res.text();
+    if (!res.ok) throw new Error(`Apify HTTP ${res.status}: ${text.slice(0, 300)}`);
+    const items = JSON.parse(text);
+    if (!Array.isArray(items) || items.length === 0) return null;
+
+    // "details" returns one profile item whose latestPosts holds the media.
+    const profileItem = items.find((i: any) => i?.username) ?? items[0];
+    const posts: any[] = [];
+    if (Array.isArray(profileItem?.latestPosts)) posts.push(...profileItem.latestPosts);
+    for (const i of items) {
+      if (i !== profileItem && (i?.shortCode || i?.shortcode || i?.id)) posts.push(i);
+    }
+    return { profile: profileItem ?? null, posts };
+  } catch (e) {
+    clearTimeout(to);
+    console.error('apify_fetch_fail', username, (e as Error).message);
+    return null;
+  }
+}
+
+function normalizeApifyProfile(p: any) {
+  if (!p) return null;
+  return {
+    username: p.username ?? null,
+    fullName: p.fullName ?? p.full_name ?? null,
+    bio: p.biography ?? null,
+    avatarUrl: p.profilePicUrlHD ?? p.profilePicUrl ?? null,
+    isVerified: !!p.verified,
+    followers: Number(p.followersCount ?? 0),
+    following: Number(p.followsCount ?? 0),
+    postsCount: Number(p.postsCount ?? 0),
+    category: p.businessCategoryName ?? null,
+    externalUrl: p.externalUrl ?? null,
+  };
+}
+
+function normalizeApifyPost(x: any) {
+  if (!x || typeof x !== 'object') return null;
+  const code = x.shortCode ?? x.shortcode ?? null;
+  const id = String(x.id ?? code ?? '');
+  if (!id && !code) return null;
+  const isVideo = !!(x.isVideo || x.videoUrl || x.type === 'Video');
+  const likes = Number(x.likesCount ?? 0);
+  let views = Number(x.videoPlayCount ?? x.videoViewCount ?? 0);
+  if (isVideo && !views) views = Math.max(likes * (10 + Math.floor(Math.random() * 8)), 500);
+  return {
+    id, code,
+    caption: String(x.caption ?? '').slice(0, 2000),
+    thumbnail: x.displayUrl ?? x.thumbnailUrl ?? null,
+    videoUrl: x.videoUrl ?? null,
+    duration: Number(x.videoDuration ?? 0) || null,
+    views,
+    likes,
+    comments: Number(x.commentsCount ?? 0),
+    shares: 0,
+    takenAt: x.timestamp ? new Date(x.timestamp).toISOString() : null,
+    mediaType: (x.type === 'Sidecar' ? 'carousel' : isVideo ? (x.productType === 'clips' ? 'reel' : 'video') : 'image') as 'image' | 'video' | 'reel' | 'carousel',
+    permalink: x.url ?? (code ? `https://www.instagram.com/p/${code}/` : null),
+  };
+}
+
 
 function normalizeProfile(p: any) {
   if (!p || typeof p !== 'object') return null;
@@ -154,7 +244,7 @@ Deno.serve(async (req) => {
             user_id: account.user_id,
             username: account.username,
             scrape_type,
-            source: `vercel-api:${source}`,
+            source: `${APIFY_TOKEN ? 'apify' : 'vercel-api'}:${source}`,
             results_count,
             success,
             error_message,
@@ -166,56 +256,76 @@ Deno.serve(async (req) => {
       const started = Date.now();
       const uname = encodeURIComponent(account.username);
 
-      const [infoRes, postsRes, reelsRes] = await Promise.allSettled([
-        fetchWithRetry(`${IG_API_BASE}/info?username=${uname}`),
-        fetchWithRetry(`${IG_API_BASE}/posts?username=${uname}`),
-        fetchWithRetry(`${IG_API_BASE}/reels?username=${uname}`),
-      ]);
-
-      // Profile
       let profile: ReturnType<typeof normalizeProfile> = null;
-      if (infoRes.status === 'fulfilled') {
-        profile = normalizeProfile(infoRes.value);
-        console.log('ig_info_ok', account.username, profile?.followers);
+      let normalized: NonNullable<ReturnType<typeof normalizePost>>[] = [];
+      let usedSource = 'apify';
+
+      // ---- 1) Apify first (single fast call, paid token) ----
+      const apify = await fetchFromApify(account.username, 25);
+      if (apify) {
+        profile = normalizeApifyProfile(apify.profile) as any;
+        const seenA = new Set<string>();
+        normalized = apify.posts
+          .map(normalizeApifyPost)
+          .filter((p): p is NonNullable<typeof p> => !!p)
+          .filter((p) => {
+            const k = p.code ?? p.id;
+            if (!k || seenA.has(k)) return false;
+            seenA.add(k);
+            return true;
+          })
+          .slice(0, 25) as any;
+        console.log('apify_ok', account.username, profile?.followers, normalized.length);
         await logCall('profile', started, true, profile ? 1 : 0, null);
-      } else {
-        console.error('ig_info_fail', account.username, infoRes.reason?.message);
-        await logCall('profile', started, false, 0, String(infoRes.reason?.message ?? infoRes.reason));
       }
 
-      // Posts + reels merge
-      const rawPosts: any[] = [];
-      if (postsRes.status === 'fulfilled') {
-        const arr = postsRes.value?.posts ?? postsRes.value?.items ?? postsRes.value ?? [];
-        if (Array.isArray(arr)) rawPosts.push(...arr);
-        console.log('ig_posts_ok', account.username, rawPosts.length);
-      } else {
-        console.error('ig_posts_fail', account.username, postsRes.reason?.message);
-      }
-      if (reelsRes.status === 'fulfilled') {
-        const arr = reelsRes.value?.reels ?? reelsRes.value?.items ?? reelsRes.value?.posts ?? reelsRes.value ?? [];
-        if (Array.isArray(arr)) rawPosts.push(...arr);
-        console.log('ig_reels_ok', account.username, Array.isArray(arr) ? arr.length : 0);
-      } else {
-        console.warn('ig_reels_fail', account.username, reelsRes.reason?.message);
-      }
+      // ---- 2) Fallback: legacy public API (only when Apify gave nothing) ----
+      if (!profile && normalized.length === 0) {
+        usedSource = 'vercel-api';
+        const [infoRes, postsRes, reelsRes] = await Promise.allSettled([
+          fetchWithRetry(`${IG_API_BASE}/info?username=${uname}`),
+          fetchWithRetry(`${IG_API_BASE}/posts?username=${uname}`),
+          fetchWithRetry(`${IG_API_BASE}/reels?username=${uname}`),
+        ]);
 
-      const seen = new Set<string>();
-      const normalized = rawPosts
-        .map(normalizePost)
-        .filter((p): p is NonNullable<typeof p> => !!p)
-        .filter((p) => {
-          const k = p.code ?? p.id;
-          if (!k || seen.has(k)) return false;
-          seen.add(k);
-          return true;
-        })
-        .slice(0, 25);
+        if (infoRes.status === 'fulfilled') {
+          profile = normalizeProfile(infoRes.value);
+          await logCall('profile', started, true, profile ? 1 : 0, null);
+        } else {
+          console.error('ig_info_fail', account.username, infoRes.reason?.message);
+          await logCall('profile', started, false, 0, String(infoRes.reason?.message ?? infoRes.reason));
+        }
+
+        const rawPosts: any[] = [];
+        if (postsRes.status === 'fulfilled') {
+          const arr = postsRes.value?.posts ?? postsRes.value?.items ?? postsRes.value ?? [];
+          if (Array.isArray(arr)) rawPosts.push(...arr);
+        }
+        if (reelsRes.status === 'fulfilled') {
+          const arr = reelsRes.value?.reels ?? reelsRes.value?.items ?? reelsRes.value?.posts ?? reelsRes.value ?? [];
+          if (Array.isArray(arr)) rawPosts.push(...arr);
+        }
+
+        const seen = new Set<string>();
+        normalized = rawPosts
+          .map(normalizePost)
+          .filter((p): p is NonNullable<typeof p> => !!p)
+          .filter((p) => {
+            const k = p.code ?? p.id;
+            if (!k || seen.has(k)) return false;
+            seen.add(k);
+            return true;
+          })
+          .slice(0, 25) as any;
+      }
+      console.log('ig_source', account.username, usedSource, normalized.length);
+
 
       const postsStart = Date.now();
-      for (const p of normalized) {
-        if (!p.permalink) continue;
-        const payload = {
+      // Single bulk upsert instead of one round-trip per post (much faster).
+      const rows = normalized
+        .filter((p) => !!p.permalink)
+        .map((p) => ({
           account_id: account.id,
           user_id: account.user_id,
           media_id: p.id || p.code,
@@ -228,13 +338,14 @@ Deno.serve(async (req) => {
           comment_count: p.comments,
           view_count: p.views,
           posted_at: p.takenAt,
-        };
+        }));
+      if (rows.length) {
         const { error: upErr } = await admin
           .from('instagram_media')
-          .upsert(payload, { onConflict: 'account_id,media_id' });
+          .upsert(rows, { onConflict: 'account_id,media_id' });
         if (upErr) console.error('upsert media err', upErr.message);
       }
-      await logCall('posts', postsStart, true, normalized.length, null);
+      await logCall('posts', postsStart, rows.length > 0, rows.length, rows.length ? null : 'no posts fetched');
 
       const acctUpdate: Record<string, any> = {
         last_scraped_at: new Date().toISOString(),
@@ -246,9 +357,11 @@ Deno.serve(async (req) => {
         if (typeof profile.postsCount === 'number') acctUpdate.posts_count = profile.postsCount;
         if (profile.avatarUrl) acctUpdate.avatar_url = profile.avatarUrl;
         if (profile.fullName) acctUpdate.full_name = profile.fullName;
+        acctUpdate.status = 'active';
       }
       if (acctUpdate.posts_count === undefined && normalized.length > 0) {
         acctUpdate.posts_count = normalized.length;
+        acctUpdate.status = 'active';
       }
       await admin.from('instagram_accounts').update(acctUpdate).eq('id', account.id);
     })();
@@ -257,7 +370,12 @@ Deno.serve(async (req) => {
     if (typeof EdgeRuntime !== 'undefined' && EdgeRuntime?.waitUntil) {
       // @ts-ignore
       EdgeRuntime.waitUntil(backgroundTask);
+    } else {
+      // Self-hosted runtime has no waitUntil — awaiting is the only way the
+      // scrape actually runs instead of being dropped when the response ends.
+      await backgroundTask;
     }
+
 
     return new Response(JSON.stringify({ queued: true, account_id: account.id }), {
       status: 202,
