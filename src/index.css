@@ -327,6 +327,39 @@ body [class*="text-white"] { color: hsl(224 64% 12%) !important; }
 [class*="bg-indigo-6"][class*="text-white"],
 .btn-3d > [class*="text-white"] { color: #fff !important; }
 
+/* Translucent tinted surfaces (bg-*/5, /10, /20 ...) are LIGHT in this theme,
+   so any white-ish text on them (or inside them) must be dark navy. */
+body [class*="bg-primary/"],
+body [class*="bg-primary/"] *,
+body [class*="bg-blue-500/"], body [class*="bg-blue-500/"] *,
+body [class*="bg-blue-600/"], body [class*="bg-blue-600/"] *,
+body [class*="bg-indigo-500/"], body [class*="bg-indigo-500/"] *,
+body [class*="bg-violet-500/"], body [class*="bg-violet-500/"] *,
+body [class*="bg-purple-500/"], body [class*="bg-purple-500/"] * {
+  --tw-text-opacity: 1;
+}
+body [class*="bg-primary/"][class*="text-white"],
+body [class*="bg-primary/"] [class*="text-white"],
+body [class*="bg-blue-500/"][class*="text-white"],
+body [class*="bg-blue-500/"] [class*="text-white"],
+body [class*="bg-blue-600/"][class*="text-white"],
+body [class*="bg-blue-600/"] [class*="text-white"],
+body [class*="bg-indigo-500/"] [class*="text-white"],
+body [class*="bg-violet-500/"] [class*="text-white"],
+body [class*="bg-purple-500/"] [class*="text-white"] {
+  color: hsl(224 64% 12%) !important;
+}
+/* text-primary-foreground is white; only valid on solid fills */
+body [class*="text-primary-foreground"]:not([class*="bg-primary "]):not([class*="bg-gradient"]):not(.btn-3d):not([class$="bg-primary"]) {
+  color: hsl(224 64% 12%) !important;
+}
+body [class*="bg-primary"]:not([class*="bg-primary/"]) [class*="text-primary-foreground"],
+body [class*="bg-gradient"] [class*="text-primary-foreground"],
+body button[class*="bg-primary"]:not([class*="bg-primary/"]),
+body .btn-3d [class*="text-primary-foreground"] {
+  color: #fff !important;
+}
+
 /* white CTA buttons (authored for dark bg) -> primary blue button */
 body a[class*="bg-white"][class*="text-black"],
 body button[class*="bg-white"][class*="text-black"],
