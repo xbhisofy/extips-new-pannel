@@ -1354,7 +1354,7 @@ async function processAllRuns(supabase: any, executionId: string, startTime: num
         }
       }
       
-      const accountsToTry: { account: ProviderAccount; providerServiceId: string; minQuantity: number }[] = [...availableAccounts]
+      const accountsToTry: { account: ProviderAccount; providerServiceId: string; minQuantity: number; isBackup?: boolean }[] = [...availableAccounts]
       accountsToTry.sort((a, b) => {
         const aRecent = recentCompletedAccountIds.has(a.account.id) ? 1 : 0
         const bRecent = recentCompletedAccountIds.has(b.account.id) ? 1 : 0
