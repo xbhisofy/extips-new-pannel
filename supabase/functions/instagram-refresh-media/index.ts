@@ -256,51 +256,70 @@ Deno.serve(async (req) => {
       const started = Date.now();
       const uname = encodeURIComponent(account.username);
 
-      const [infoRes, postsRes, reelsRes] = await Promise.allSettled([
-        fetchWithRetry(`${IG_API_BASE}/info?username=${uname}`),
-        fetchWithRetry(`${IG_API_BASE}/posts?username=${uname}`),
-        fetchWithRetry(`${IG_API_BASE}/reels?username=${uname}`),
-      ]);
-
-      // Profile
       let profile: ReturnType<typeof normalizeProfile> = null;
-      if (infoRes.status === 'fulfilled') {
-        profile = normalizeProfile(infoRes.value);
-        console.log('ig_info_ok', account.username, profile?.followers);
+      let normalized: NonNullable<ReturnType<typeof normalizePost>>[] = [];
+      let usedSource = 'apify';
+
+      // ---- 1) Apify first (single fast call, paid token) ----
+      const apify = await fetchFromApify(account.username, 25);
+      if (apify) {
+        profile = normalizeApifyProfile(apify.profile) as any;
+        const seenA = new Set<string>();
+        normalized = apify.posts
+          .map(normalizeApifyPost)
+          .filter((p): p is NonNullable<typeof p> => !!p)
+          .filter((p) => {
+            const k = p.code ?? p.id;
+            if (!k || seenA.has(k)) return false;
+            seenA.add(k);
+            return true;
+          })
+          .slice(0, 25) as any;
+        console.log('apify_ok', account.username, profile?.followers, normalized.length);
         await logCall('profile', started, true, profile ? 1 : 0, null);
-      } else {
-        console.error('ig_info_fail', account.username, infoRes.reason?.message);
-        await logCall('profile', started, false, 0, String(infoRes.reason?.message ?? infoRes.reason));
       }
 
-      // Posts + reels merge
-      const rawPosts: any[] = [];
-      if (postsRes.status === 'fulfilled') {
-        const arr = postsRes.value?.posts ?? postsRes.value?.items ?? postsRes.value ?? [];
-        if (Array.isArray(arr)) rawPosts.push(...arr);
-        console.log('ig_posts_ok', account.username, rawPosts.length);
-      } else {
-        console.error('ig_posts_fail', account.username, postsRes.reason?.message);
-      }
-      if (reelsRes.status === 'fulfilled') {
-        const arr = reelsRes.value?.reels ?? reelsRes.value?.items ?? reelsRes.value?.posts ?? reelsRes.value ?? [];
-        if (Array.isArray(arr)) rawPosts.push(...arr);
-        console.log('ig_reels_ok', account.username, Array.isArray(arr) ? arr.length : 0);
-      } else {
-        console.warn('ig_reels_fail', account.username, reelsRes.reason?.message);
-      }
+      // ---- 2) Fallback: legacy public API (only when Apify gave nothing) ----
+      if (!profile && normalized.length === 0) {
+        usedSource = 'vercel-api';
+        const [infoRes, postsRes, reelsRes] = await Promise.allSettled([
+          fetchWithRetry(`${IG_API_BASE}/info?username=${uname}`),
+          fetchWithRetry(`${IG_API_BASE}/posts?username=${uname}`),
+          fetchWithRetry(`${IG_API_BASE}/reels?username=${uname}`),
+        ]);
 
-      const seen = new Set<string>();
-      const normalized = rawPosts
-        .map(normalizePost)
-        .filter((p): p is NonNullable<typeof p> => !!p)
-        .filter((p) => {
-          const k = p.code ?? p.id;
-          if (!k || seen.has(k)) return false;
-          seen.add(k);
-          return true;
-        })
-        .slice(0, 25);
+        if (infoRes.status === 'fulfilled') {
+          profile = normalizeProfile(infoRes.value);
+          await logCall('profile', started, true, profile ? 1 : 0, null);
+        } else {
+          console.error('ig_info_fail', account.username, infoRes.reason?.message);
+          await logCall('profile', started, false, 0, String(infoRes.reason?.message ?? infoRes.reason));
+        }
+
+        const rawPosts: any[] = [];
+        if (postsRes.status === 'fulfilled') {
+          const arr = postsRes.value?.posts ?? postsRes.value?.items ?? postsRes.value ?? [];
+          if (Array.isArray(arr)) rawPosts.push(...arr);
+        }
+        if (reelsRes.status === 'fulfilled') {
+          const arr = reelsRes.value?.reels ?? reelsRes.value?.items ?? reelsRes.value?.posts ?? reelsRes.value ?? [];
+          if (Array.isArray(arr)) rawPosts.push(...arr);
+        }
+
+        const seen = new Set<string>();
+        normalized = rawPosts
+          .map(normalizePost)
+          .filter((p): p is NonNullable<typeof p> => !!p)
+          .filter((p) => {
+            const k = p.code ?? p.id;
+            if (!k || seen.has(k)) return false;
+            seen.add(k);
+            return true;
+          })
+          .slice(0, 25) as any;
+      }
+      console.log('ig_source', account.username, usedSource, normalized.length);
+
 
       const postsStart = Date.now();
       for (const p of normalized) {
