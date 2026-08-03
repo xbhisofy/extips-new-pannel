@@ -109,8 +109,9 @@ export default function InstagramPage() {
     },
     onSuccess: () => {
       toast.success('Account removed');
-      qc.invalidateQueries({ queryKey: igQueryKeys.accounts() });
-      qc.invalidateQueries({ queryKey: igQueryKeys.postsSummary() });
+      qc.invalidateQueries({ queryKey: igQueryKeys.accounts(user?.id) });
+      qc.invalidateQueries({ queryKey: [IG_CACHE_PREFIX, 'posts-summary'] });
+
     },
   });
 
