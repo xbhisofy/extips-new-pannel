@@ -68,10 +68,42 @@ done < "$SECRETS_FILE"
 PUB="$(grep -E '^API_EXTERNAL_URL=' "$ENVF" | head -1 | cut -d= -f2- || true)"
 [ -n "$PUB" ] && set_env "PUBLIC_FUNCTIONS_URL" "$PUB"
 
+# ---------------------------------------------------------------------------
+# The edge runtime container only sees variables explicitly passed to it.
+# Attach the merged .env as an env_file on the functions service so every
+# secret above (ZAPUPI_ZAP_KEY, OXAPAY_*, APIFY_API_TOKEN, ...) is present.
+# ---------------------------------------------------------------------------
+log "3b/5 Ensuring functions service loads $ENVF"
+python3 - "$SUPA_DIR/docker-compose.yml" <<'PY' || warn "could not patch docker-compose.yml (python3 missing?)"
+import re, sys
+p = sys.argv[1]
+s = open(p).read()
+m = re.search(r'^(  )(functions|edge-functions):\s*$', s, re.M)
+if not m:
+    print("   [warn] functions service not found in compose file"); sys.exit(0)
+start = m.end()
+nxt = re.search(r'^  \S', s[start:], re.M)
+end = start + (nxt.start() if nxt else len(s) - start)
+block = s[start:end]
+if 'env_file' in block:
+    print("   env_file already configured"); sys.exit(0)
+block = "\n    env_file:\n      - ./.env" + block
+open(p, 'w').write(s[:start] + block + s[end:])
+print("   env_file: ./.env added to functions service")
+PY
+
 log "4/5 Restarting edge runtime"
 cd "$SUPA_DIR"
 docker compose up -d functions >/dev/null 2>&1 || docker compose up -d edge-functions >/dev/null 2>&1 || true
-docker compose restart functions >/dev/null 2>&1 || docker compose restart edge-functions >/dev/null 2>&1 || true
+docker compose up -d --force-recreate functions >/dev/null 2>&1 || docker compose up -d --force-recreate edge-functions >/dev/null 2>&1 || true
+
+# Report which payment/integration secrets the container actually sees (masked)
+SVC="functions"; docker compose ps functions >/dev/null 2>&1 || SVC="edge-functions"
+for K in ZAPUPI_ZAP_KEY OXAPAY_MERCHANT_API_KEY RAZORPAY_KEY_ID APIFY_API_TOKEN TELEGRAM_BOT_TOKEN PUBLIC_FUNCTIONS_URL; do
+  V="$(docker compose exec -T "$SVC" sh -lc "printenv $K" 2>/dev/null || true)"
+  if [ -n "$V" ]; then echo "   $K = ${V:0:6}…(len ${#V})"; else warn "   $K NOT visible inside edge runtime"; fi
+done
+
 
 log "5/5 Health check + webhook URLs"
 KONG_PORT="$(grep -E '^KONG_HTTP_PORT=' "$ENVF" | cut -d= -f2- | tr -d '"')"
