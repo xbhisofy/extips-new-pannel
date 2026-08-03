@@ -45,12 +45,19 @@ Deno.serve(async (req) => {
       return json({ status: "success", credited: true, already: true });
     }
 
-    // Query provider
-    const resp = await fetch(STATUS_URL, {
+    // Query provider (ZapUPI expects form-encoded; retry as JSON if needed)
+    let resp = await fetch(STATUS_URL, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ zap_key: ZAP_KEY, order_id: orderId }),
+      headers: { "Content-Type": "application/x-www-form-urlencoded" },
+      body: new URLSearchParams({ zap_key: ZAP_KEY, order_id: orderId }).toString(),
     });
+    if (!resp.ok) {
+      resp = await fetch(STATUS_URL, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ zap_key: ZAP_KEY, order_id: orderId }),
+      });
+    }
     const raw = await resp.text();
     let data: any = null;
     try { data = JSON.parse(raw); } catch { data = { raw }; }

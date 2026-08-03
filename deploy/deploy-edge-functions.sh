@@ -64,6 +64,10 @@ while IFS='=' read -r k v; do
 done < "$SECRETS_FILE"
 [ -n "${MISSING// /}" ] && warn "empty secrets (features using them will fail):$MISSING"
 
+# Public functions base URL — payment providers must reach webhooks from outside.
+PUB="$(grep -E '^API_EXTERNAL_URL=' "$ENVF" | head -1 | cut -d= -f2- || true)"
+[ -n "$PUB" ] && set_env "PUBLIC_FUNCTIONS_URL" "$PUB"
+
 log "4/5 Restarting edge runtime"
 cd "$SUPA_DIR"
 docker compose up -d functions >/dev/null 2>&1 || docker compose up -d edge-functions >/dev/null 2>&1 || true
