@@ -906,6 +906,9 @@ export default function AdminUsers() {
                       disabled={selfTestRunning}
                       onClick={async () => {
                         if (!selectedUser) return;
+                        let tuid: string;
+                        try { tuid = resolveUserId(selectedUser); }
+                        catch (e) { toast.error((e as Error).message); return; }
                         setSelfTestRunning(true);
                         setSelfTestSteps([]);
                         const push = (s: { label: string; ok: boolean | null; detail?: string }) =>
@@ -920,7 +923,7 @@ export default function AdminUsers() {
                           try {
                             if (walletMutated && b0 !== null) {
                               await supabase.from('wallets')
-                                .update({ balance: b0 }).eq('user_id', selectedUser.user_id);
+                                .update({ balance: b0 }).eq('user_id', tuid);
                             }
                             if (insertedTxIds.length) {
                               await supabase.from('transactions').delete().in('id', insertedTxIds);
@@ -934,20 +937,20 @@ export default function AdminUsers() {
 
                         try {
                           const { data: w0, error: e0 } = await supabase.from('wallets')
-                            .select('balance').eq('user_id', selectedUser.user_id).single();
+                            .select('balance').eq('user_id', tuid).single();
                           if (e0) throw new Error('read: ' + e0.message);
                           b0 = Number(w0?.balance || 0);
                           push({ label: `1. Initial balance = $${b0.toFixed(4)}`, ok: true });
 
                           const b1 = Math.trunc((b0 + delta) * 10000) / 10000;
                           const { error: eu1 } = await supabase.from('wallets')
-                            .update({ balance: b1 }).eq('user_id', selectedUser.user_id);
+                            .update({ balance: b1 }).eq('user_id', tuid);
                           push({ label: '2. Update wallet (+₹1)', ok: !eu1, detail: eu1?.message });
                           if (eu1) throw eu1;
                           walletMutated = true;
 
                           const { data: ti1, error: et1 } = await supabase.from('transactions').insert({
-                            user_id: selectedUser.user_id, type: 'deposit', amount: delta,
+                            user_id: tuid, type: 'deposit', amount: delta,
                             balance_after: b1, status: 'completed',
                             description: '[ADMIN SELF-TEST] +₹1 (auto-reverted)',
                           }).select('id').single();
@@ -956,18 +959,18 @@ export default function AdminUsers() {
                           if (ti1?.id) insertedTxIds.push(ti1.id);
 
                           const { data: w1 } = await supabase.from('wallets').select('balance')
-                            .eq('user_id', selectedUser.user_id).single();
+                            .eq('user_id', tuid).single();
                           const okAdd = Math.abs(Number(w1?.balance || 0) - b1) < 0.0001;
                           push({ label: `4. Verify balance = $${b1.toFixed(4)}`, ok: okAdd, detail: `got $${Number(w1?.balance).toFixed(4)}` });
 
                           const b2 = Math.trunc((b1 - delta) * 10000) / 10000;
                           const { error: eu2 } = await supabase.from('wallets')
-                            .update({ balance: b2 }).eq('user_id', selectedUser.user_id);
+                            .update({ balance: b2 }).eq('user_id', tuid);
                           push({ label: '5. Update wallet (-₹1)', ok: !eu2, detail: eu2?.message });
                           if (eu2) throw eu2;
 
                           const { data: ti2, error: et2 } = await supabase.from('transactions').insert({
-                            user_id: selectedUser.user_id, type: 'withdrawal', amount: -delta,
+                            user_id: tuid, type: 'withdrawal', amount: -delta,
                             balance_after: b2, status: 'completed',
                             description: '[ADMIN SELF-TEST] -₹1 (auto-reverted)',
                           }).select('id').single();
@@ -976,7 +979,7 @@ export default function AdminUsers() {
                           if (ti2?.id) insertedTxIds.push(ti2.id);
 
                           const { data: w2 } = await supabase.from('wallets').select('balance')
-                            .eq('user_id', selectedUser.user_id).single();
+                            .eq('user_id', tuid).single();
                           const okSub = Math.abs(Number(w2?.balance || 0) - b0) < 0.0001;
                           push({ label: `7. Verify balance restored = $${b0.toFixed(4)}`, ok: okSub, detail: `got $${Number(w2?.balance).toFixed(4)}` });
 
