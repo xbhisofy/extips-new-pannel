@@ -23,12 +23,15 @@ Deno.serve(async (req) => {
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
     );
 
-    const authHeader = req.headers.get("Authorization");
-    if (!authHeader?.startsWith("Bearer ")) return json({ error: "Unauthorized" }, 401);
-    const { data: { user }, error: userErr } = await supabase.auth.getUser(
-      authHeader.replace("Bearer ", "")
-    );
-    if (userErr || !user) return json({ error: "Unauthorized" }, 401);
+    const authHeader = req.headers.get("Authorization") || "";
+    const token = authHeader.replace(/^Bearer\s+/i, "").trim();
+    if (!token) return json({ error: "Please sign in again to continue (missing auth token)" }, 401);
+    const { data: { user }, error: userErr } = await supabase.auth.getUser(token);
+    if (userErr || !user) {
+      console.error("[zapupi-create-order] auth failed", userErr?.message);
+      return json({ error: "Session expired — sign out and sign in again, then retry." }, 401);
+    }
+
 
     const body = await req.json().catch(() => ({}));
     const amountInr = Math.floor(Number(body?.amount_inr) || 0);
