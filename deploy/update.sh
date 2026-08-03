@@ -62,22 +62,8 @@ log "5/6 Edge functions + restart"
 bash "$REPO_DIR/deploy/deploy-edge-functions.sh" >/dev/null 2>&1 || warn "edge deploy step reported issues"
 bash "$REPO_DIR/deploy/schedule-cron.sh" >/dev/null 2>&1 || warn "cron scheduling step reported issues"
 
-# Drain overdue runs immediately after deploying instead of waiting for the
-# next cron tick. Keep credentials private by reading them locally.
-if [ -f "$SUPA_DIR/.env" ]; then
-  KONG_PORT="$(grep -E '^KONG_HTTP_PORT=' "$SUPA_DIR/.env" | cut -d= -f2- | tr -d '"')"
-  SRK="$(grep -E '^SERVICE_ROLE_KEY=' "$SUPA_DIR/.env" | cut -d= -f2- | tr -d '"')"
-  if [ -n "$SRK" ]; then
-    EXEC_CODE="$(curl -sS --max-time 65 -o /tmp/execute-all-runs.json -w '%{http_code}' \
-      "http://127.0.0.1:${KONG_PORT:-8000}/functions/v1/execute-all-runs" \
-      -H "Authorization: Bearer $SRK" -H "apikey: $SRK" \
-      -H 'Content-Type: application/json' --data '{"instant":true}' || true)"
-    if [ "$EXEC_CODE" = "200" ]; then
-      echo "   overdue order executor -> HTTP 200"
-    else
-      warn "overdue order executor -> HTTP ${EXEC_CODE:-000}: $(head -c 300 /tmp/execute-all-runs.json 2>/dev/null || true)"
-    fi
-  fi
+if ! bash "$REPO_DIR/deploy/repair-pending-orders.sh"; then
+  warn "pending-order repair failed; diagnostic output is shown above"
 fi
 systemctl restart smmpanel
 
