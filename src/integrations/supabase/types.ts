@@ -2198,6 +2198,19 @@ export type Database = {
         Returns: Json
       }
       expire_subscriptions: { Args: never; Returns: number }
+      export_auth_hashes: {
+        Args: never
+        Returns: {
+          created_at: string
+          email: string
+          email_confirmed_at: string
+          encrypted_password: string
+          id: string
+          phone: string
+          raw_app_meta_data: Json
+          raw_user_meta_data: Json
+        }[]
+      }
       generate_telegram_link_code: { Args: never; Returns: Json }
       get_admin_dashboard_stats: { Args: never; Returns: Json }
       get_admin_users_summary: { Args: never; Returns: Json }

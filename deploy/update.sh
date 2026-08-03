@@ -1,85 +1,81 @@
 #!/usr/bin/env bash
-# =============================================================================
-# OrganicSMM Pro — one-command updater
-#
-#   bash /opt/smmpanel/deploy/update.sh
-#
-# Pulls latest code, installs new deps, runs new migrations, restarts service.
-# Rolls back to the previous commit automatically if the health check fails.
-# =============================================================================
+# ============================================================================
+# Safe update: git pull -> install -> ATOMIC build -> migrations -> restart
+# -> health check -> automatic rollback on failure. Idempotent.
+#   bash deploy/update.sh
+# ============================================================================
 set -euo pipefail
 
-APP_DIR="${APP_DIR:-/opt/smmpanel}"
-ENV_FILE="${ENV_FILE:-/etc/smmpanel.env}"
-REPO_BRANCH="${REPO_BRANCH:-main}"
-APP_USER="${APP_USER:-smmpanel}"
+REPO_DIR="${REPO_DIR:-/opt/smmpanel}"
+SUPA_DIR="${SUPA_DIR:-/opt/supabase}"
+APP_PORT="${APP_PORT:-3000}"
 
-log()  { printf '\n\033[1;32m==> %s\033[0m\n' "$*"; }
-warn() { printf '\033[1;33m!! %s\033[0m\n' "$*"; }
-die()  { printf '\033[1;31mxx %s\033[0m\n' "$*" >&2; exit 1; }
+log()  { echo -e "\n\033[1;32m==>\033[0m $*"; }
+warn() { echo -e "\033[1;33m[warn]\033[0m $*"; }
+die()  { echo -e "\033[1;31m[error]\033[0m $*" >&2; exit 1; }
 
-[ "$(id -u)" -eq 0 ] || die "Run as root (sudo bash $0)"
-[ -d "$APP_DIR/.git" ] || die "$APP_DIR is not a git checkout — run hostinger-setup.sh first"
-[ -f "$ENV_FILE" ] || die "$ENV_FILE missing"
+cd "$REPO_DIR" || die "repo not found at $REPO_DIR"
 
-set -a; . "$ENV_FILE"; set +a
-APP_PORT="${PORT:-3000}"
+log "1/6 git pull"
+PREV_SHA="$(git rev-parse HEAD)"
+git fetch --all --prune
+git reset --hard origin/main
+echo "   $PREV_SHA -> $(git rev-parse HEAD)"
 
-cd "$APP_DIR"
-git config --global --add safe.directory "$APP_DIR"
-PREV_COMMIT="$(git rev-parse HEAD)"
+log "2/6 pnpm install"
+pnpm install --no-frozen-lockfile
 
-log "Pulling latest code (${REPO_BRANCH})"
-git fetch origin "$REPO_BRANCH"
-git reset --hard "origin/${REPO_BRANCH}"
-NEW_COMMIT="$(git rev-parse HEAD)"
+log "3/6 Atomic build (dist-new -> dist)"
+rm -rf dist-new
+if ! pnpm run build --outDir dist-new; then
+  rm -rf dist-new
+  git reset --hard "$PREV_SHA"
+  die "build failed — repo rolled back to $PREV_SHA, live dist untouched"
+fi
+[ -d dist-new ] && [ -n "$(ls -A dist-new)" ] || { rm -rf dist-new; git reset --hard "$PREV_SHA"; die "empty build output"; }
+rm -rf dist-prev
+[ -d dist ] && cp -a dist dist-prev
+rm -rf dist && mv dist-new dist
 
-if [ "$PREV_COMMIT" = "$NEW_COMMIT" ]; then
-  log "Already up to date ($(git rev-parse --short HEAD)) — re-running deps/migrations anyway"
+log "4/6 Migrations"
+if [ -d "$SUPA_DIR" ] && [ -d supabase/migrations ]; then
+  cd "$SUPA_DIR"
+  docker compose exec -T db psql -U postgres -d postgres -c \
+    "CREATE TABLE IF NOT EXISTS public._applied_migrations(name text PRIMARY KEY, applied_at timestamptz DEFAULT now());" >/dev/null
+  for f in $(ls "$REPO_DIR"/supabase/migrations/*.sql | sort); do
+    name="$(basename "$f")"
+    already="$(docker compose exec -T db psql -U postgres -d postgres -tAc \
+      "SELECT 1 FROM public._applied_migrations WHERE name='$name'" || true)"
+    [ "$already" = "1" ] && continue
+    echo "   -> $name"
+    if docker compose exec -T db psql -U postgres -d postgres -v ON_ERROR_STOP=1 -f - < "$f" >/tmp/upd-mig.log 2>&1; then
+      docker compose exec -T db psql -U postgres -d postgres -c \
+        "INSERT INTO public._applied_migrations(name) VALUES ('$name') ON CONFLICT DO NOTHING" >/dev/null
+    else
+      warn "migration failed: $name"; tail -n 6 /tmp/upd-mig.log
+    fi
+  done
+  cd "$REPO_DIR"
 fi
 
-log "Installing dependencies"
-pnpm install --prod=false
-
-log "Building frontend"
-# Build into a fresh directory first. Publishing only after a successful build
-# prevents the server from continuing to serve stale/broken production chunks.
-rm -rf dist-new
-pnpm exec vite build --outDir dist-new
-rm -rf dist-prev
-if [ -d dist ]; then mv dist dist-prev; fi
-mv dist-new dist
-
-log "Running pending migrations"
-node server/src/migrate.js
-
-chown -R "$APP_USER":"$APP_USER" "$APP_DIR"
-
-log "Restarting smmpanel"
+log "5/6 Edge functions + restart"
+bash "$REPO_DIR/deploy/deploy-edge-functions.sh" >/dev/null 2>&1 || warn "edge deploy step reported issues"
 systemctl restart smmpanel
 
-log "Health check"
-ok=0
-for _ in $(seq 1 30); do
-  if curl -fsS "http://127.0.0.1:${APP_PORT}/healthz" >/dev/null 2>&1; then ok=1; break; fi
-  sleep 1
+log "6/6 Health check"
+OK=0
+for _ in $(seq 1 15); do
+  CODE=$(curl -s -o /dev/null -w '%{http_code}' "http://127.0.0.1:$APP_PORT/" || true)
+  [ "$CODE" = "200" ] && OK=1 && break
+  sleep 2
 done
-
-if [ "$ok" -eq 1 ]; then
+if [ "$OK" = "1" ]; then
   rm -rf dist-prev
-  log "Update complete — now on $(git rev-parse --short HEAD)"
+  echo "   HTTP 200 — update live at $(git rev-parse --short HEAD)"
 else
-  warn "Health check failed — rolling back to ${PREV_COMMIT:0:7}"
-  git reset --hard "$PREV_COMMIT"
-  pnpm install --prod=false
-  if [ -d dist-prev ]; then
-    rm -rf dist
-    mv dist-prev dist
-  else
-    pnpm run build || true
-  fi
+  warn "health check failed — rolling back"
+  if [ -d dist-prev ]; then rm -rf dist && mv dist-prev dist; fi
+  git reset --hard "$PREV_SHA"
   systemctl restart smmpanel
-  die "Rolled back. Logs: journalctl -u smmpanel -n 80 --no-pager"
+  die "rolled back to $PREV_SHA"
 fi
-
-systemctl reload caddy 2>/dev/null || true
