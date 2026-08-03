@@ -17,10 +17,12 @@ psql_db -P pager=off -c "SELECT jobname,schedule,active FROM cron.job ORDER BY j
 BAD="$(scalar "SELECT count(*) FROM cron.job WHERE NOT active OR command LIKE '%supabase.co%';")"
 [ "$BAD" = "0" ] || die "$BAD inactive/hosted cron jobs found"
 
-RUN_ID="$(scalar "SELECT r.id FROM public.organic_run_schedule r JOIN public.engagement_order_items i ON i.id=r.engagement_order_item_id JOIN public.engagement_orders o ON o.id=i.engagement_order_id WHERE r.provider_order_id IS NULL AND r.status IN ('pending','failed') AND o.status IN ('pending','processing') AND i.status IN ('pending','processing') ORDER BY r.scheduled_at,r.created_at LIMIT 1;")"
-[ -n "$RUN_ID" ] || die "no pending engagement run exists; place one small real order, then rerun this verifier"
-ORDER_ID="$(scalar "SELECT i.engagement_order_id FROM public.organic_run_schedule r JOIN public.engagement_order_items i ON i.id=r.engagement_order_item_id WHERE r.id='$RUN_ID';")"
+: "${TEST_ORDER_ID:?set TEST_ORDER_ID to the existing pending engagement order you explicitly want to dispatch}"
+ORDER_ID="$TEST_ORDER_ID"
+RUN_ID="$(scalar "SELECT r.id FROM public.organic_run_schedule r JOIN public.engagement_order_items i ON i.id=r.engagement_order_item_id WHERE i.engagement_order_id='$ORDER_ID' AND r.provider_order_id IS NULL AND r.status IN ('pending','failed') AND coalesce(r.error_message,'') NOT ILIKE '%dispatch uncertain%' AND coalesce(r.error_message,'') NOT ILIKE '%awaiting provider confirmation%' ORDER BY r.scheduled_at,r.created_at LIMIT 1;")"
+[ -n "$RUN_ID" ] || die "no safely retryable run exists for TEST_ORDER_ID=$ORDER_ID"
 USER_ID="$(scalar "SELECT user_id FROM public.engagement_orders WHERE id='$ORDER_ID';")"
+[ -n "$USER_ID" ] || die "TEST_ORDER_ID is not an engagement order"
 BALANCE_BEFORE="$(scalar "SELECT balance FROM public.wallets WHERE user_id='$USER_ID';")"
 TX_BEFORE="$(scalar "SELECT count(*) FROM public.transactions WHERE order_id='$ORDER_ID';")"
 echo "test_order=$ORDER_ID run=$RUN_ID wallet_before=$BALANCE_BEFORE order_transactions_before=$TX_BEFORE"
@@ -30,7 +32,7 @@ call_retry() {
   local label="$1" code
   code="$(curl -sS --max-time 300 -o "/tmp/retry-$label.json" -w '%{http_code}' \
     "http://127.0.0.1:${PORT:-8000}/functions/v1/retry-pending-dispatch" \
-    -H "Authorization: Bearer $KEY" -H "apikey: $KEY" -H 'Content-Type: application/json' --data '{}')"
+    -H "Authorization: Bearer $KEY" -H "apikey: $KEY" -H 'Content-Type: application/json' --data "{\"run_id\":\"$RUN_ID\"}")"
   echo "$label HTTP=$code response=$(head -c 600 "/tmp/retry-$label.json")"
   [ "$code" = "200" ] || die "$label retry endpoint failed"
 }
