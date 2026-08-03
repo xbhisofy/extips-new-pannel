@@ -121,7 +121,6 @@ Deno.serve(async (req) => {
       }
     }
 
-    const upstream = attempt.res;
     const data = attempt.parsed;
 
 
