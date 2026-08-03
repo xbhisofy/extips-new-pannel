@@ -21,7 +21,7 @@ warn() { echo -e "\033[1;33m[warn]\033[0m $*"; }
 die()  { echo -e "\033[1;31m[error]\033[0m $*" >&2; exit 1; }
 
 [ -f "$CONF" ] && . "$CONF"
-: "${CLOUD_URL:?CLOUD_URL required (https://<project-ref>.supabase.co)}"
+CLOUD_URL="${CLOUD_URL:-https://xbxcjkypcgriiqsmhcjq.supabase.co}"
 : "${MIGRATION_TOKEN:?MIGRATION_TOKEN required}"
 CLOUD_URL="${CLOUD_URL%/}"
 
