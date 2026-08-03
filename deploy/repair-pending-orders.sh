@@ -102,6 +102,19 @@ echo "   run state before executor: pending=$TOTAL_PENDING future=$FUTURE_PENDIN
 BEFORE="$(pending_count || echo unknown)"
 echo "   overdue runs before: $BEFORE"
 
+# Refresh provider state before dispatching another run. This releases accounts
+# whose previous order has completed since the last five-minute cron tick and
+# avoids reporting them as busy from stale local state.
+STATUS_CODE="$(curl -sS --max-time 300 -o /tmp/order-status-result.json -w '%{http_code}' \
+  "http://127.0.0.1:${PORT:-8000}/functions/v1/check-order-status" \
+  -H "Authorization: Bearer $SERVICE_KEY" -H "apikey: $SERVICE_KEY" \
+  -H 'Content-Type: application/json' --data '{}' || true)"
+if [ "$STATUS_CODE" = "200" ]; then
+  echo "   provider status refresh -> HTTP 200"
+else
+  echo "[warn] provider status refresh HTTP ${STATUS_CODE:-000}: $(head -c 300 /tmp/order-status-result.json 2>/dev/null || true)" >&2
+fi
+
 # Ensure the runtime has loaded the freshly copied function before invoking it.
 for _ in $(seq 1 20); do
   CODE="$(curl -sS --max-time 5 -o /tmp/order-executor-ready.json -w '%{http_code}' \
