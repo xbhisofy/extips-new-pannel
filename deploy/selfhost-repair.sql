@@ -109,3 +109,29 @@ BEGIN
 END $$;
 REVOKE EXECUTE ON FUNCTION public.redeem_promo_code(text,numeric) FROM PUBLIC,anon;
 GRANT EXECUTE ON FUNCTION public.redeem_promo_code(text,numeric) TO authenticated;
+-- ==== Missing helper functions (needed by 20260614013712 grant migration) ====
+CREATE OR REPLACE FUNCTION public.get_user_tier(_user_id uuid) RETURNS text
+LANGUAGE sql STABLE SECURITY DEFINER SET search_path=public AS $$
+  SELECT CASE
+    WHEN COALESCE((SELECT total_deposited FROM public.wallets WHERE user_id = _user_id), 0) >= 2000 THEN 'diamond'
+    WHEN COALESCE((SELECT total_deposited FROM public.wallets WHERE user_id = _user_id), 0) >= 500 THEN 'gold'
+    WHEN COALESCE((SELECT total_deposited FROM public.wallets WHERE user_id = _user_id), 0) >= 100 THEN 'silver'
+    ELSE 'bronze'
+  END
+$$;
+
+CREATE OR REPLACE FUNCTION public.get_public_markup() RETURNS numeric
+LANGUAGE sql STABLE SECURITY DEFINER SET search_path=public AS $$
+  SELECT COALESCE((SELECT global_markup_percent FROM public.platform_settings LIMIT 1), 0)::numeric
+$$;
+
+CREATE OR REPLACE FUNCTION public.is_maintenance_mode() RETURNS boolean
+LANGUAGE sql STABLE SECURITY DEFINER SET search_path=public AS $$
+  SELECT COALESCE((SELECT maintenance_mode FROM public.platform_settings LIMIT 1), false)
+$$;
+
+DO $$ BEGIN
+  BEGIN GRANT EXECUTE ON FUNCTION public.get_user_tier(uuid) TO authenticated; EXCEPTION WHEN OTHERS THEN NULL; END;
+  BEGIN GRANT EXECUTE ON FUNCTION public.get_public_markup() TO authenticated; EXCEPTION WHEN OTHERS THEN NULL; END;
+  BEGIN GRANT EXECUTE ON FUNCTION public.is_maintenance_mode() TO authenticated, anon; EXCEPTION WHEN OTHERS THEN NULL; END;
+END $$;
