@@ -99,7 +99,23 @@ export default function AdminUsers() {
       const { data, error } = await supabase.rpc('get_admin_users_summary' as any);
       if (error) throw error;
 
-      return ((data as any) || []).map((u: any) => ({
+      // A partially imported backend can still return more than one row per
+      // auth user. Collapse by user id (email as fallback) and keep the row
+      // that carries the most data so admin/wallet info never splits.
+      const byUser = new Map<string, any>();
+      for (const u of ((data as any) || [])) {
+        const key = String(u.user_id || u.id || u.email || '').toLowerCase();
+        if (!key) continue;
+        const prev = byUser.get(key);
+        const weight = (r: any) =>
+          (Number(r?.balance) || 0) + (Number(r?.total_deposited) || 0) + (Number(r?.total_spent) || 0) +
+          (r?.subscription_plan && r.subscription_plan !== 'none' ? 1 : 0) +
+          (r?.is_admin || r?.role === 'admin' ? 1 : 0);
+        if (!prev || weight(u) > weight(prev)) byUser.set(key, prev ? { ...prev, ...u } : u);
+        else byUser.set(key, { ...u, ...prev });
+      }
+
+      return Array.from(byUser.values()).map((u: any) => ({
         ...u,
         wallet: {
           balance: u.balance,
@@ -118,6 +134,7 @@ export default function AdminUsers() {
           engagementPaused: u.paused_engagement_orders,
         }
       })) as UserProfile[];
+
     },
   });
 
