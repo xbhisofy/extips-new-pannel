@@ -49,7 +49,7 @@ BEGIN
       \$q\$SELECT net.http_post(
             url := '$BASE/functions/v1/%s',
             headers := '{"Content-Type":"application/json","Authorization":"Bearer $SRK","apikey":"$SRK"}'::jsonb,
-            body := '{}'::jsonb
+            body := '{"instant":true}'::jsonb
           );\$q\$, j[3]));
   END LOOP;
 END \$\$;
