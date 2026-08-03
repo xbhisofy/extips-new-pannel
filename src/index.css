@@ -19,45 +19,45 @@ input[type="number"] {
 
 @layer base {
   :root {
-    /* ════ EXTIPS BLUE — Light SaaS ════ */
-    --background: 214 100% 98%;
-    --foreground: 222 47% 11%;
+    /* ════ EXTIPS BLUE — Deep Royal (light bg, dark-blue ink) ════ */
+    --background: 210 40% 99%;
+    --foreground: 224 64% 12%;
 
     --card: 0 0% 100%;
-    --card-foreground: 222 47% 11%;
+    --card-foreground: 224 64% 12%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 222 47% 11%;
+    --popover-foreground: 224 64% 12%;
 
-    --primary: 221 83% 53%;
+    --primary: 226 78% 38%;
     --primary-foreground: 0 0% 100%;
 
-    --secondary: 214 60% 96%;
-    --secondary-foreground: 222 47% 11%;
+    --secondary: 216 45% 94%;
+    --secondary-foreground: 226 60% 18%;
 
-    --muted: 214 40% 95%;
-    --muted-foreground: 215 20% 45%;
+    --muted: 215 35% 93%;
+    --muted-foreground: 220 30% 34%;
 
-    --accent: 210 90% 60%;
+    --accent: 224 76% 44%;
     --accent-foreground: 0 0% 100%;
 
-    --success: 160 70% 40%;
+    --success: 160 72% 32%;
     --success-foreground: 0 0% 100%;
 
-    --warning: 38 92% 48%;
+    --warning: 32 92% 40%;
     --warning-foreground: 0 0% 100%;
 
-    --destructive: 0 72% 51%;
+    --destructive: 0 72% 45%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 214 32% 89%;
-    --input: 214 32% 91%;
-    --ring: 221 83% 53%;
+    --border: 216 30% 84%;
+    --input: 216 30% 86%;
+    --ring: 226 78% 38%;
 
     --radius: 1rem;
 
-    --shadow-soft: 0 4px 20px rgba(15,23,42,.08);
-    --shadow-glow: 0 0 30px rgba(37,99,235,.18);
+    --shadow-soft: 0 6px 24px rgba(15,30,70,.10);
+    --shadow-glow: 0 0 30px rgba(29,64,175,.22);
   }
 }
 
