@@ -419,3 +419,7 @@ body [class*="text-blue-2"], body [class*="text-blue-3"] { color: hsl(226 82% 38
 
 /* borders visible on white */
 body [class*="border-white/"] { border-color: hsl(216 32% 86%) !important; }
+
+/* placeholders readable on light inputs */
+body input::placeholder, body textarea::placeholder { color: hsl(220 22% 52%) !important; opacity: 1 !important; }
+body input, body textarea, body select { color: hsl(224 64% 12%) !important; }
