@@ -12,7 +12,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Plus, Edit, Trash2, Key, Clock, Link as LinkIcon, ArrowLeft } from "lucide-react";
+import { Plus, Edit, Trash2, Key, Clock, Link as LinkIcon, ArrowLeft, Wallet, RefreshCw, AlertTriangle } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { useNavigate } from "react-router-dom";
 
@@ -28,6 +28,10 @@ interface ProviderAccount {
   created_at: string;
   updated_at: string;
   delivery_multiplier?: number | null;
+  balance?: number | null;
+  balance_currency?: string | null;
+  balance_checked_at?: string | null;
+  last_balance_error?: string | null;
 }
 
 interface Provider {
