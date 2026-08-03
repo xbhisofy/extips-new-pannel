@@ -121,6 +121,7 @@ MISSING_TABLES="$(scalar "SELECT count(*) FROM (VALUES ('profiles'),('wallets'),
 [ "$MISSING_TABLES" = "0" ] || die "$MISSING_TABLES required tables are missing"
 [ "$(scalar "SELECT to_regprocedure('public.set_referrer_by_code(text)') IS NOT NULL;")" = "t" ] || die "set_referrer_by_code(text) missing"
 [ "$(scalar "SELECT to_regprocedure('public.credit_wallet_razorpay(uuid,text,numeric,numeric)') IS NOT NULL;")" = "t" ] || die "credit_wallet_razorpay missing"
+[ "$(scalar "SELECT to_regprocedure('public.apply_referral_bonus(uuid,numeric)') IS NOT NULL;")" = "t" ] || die "apply_referral_bonus missing"
 
 BAD_FK="$(scalar "SELECT count(*) FROM public.services s LEFT JOIN public.providers p ON p.id=s.provider_id WHERE s.provider_id IS NOT NULL AND p.id IS NULL;")"
 [ "$BAD_FK" = "0" ] || die "$BAD_FK services have missing providers"

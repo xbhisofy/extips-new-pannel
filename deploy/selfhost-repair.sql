@@ -64,6 +64,71 @@ UPDATE public.transactions t
   FROM ranked r
  WHERE t.id=r.id AND r.rn>1;
 
+-- Migration 20260627023321 locks this RPC down but some partially imported
+-- databases never received its CREATE statement. Install the canonical
+-- service-role-only implementation before that migration reaches REVOKE.
+CREATE OR REPLACE FUNCTION public.apply_referral_bonus(
+  p_referee uuid,
+  p_deposit_usd numeric
+) RETURNS json
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+  v_referrer uuid;
+  v_prev_deposits numeric;
+  v_bonus numeric;
+  v_balance numeric;
+  v_new_balance numeric;
+BEGIN
+  IF p_referee IS NULL OR p_deposit_usd IS NULL OR p_deposit_usd <= 0 THEN
+    RETURN json_build_object('success', false, 'reason', 'invalid_input');
+  END IF;
+
+  SELECT referred_by INTO v_referrer
+    FROM public.profiles
+   WHERE user_id = p_referee;
+  IF v_referrer IS NULL THEN
+    RETURN json_build_object('success', false, 'reason', 'no_referrer');
+  END IF;
+
+  SELECT COALESCE(SUM(amount), 0) INTO v_prev_deposits
+    FROM public.transactions
+   WHERE user_id = p_referee
+     AND type = 'deposit'
+     AND status = 'completed'
+     AND payment_method <> 'promo';
+  IF v_prev_deposits > p_deposit_usd THEN
+    RETURN json_build_object('success', false, 'reason', 'not_first_deposit');
+  END IF;
+
+  v_bonus := trunc(p_deposit_usd * 0.10, 4);
+  IF v_bonus <= 0 THEN
+    RETURN json_build_object('success', false, 'reason', 'zero_bonus');
+  END IF;
+
+  INSERT INTO public.wallets(user_id,balance,total_deposited,total_spent)
+  VALUES(v_referrer,0,0,0) ON CONFLICT(user_id) DO NOTHING;
+  SELECT balance INTO v_balance FROM public.wallets
+   WHERE user_id=v_referrer FOR UPDATE;
+  v_new_balance := trunc(COALESCE(v_balance,0)+v_bonus,4);
+  UPDATE public.wallets SET balance=v_new_balance WHERE user_id=v_referrer;
+  UPDATE public.profiles
+     SET referral_earnings=COALESCE(referral_earnings,0)+v_bonus
+   WHERE user_id=v_referrer;
+  INSERT INTO public.transactions(
+    user_id,type,amount,balance_after,status,payment_method,description
+  ) VALUES (
+    v_referrer,'deposit',v_bonus,v_new_balance,'completed','referral',
+    'Referral bonus (10%) from new user deposit'
+  );
+  RETURN json_build_object('success',true,'bonus_usd',v_bonus,'referrer',v_referrer);
+END;
+$$;
+REVOKE EXECUTE ON FUNCTION public.apply_referral_bonus(uuid,numeric) FROM PUBLIC, anon, authenticated;
+GRANT EXECUTE ON FUNCTION public.apply_referral_bonus(uuid,numeric) TO service_role;
+
 CREATE TABLE IF NOT EXISTS public.zapupi_deposits (
  id uuid PRIMARY KEY DEFAULT gen_random_uuid(), user_id uuid NOT NULL, order_id text NOT NULL UNIQUE,
  amount_inr numeric NOT NULL, amount_usd numeric, status text NOT NULL DEFAULT 'pending',
