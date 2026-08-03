@@ -651,9 +651,10 @@ serve(async (req) => {
     // Order-placement calls need a guaranteed execution on self-hosted runtimes.
     // Cron calls remain background jobs so the scheduler responds quickly.
     const backgroundWork = processAllRuns(supabase, executionId, startTime)
+    let summary: Awaited<ReturnType<typeof processAllRuns>> | null = null
 
     if (requestBody.instant) {
-      await backgroundWork
+      summary = await backgroundWork
     } else {
       if (typeof EdgeRuntime !== 'undefined' && typeof EdgeRuntime.waitUntil === 'function') {
         EdgeRuntime.waitUntil(backgroundWork)
@@ -664,7 +665,8 @@ serve(async (req) => {
 
     return new Response(JSON.stringify({
       success: true, execution_id: executionId,
-      message: requestBody.instant ? 'Processing completed' : 'Processing started in background'
+      message: requestBody.instant ? 'Processing completed' : 'Processing started in background',
+      ...(summary ? { summary } : {}),
     }), {
       status: requestBody.instant ? 200 : 202,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' }
@@ -2011,7 +2013,10 @@ async function processAllRuns(supabase: any, executionId: string, startTime: num
 
     console.log(`✅ Background execution [${executionId}] complete: ${processed} processed, ${skipped} skipped, ${failed} failed`)
 
+    return { processed, skipped, failed, retried, should_continue: shouldContinue }
+
   } catch (error: any) {
     console.error(`❌ Background execution error:`, error)
+    throw error
   }
 }

@@ -24,6 +24,11 @@ pending_count() {
     | tr -d '[:space:]'
 }
 
+scalar() {
+  docker compose exec -T db psql -U postgres -d postgres -tAc "$1" 2>/dev/null \
+    | tr -d '[:space:]'
+}
+
 TABLE_EXISTS="$(docker compose exec -T db psql -U postgres -d postgres -tAc \
   "SELECT to_regclass('public.organic_run_schedule') IS NOT NULL;" 2>/dev/null | tr -d '[:space:]')"
 [ "$TABLE_EXISTS" = "t" ] || fail "organic_run_schedule is missing; schema repair did not apply"
@@ -59,6 +64,40 @@ for ORDER_ID in "${UNSCHEDULED_ORDER_IDS[@]}"; do
 done
 echo "   unscheduled orders rebuilt: $RESUMED"
 
+# A freshly rebuilt organic schedule intentionally starts in the future. During
+# a repair this looked like "0 overdue" and no provider call happened at all.
+# Move only the earliest untouched run of every active item to now; later runs
+# keep their randomized organic timing and already-dispatched items are ignored.
+KICKED="$(docker compose exec -T db psql -U postgres -d postgres -tAc \
+  "WITH first_untouched AS (
+     SELECT DISTINCT ON (ors.engagement_order_item_id) ors.id
+       FROM public.organic_run_schedule ors
+       JOIN public.engagement_order_items eoi ON eoi.id = ors.engagement_order_item_id
+       JOIN public.engagement_orders eo ON eo.id = eoi.engagement_order_id
+      WHERE ors.status = 'pending'
+        AND eo.status IN ('pending','processing')
+        AND eoi.status IN ('pending','processing')
+        AND NOT EXISTS (
+          SELECT 1 FROM public.organic_run_schedule sent
+           WHERE sent.engagement_order_item_id = ors.engagement_order_item_id
+             AND sent.provider_order_id IS NOT NULL
+        )
+      ORDER BY ors.engagement_order_item_id, ors.scheduled_at
+   )
+   UPDATE public.organic_run_schedule ors
+      SET scheduled_at = LEAST(ors.scheduled_at, now())
+     FROM first_untouched f
+    WHERE ors.id = f.id
+      AND ors.scheduled_at > now()
+   RETURNING ors.id;" 2>/dev/null | grep -c . || true)"
+echo "   first untouched runs made due now: ${KICKED:-0}"
+
+TOTAL_PENDING="$(scalar "SELECT count(*) FROM public.organic_run_schedule WHERE status='pending';" || echo unknown)"
+FUTURE_PENDING="$(scalar "SELECT count(*) FROM public.organic_run_schedule WHERE status='pending' AND scheduled_at > now();" || echo unknown)"
+STARTED="$(scalar "SELECT count(*) FROM public.organic_run_schedule WHERE status='started';" || echo unknown)"
+FAILED="$(scalar "SELECT count(*) FROM public.organic_run_schedule WHERE status='failed';" || echo unknown)"
+echo "   run state before executor: pending=$TOTAL_PENDING future=$FUTURE_PENDING started=$STARTED failed=$FAILED"
+
 BEFORE="$(pending_count || echo unknown)"
 echo "   overdue runs before: $BEFORE"
 
@@ -87,3 +126,13 @@ AFTER="$(pending_count || echo unknown)"
 echo "   order executor -> HTTP 200"
 echo "   overdue runs after: $AFTER"
 echo "   response: $(head -c 500 /tmp/order-executor-result.json)"
+
+echo "   recent unresolved run errors:"
+docker compose exec -T db psql -U postgres -d postgres -P pager=off -c \
+  "SELECT ors.status, ors.run_number, eoi.engagement_type,
+          left(coalesce(ors.error_message, 'no error recorded'), 110) AS error
+     FROM public.organic_run_schedule ors
+     LEFT JOIN public.engagement_order_items eoi ON eoi.id = ors.engagement_order_item_id
+    WHERE ors.status IN ('pending','started','failed')
+    ORDER BY coalesce(ors.last_status_check, ors.created_at) DESC NULLS LAST
+    LIMIT 8;" 2>/dev/null || true
