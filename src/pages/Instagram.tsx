@@ -285,13 +285,26 @@ export default function InstagramPage() {
                 </div>
                 {a.full_name && <p className="text-[13px] text-white/85 truncate">{a.full_name}</p>}
                 <p className="text-[11px] text-white/75 mt-0.5">
-                  {a.followers?.toLocaleString('en-IN') ?? 0} followers · {a.posts_count ?? 0} posts
+                  {a.status === 'pending_refresh'
+                    ? 'Fetching profile & posts…'
+                    : `${a.followers?.toLocaleString('en-IN') ?? 0} followers · ${a.posts_count ?? 0} posts`}
                 </p>
               </div>
               <div className="flex items-center gap-2 shrink-0">
+                <button
+                  onClick={() => refreshMut.mutate(a.id)}
+                  disabled={refreshMut.isPending}
+                  className="w-9 h-9 rounded-lg bg-white/5 hover:bg-white/10 border border-white/10 text-white/80 flex items-center justify-center disabled:opacity-50"
+                  title="Refresh from Instagram"
+                >
+                  {refreshMut.isPending || a.status === 'pending_refresh'
+                    ? <Loader2 className="w-4 h-4 animate-spin" />
+                    : <RefreshCw className="w-4 h-4" />}
+                </button>
                 <Link to={`/my-posts?account=${encodeURIComponent(a.id)}`} className="px-3 h-9 rounded-lg text-[12px] font-semibold bg-white/5 hover:bg-white/10 border border-white/10 text-white/80 flex items-center">
                   View Posts
                 </Link>
+
                 <button
                   onClick={() => confirm(`Remove @${a.username}?`) && removeMut.mutate(a.id)}
                   className="w-9 h-9 rounded-lg bg-red-500/10 hover:bg-red-500/20 border border-red-400/20 text-red-300 flex items-center justify-center"
