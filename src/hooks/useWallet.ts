@@ -12,7 +12,9 @@ export function useWallet() {
         .from('wallets')
         .select('*')
         .eq('user_id', user!.id)
-        .single();
+        .order('created_at', { ascending: true })
+        .limit(1)
+        .maybeSingle();
       if (error) throw error;
       return data;
     },

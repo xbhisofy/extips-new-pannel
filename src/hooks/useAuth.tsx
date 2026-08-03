@@ -33,8 +33,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const fetchUserData = useCallback(async (userId: string) => {
     try {
       const load = async () => Promise.all([
-        supabase.from('profiles').select('*').eq('user_id', userId).maybeSingle(),
-        supabase.from('wallets').select('*').eq('user_id', userId).maybeSingle(),
+        supabase.from('profiles').select('*').eq('user_id', userId).limit(1).maybeSingle(),
+        supabase.from('wallets').select('*').eq('user_id', userId).limit(1).maybeSingle(),
         supabase.from('user_roles').select('role').eq('user_id', userId),
       ]);
 
@@ -236,7 +236,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         .from('profiles')
         .select('*')
         .eq('user_id', user.id)
-        .single();
+        .limit(1)
+        .maybeSingle();
       if (data) setProfile(data as unknown as Profile);
     }
   };
@@ -247,7 +248,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         .from('wallets')
         .select('*')
         .eq('user_id', user.id)
-        .single();
+        .limit(1)
+        .maybeSingle();
       if (data) setWallet(data as Wallet);
     }
   };
