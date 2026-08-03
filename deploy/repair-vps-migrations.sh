@@ -101,7 +101,11 @@ for file in "${FILES[@]}"; do
   else
     psql_db --single-transaction -f - < "$file"
   fi
-  psql_db -v n="$name" -c "INSERT INTO public._applied_migrations(name) VALUES (:'n') ON CONFLICT DO NOTHING;" >/dev/null
+  # psql does not perform :'var' interpolation inside a command supplied with
+  # -c on every packaged version. Feed SQL on stdin, as in reconciliation above.
+  psql_db -v n="$name" >/dev/null <<'SQL'
+INSERT INTO public._applied_migrations(name) VALUES (:'n') ON CONFLICT DO NOTHING;
+SQL
 done
 
 log "6/7 Register local cron and deploy functions"
