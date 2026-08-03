@@ -11,6 +11,17 @@
 # ============================================================================
 set -euo pipefail
 
+# If piped into bash (curl | bash), docker/psql commands would eat the script
+# from stdin. Re-exec from a real file so stdin stays free.
+if [ ! -f "${BASH_SOURCE[0]:-}" ]; then
+  _self="/tmp/supabase-selfhost.$$.sh"
+  curl -fsSL "https://raw.githubusercontent.com/xbhisofy/extips-new-pannel/main/deploy/supabase-selfhost.sh" -o "$_self"
+  chmod +x "$_self"
+  exec bash "$_self" </dev/null
+fi
+exec </dev/null
+
+
 INSTALL_DIR="${INSTALL_DIR:-/opt/supabase}"
 REPO_DIR="${REPO_DIR:-/opt/smmpanel}"
 REPO_URL="${REPO_URL:-https://github.com/xbhisofy/extips-new-pannel.git}"
