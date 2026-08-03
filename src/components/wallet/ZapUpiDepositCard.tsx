@@ -74,8 +74,32 @@ export default function ZapUpiDepositCard() {
     if (inr > MAX_AMOUNT) return toast.error(`Maximum deposit is ₹${MAX_AMOUNT}`);
     setLoading(true);
     try {
-      const { data, error } = await supabase.functions.invoke('zapupi-create-order', { body: { amount_inr: inr } });
-      if (error) throw error;
+      // Always attach a fresh access token — invoke() can send a stale/empty one
+      let { data: sess } = await supabase.auth.getSession();
+      if (!sess.session) {
+        const refreshed = await supabase.auth.refreshSession();
+        sess = { session: refreshed.data.session } as any;
+      }
+      const accessToken = sess.session?.access_token;
+      if (!accessToken) {
+        setLoading(false);
+        return toast.error('Session expired — please sign in again.');
+      }
+      const { data, error } = await supabase.functions.invoke('zapupi-create-order', {
+        body: { amount_inr: inr },
+        headers: { Authorization: `Bearer ${accessToken}` },
+      });
+
+      if (error) {
+        // Surface the real server message instead of the generic non-2xx text
+        let msg = error.message;
+        try {
+          const ctx: any = (error as any).context;
+          if (ctx?.json) { const b = await ctx.json(); msg = b?.error || msg; }
+          else if (ctx?.text) { const t = await ctx.text(); msg = t || msg; }
+        } catch { /* keep default */ }
+        throw new Error(msg);
+      }
       if (!data?.payment_url) throw new Error(data?.error || 'No payment URL');
       window.location.href = data.payment_url;
     } catch (e: any) {
@@ -83,6 +107,7 @@ export default function ZapUpiDepositCard() {
       toast.error(e?.message || 'Could not start payment');
       setLoading(false);
     }
+
   }
 
   return (
