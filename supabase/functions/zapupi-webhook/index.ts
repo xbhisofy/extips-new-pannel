@@ -311,11 +311,18 @@ async function verifyOrder(
   fallbackPayload: Record<string, any>
 ): Promise<{ success: boolean; failed?: boolean; amount?: number; txnId?: string; utr?: string; raw?: any }> {
   try {
-    const resp = await fetch(STATUS_URL, {
+    let resp = await fetch(STATUS_URL, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ zap_key: zapKey, order_id: orderId }),
+      headers: { "Content-Type": "application/x-www-form-urlencoded" },
+      body: new URLSearchParams({ zap_key: zapKey, order_id: orderId }).toString(),
     });
+    if (!resp.ok) {
+      resp = await fetch(STATUS_URL, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ zap_key: zapKey, order_id: orderId }),
+      });
+    }
     const raw = await resp.text();
     let data: any = null;
     try { data = JSON.parse(raw); } catch { data = { raw }; }
