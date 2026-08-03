@@ -75,25 +75,6 @@ ALTER TABLE public.zapupi_deposits ENABLE ROW LEVEL SECURITY;
 DROP POLICY IF EXISTS "Users view own zapupi deposits" ON public.zapupi_deposits;
 CREATE POLICY "Users view own zapupi deposits" ON public.zapupi_deposits FOR SELECT TO authenticated USING (auth.uid()=user_id);
 
--- Policies from historically partially-applied migrations. Dropping only the
--- named policy lets the original migration recreate the intended definition.
-DROP POLICY IF EXISTS "Restrict user_roles mutations to admins" ON public.user_roles;
-DROP POLICY IF EXISTS "Restrict providers to admins" ON public.providers;
-DROP POLICY IF EXISTS "Restrict provider_accounts to admins" ON public.provider_accounts;
-DROP POLICY IF EXISTS "Users manage own drip campaigns" ON public.drip_feed_campaigns;
-DROP POLICY IF EXISTS "Admins manage all drip campaigns" ON public.drip_feed_campaigns;
-DROP POLICY IF EXISTS "Users view own engagement health history" ON public.engagement_health_history;
-DROP POLICY IF EXISTS "Users insert own engagement health history" ON public.engagement_health_history;
-DROP POLICY IF EXISTS "Admins manage engagement health history" ON public.engagement_health_history;
-DROP POLICY IF EXISTS "Deny anonymous access to engagement_health_history" ON public.engagement_health_history;
-DROP POLICY IF EXISTS "Users manage their own batches" ON public.mass_order_batches;
-DROP POLICY IF EXISTS "Users manage their own batch items" ON public.mass_order_batch_items;
-DROP POLICY IF EXISTS "Users view own link events" ON public.instagram_link_events;
-DROP POLICY IF EXISTS "Admins view all link events" ON public.instagram_link_events;
-DROP POLICY IF EXISTS "oxapay_deposits_select_own_or_admin" ON public.oxapay_deposits;
-DROP POLICY IF EXISTS "oxapay_deposits_insert_own" ON public.oxapay_deposits;
-DROP POLICY IF EXISTS "oxapay_deposits_admin_update" ON public.oxapay_deposits;
-
 DROP POLICY IF EXISTS "Admins can view poll state" ON public.instagram_poll_state;
 CREATE POLICY "Admins can view poll state" ON public.instagram_poll_state FOR SELECT TO authenticated USING (public.has_role(auth.uid(),'admin'));
 DROP POLICY IF EXISTS "Admins can manage poll state" ON public.instagram_poll_state;

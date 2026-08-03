@@ -82,7 +82,17 @@ for file in "${FILES[@]}"; do
   [ "$(scalar "SELECT EXISTS(SELECT 1 FROM public._applied_migrations WHERE name='${name//\'/\'\'}');")" = "t" ] && continue
   echo "apply: $name"
   # One transaction means a failed migration cannot leave another partial state.
-  psql_db --single-transaction -f - < "$file"
+  if [ "$name" = "20260627023321_b39ea7be-1a3e-410e-b31a-d6338d4744f5.sql" ]; then
+    # This tracked migration predates idempotency guards. Normalize only its
+    # DDL wrappers at runtime; its functions/grants still execute unchanged.
+    sed -e 's/^CREATE TABLE public\.zapupi_deposits/CREATE TABLE IF NOT EXISTS public.zapupi_deposits/' \
+        -e '/^CREATE POLICY "Users view own zapupi deposits"/i DROP POLICY IF EXISTS "Users view own zapupi deposits" ON public.zapupi_deposits;' \
+        -e '/^CREATE TRIGGER update_zapupi_deposits_updated_at/i DROP TRIGGER IF EXISTS update_zapupi_deposits_updated_at ON public.zapupi_deposits;' \
+        -e 's/^CREATE INDEX zapupi_deposits_/CREATE INDEX IF NOT EXISTS zapupi_deposits_/' \
+        "$file" | psql_db --single-transaction -f -
+  else
+    psql_db --single-transaction -f - < "$file"
+  fi
   psql_db -v n="$name" -c "INSERT INTO public._applied_migrations(name) VALUES (:'n') ON CONFLICT DO NOTHING;" >/dev/null
 done
 
