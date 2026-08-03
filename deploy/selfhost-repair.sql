@@ -212,3 +212,30 @@ DO $$ BEGIN
   BEGIN GRANT EXECUTE ON FUNCTION public.get_public_markup() TO authenticated; EXCEPTION WHEN OTHERS THEN NULL; END;
   BEGIN GRANT EXECUTE ON FUNCTION public.is_maintenance_mode() TO authenticated, anon; EXCEPTION WHEN OTHERS THEN NULL; END;
 END $$;
+
+-- ============ Subscriptions repair (dedupe + unique + admin policies) ============
+DO $$ BEGIN
+  -- keep newest row per user, drop duplicates
+  DELETE FROM public.subscriptions s
+  USING public.subscriptions d
+  WHERE s.user_id = d.user_id
+    AND s.ctid < d.ctid;
+
+  BEGIN
+    CREATE UNIQUE INDEX IF NOT EXISTS subscriptions_user_id_key ON public.subscriptions(user_id);
+  EXCEPTION WHEN OTHERS THEN NULL; END;
+
+  BEGIN
+    CREATE POLICY "Admins can manage all subscriptions" ON public.subscriptions
+      FOR ALL TO authenticated
+      USING (public.has_role(auth.uid(), 'admin'))
+      WITH CHECK (public.has_role(auth.uid(), 'admin'));
+  EXCEPTION WHEN OTHERS THEN NULL; END;
+
+  BEGIN
+    CREATE POLICY "Admins can manage all subscription requests" ON public.subscription_requests
+      FOR ALL TO authenticated
+      USING (public.has_role(auth.uid(), 'admin'))
+      WITH CHECK (public.has_role(auth.uid(), 'admin'));
+  EXCEPTION WHEN OTHERS THEN NULL; END;
+END $$;

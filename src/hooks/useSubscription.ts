@@ -36,9 +36,11 @@ export function useSubscription() {
         .from('subscriptions')
         .select('*')
         .eq('user_id', user.id)
-        .single();
+        .order('activated_at', { ascending: false, nullsFirst: false })
+        .limit(1)
+        .maybeSingle();
 
-      if (error && error.code !== 'PGRST116') {
+      if (error) {
         console.error('Error fetching subscription:', error);
         return null;
       }
