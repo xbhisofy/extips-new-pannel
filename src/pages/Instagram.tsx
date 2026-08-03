@@ -6,7 +6,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { useSubscription } from '@/hooks/useSubscription';
 import { SubscriptionCheckDialog } from '@/components/subscription/SubscriptionCheckDialog';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
-import { Instagram, Loader2, Plus, Trash2, CheckCircle2, ShieldAlert, Lock } from 'lucide-react';
+import { Instagram, Loader2, Plus, Trash2, CheckCircle2, ShieldAlert, Lock, RefreshCw } from 'lucide-react';
 import { toast } from 'sonner';
 import { Link } from 'react-router-dom';
 import { igQueryKeys, IG_CACHE_PREFIX } from '@/lib/instagramCache';
