@@ -453,6 +453,51 @@ const getNestedEngagementOrderLink = (value: any) => {
   return value?.link || ''
 }
 
+// ==========================================================================
+// HARD INVARIANT: for one (link, engagement_type) a provider account may hold
+// at most ONE active provider order. "Active" = provider_order_id present and
+// provider_status not terminal (completed / canceled / partial / refunded).
+// This is authoritative and independent of the in-app run status, because a run
+// can be marked completed locally while the provider is still delivering.
+// ==========================================================================
+async function getProvidersBusyOnLink(
+  supabase: SupabaseClient,
+  normalizedLink: string,
+  engagementType: string,
+  excludeRunId?: string,
+): Promise<Set<string>> {
+  const busy = new Set<string>()
+  if (!normalizedLink) return busy
+  const type = (engagementType || '').toLowerCase().trim()
+
+  const { data, error } = await supabase
+    .from('organic_run_schedule')
+    .select('id, provider_account_id, provider_status, provider_remains, engagement_order_item:engagement_order_items!inner(engagement_type, engagement_order:engagement_orders!inner(link))')
+    .not('provider_order_id', 'is', null)
+    .not('provider_account_id', 'is', null)
+    .limit(1000)
+
+  if (error) {
+    console.error(`⚠️ Busy-provider lookup failed: ${error.message}`)
+    return busy
+  }
+
+  for (const row of (data || []) as any[]) {
+    if (excludeRunId && row.id === excludeRunId) continue
+    const rowLink = normalizeLink(getNestedEngagementOrderLink(row.engagement_order_item))
+    const rowType = (Array.isArray(row.engagement_order_item)
+      ? row.engagement_order_item[0]?.engagement_type
+      : row.engagement_order_item?.engagement_type || '').toLowerCase().trim()
+    if (rowLink !== normalizedLink || rowType !== type) continue
+    if (isTerminalProviderStatus(row.provider_status)) continue
+    if (typeof row.provider_remains === 'number' && row.provider_remains <= 0) continue
+    busy.add(row.provider_account_id)
+  }
+  return busy
+}
+
+
+
 async function batchPostponeEngagementRunsForLink(
   supabase: SupabaseClient,
   normalizedLink: string,
