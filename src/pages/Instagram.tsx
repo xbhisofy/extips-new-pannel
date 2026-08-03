@@ -9,7 +9,7 @@ import { DashboardLayout } from '@/components/layout/DashboardLayout';
 import { Instagram, Loader2, Plus, Trash2, CheckCircle2, ShieldAlert, Lock } from 'lucide-react';
 import { toast } from 'sonner';
 import { Link } from 'react-router-dom';
-import { igQueryKeys } from '@/lib/instagramCache';
+import { igQueryKeys, IG_CACHE_PREFIX } from '@/lib/instagramCache';
 
 export default function InstagramPage() {
   const { user } = useAuth();
