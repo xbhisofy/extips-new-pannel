@@ -322,9 +322,10 @@ Deno.serve(async (req) => {
 
 
       const postsStart = Date.now();
-      for (const p of normalized) {
-        if (!p.permalink) continue;
-        const payload = {
+      // Single bulk upsert instead of one round-trip per post (much faster).
+      const rows = normalized
+        .filter((p) => !!p.permalink)
+        .map((p) => ({
           account_id: account.id,
           user_id: account.user_id,
           media_id: p.id || p.code,
@@ -337,13 +338,14 @@ Deno.serve(async (req) => {
           comment_count: p.comments,
           view_count: p.views,
           posted_at: p.takenAt,
-        };
+        }));
+      if (rows.length) {
         const { error: upErr } = await admin
           .from('instagram_media')
-          .upsert(payload, { onConflict: 'account_id,media_id' });
+          .upsert(rows, { onConflict: 'account_id,media_id' });
         if (upErr) console.error('upsert media err', upErr.message);
       }
-      await logCall('posts', postsStart, true, normalized.length, null);
+      await logCall('posts', postsStart, rows.length > 0, rows.length, rows.length ? null : 'no posts fetched');
 
       const acctUpdate: Record<string, any> = {
         last_scraped_at: new Date().toISOString(),
@@ -355,9 +357,11 @@ Deno.serve(async (req) => {
         if (typeof profile.postsCount === 'number') acctUpdate.posts_count = profile.postsCount;
         if (profile.avatarUrl) acctUpdate.avatar_url = profile.avatarUrl;
         if (profile.fullName) acctUpdate.full_name = profile.fullName;
+        acctUpdate.status = 'active';
       }
       if (acctUpdate.posts_count === undefined && normalized.length > 0) {
         acctUpdate.posts_count = normalized.length;
+        acctUpdate.status = 'active';
       }
       await admin.from('instagram_accounts').update(acctUpdate).eq('id', account.id);
     })();
@@ -366,7 +370,12 @@ Deno.serve(async (req) => {
     if (typeof EdgeRuntime !== 'undefined' && EdgeRuntime?.waitUntil) {
       // @ts-ignore
       EdgeRuntime.waitUntil(backgroundTask);
+    } else {
+      // Self-hosted runtime has no waitUntil — awaiting is the only way the
+      // scrape actually runs instead of being dropped when the response ends.
+      await backgroundTask;
     }
+
 
     return new Response(JSON.stringify({ queued: true, account_id: account.id }), {
       status: 202,
