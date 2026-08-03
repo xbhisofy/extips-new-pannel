@@ -376,6 +376,10 @@ serve(async (req) => {
         })
       }
 
+      if (createdItemIds.length === 0) {
+        throw new Error('Order has no engagement items to schedule')
+      }
+
       // Flip order to processing so UI shows correct state
       await supabase.from('engagement_orders').update({ status: 'processing' }).eq('id', order.id)
     } else {
@@ -474,7 +478,10 @@ serve(async (req) => {
           price: eng.price,
           status: 'pending'
         }).select().single()
-        if (item) createdItemIds.push({ type: eng.type, itemId: item.id, engagement: eng, finalServiceId: eng.service_id })
+        if (!item) {
+          throw new Error(`Failed to create ${eng.type} order item`)
+        }
+        createdItemIds.push({ type: eng.type, itemId: item.id, engagement: eng, finalServiceId: eng.service_id })
       }
     }
 
@@ -745,6 +752,7 @@ serve(async (req) => {
             const { error: schedErr } = await supabase.from('organic_run_schedule').insert(validatedEntries)
             if (schedErr) {
                console.error(`❌ [${engType}] Insert error:`, schedErr.message)
+               throw new Error(`Could not schedule ${engType}: ${schedErr.message}`)
             } else {
                const scheduledSum = validatedEntries.reduce((s, r) => s + r.quantity_to_send, 0)
                console.log(`✅ [${engType}] Scheduled ${validatedEntries.length} runs. (Sum: ${scheduledSum}, Target: ${totalTargetQty})`)
@@ -762,6 +770,7 @@ serve(async (req) => {
             }
           } else {
             console.warn(`⚠️ [${engType}] No schedule entries created (qty: ${totalTargetQty})`)
+            throw new Error(`No schedule entries created for ${engType}`)
           }
         }
 

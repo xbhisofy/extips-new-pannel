@@ -84,12 +84,14 @@ KICKED="$(docker compose exec -T db psql -U postgres -d postgres -tAc \
         )
       ORDER BY ors.engagement_order_item_id, ors.scheduled_at
    )
-   UPDATE public.organic_run_schedule ors
-      SET scheduled_at = LEAST(ors.scheduled_at, now())
-     FROM first_untouched f
-    WHERE ors.id = f.id
-      AND ors.scheduled_at > now()
-   RETURNING ors.id;" 2>/dev/null | grep -c . || true)"
+   ), moved AS (
+     UPDATE public.organic_run_schedule ors
+        SET scheduled_at = LEAST(ors.scheduled_at, now())
+       FROM first_untouched f
+      WHERE ors.id = f.id
+        AND ors.scheduled_at > now()
+     RETURNING ors.id
+   ) SELECT count(*) FROM moved;" 2>/dev/null | tr -d '[:space:]')"
 echo "   first untouched runs made due now: ${KICKED:-0}"
 
 TOTAL_PENDING="$(scalar "SELECT count(*) FROM public.organic_run_schedule WHERE status='pending';" || echo unknown)"
