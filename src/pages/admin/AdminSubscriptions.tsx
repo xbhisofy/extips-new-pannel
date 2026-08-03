@@ -151,6 +151,8 @@ export default function AdminSubscriptions() {
         .from('profiles')
         .select('user_id, email, full_name')
         .eq('email', addEmail.trim().toLowerCase())
+        .order('created_at', { ascending: false })
+        .limit(1)
         .maybeSingle();
 
       if (profileError) throw profileError;
@@ -160,19 +162,29 @@ export default function AdminSubscriptions() {
         ? new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString()  // 30 days
         : null; // lifetime — no expiry
 
-      // Upsert subscription
-      const { error: subError } = await supabase
+      // Update-first is intentionally used instead of upsert. Older self-hosted
+      // databases can contain duplicate rows or be missing the user_id unique
+      // constraint, both of which make PostgREST's upsert fail.
+      const subscriptionValues = {
+        plan_type: addPlanType,
+        status: 'active' as const,
+        activated_at: new Date().toISOString(),
+        expires_at: expiresAt,
+        activated_by: user?.id,
+      };
+      const { data: updatedSubscriptions, error: updateError } = await supabase
         .from('subscriptions')
-        .upsert({
-          user_id: profile.user_id,
-          plan_type: addPlanType,
-          status: 'active',
-          activated_at: new Date().toISOString(),
-          expires_at: expiresAt,
-          activated_by: user?.id,
-        }, { onConflict: 'user_id' });
+        .update(subscriptionValues)
+        .eq('user_id', profile.user_id)
+        .select('id');
 
-      if (subError) throw subError;
+      if (updateError) throw updateError;
+      if (!updatedSubscriptions?.length) {
+        const { error: insertError } = await supabase
+          .from('subscriptions')
+          .insert({ user_id: profile.user_id, ...subscriptionValues });
+        if (insertError) throw insertError;
+      }
 
       // Fire-and-forget email - don't wait for response
       supabase.functions.invoke('send-subscription-email', {
@@ -259,18 +271,26 @@ export default function AdminSubscriptions() {
           ? new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString()
           : null;
 
-        const { error: subError } = await supabase
+        const subscriptionValues = {
+          plan_type: request.plan_type,
+          status: 'active' as const,
+          activated_at: new Date().toISOString(),
+          expires_at: expiresAt,
+          activated_by: user?.id,
+        };
+        const { data: updatedSubscriptions, error: updateError } = await supabase
           .from('subscriptions')
-          .upsert({
-            user_id: request.user_id,
-            plan_type: request.plan_type,
-            status: 'active',
-            activated_at: new Date().toISOString(),
-            expires_at: expiresAt,
-            activated_by: user?.id,
-          }, { onConflict: 'user_id' });
+          .update(subscriptionValues)
+          .eq('user_id', request.user_id)
+          .select('id');
 
-        if (subError) throw subError;
+        if (updateError) throw updateError;
+        if (!updatedSubscriptions?.length) {
+          const { error: insertError } = await supabase
+            .from('subscriptions')
+            .insert({ user_id: request.user_id, ...subscriptionValues });
+          if (insertError) throw insertError;
+        }
       }
 
       // Fire-and-forget email - don't wait for response
