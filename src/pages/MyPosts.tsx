@@ -179,7 +179,7 @@ export default function MyPosts() {
         {/* Boost link input */}
         <div className="relative group">
           <div className="absolute -inset-0.5 bg-gradient-to-r from-violet-600/20 to-fuchsia-600/20 rounded-2xl blur opacity-60 group-focus-within:opacity-100 transition duration-700 pointer-events-none"></div>
-          <div className="relative flex flex-col sm:flex-row items-stretch sm:items-center gap-2 p-2 rounded-2xl bg-[#0a0a0a] border border-white/10 shadow-2xl">
+          <div className="relative flex flex-col sm:flex-row items-stretch sm:items-center gap-2 p-2 rounded-2xl bg-[#ffffff] border border-white/10 shadow-2xl">
             <Input
               placeholder={selectedAccount ? `Paste a link from @${selectedAccount.username}…` : 'Paste any Instagram reel/post link…'}
               value={manualLink}
@@ -223,7 +223,7 @@ export default function MyPosts() {
 
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
           {rows.map((r) => (
-            <div key={r.media_id} className="rounded-2xl overflow-hidden bg-[#0a0a14]/80 border border-white/10 hover:border-purple-400/30 transition-colors group">
+            <div key={r.media_id} className="rounded-2xl overflow-hidden bg-[#ffffff]/80 border border-white/10 hover:border-purple-400/30 transition-colors group">
               <div className="relative aspect-square bg-black">
                 {r.thumbnail_url ? (
                   <img src={`https://lvrbhgulxqdsamhdjzkw.supabase.co/functions/v1/ig-image-proxy?url=${encodeURIComponent(r.thumbnail_url)}`} alt="" loading="lazy" referrerPolicy="no-referrer" className="w-full h-full object-cover" onError={(e) => { (e.target as HTMLImageElement).style.opacity = '0.2'; }} />

@@ -105,7 +105,7 @@ export default function Wallet() {
       <style>{`
         @keyframes vault-pulse { 0%,100%{opacity:.6} 50%{opacity:1} }
       `}</style>
-      <div className="min-h-full bg-[#030303] -mx-4 -my-6 md:-mx-6 md:-my-8 px-4 py-6 md:px-8 md:py-10 relative overflow-hidden">
+      <div className="min-h-full bg-[#f5f9ff] -mx-4 -my-6 md:-mx-6 md:-my-8 px-4 py-6 md:px-8 md:py-10 relative overflow-hidden">
         {/* Subtle ambient glow */}
         <div aria-hidden className="pointer-events-none absolute top-0 left-1/2 -translate-x-1/2 w-[700px] h-[400px] bg-purple-500/10 blur-[120px] rounded-full" />
 

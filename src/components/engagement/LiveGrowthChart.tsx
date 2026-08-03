@@ -72,7 +72,7 @@ const TYPE_COLORS: Record<VisibleType, string> = {
   comments: "#87a878", // Emerald-400
   likes: "#a4c19c",    // Pink-400
   saves: "#fbbf24",    // Amber-400
-  shares: "#e8a87c",   // Violet-400
+  shares: "#60a5fa",   // Violet-400
 };
 
 // Line patterns (helps distinguish types even in monochrome)

@@ -38,11 +38,11 @@ export function MobileBottomNav() {
     <>
       {/* Top header — all viewports */}
       <header className="fixed top-0 left-0 right-0 z-40">
-        <div className="flex items-center justify-between h-14 px-3 sm:px-5 bg-[#030303]/85 backdrop-blur-md border-b border-white/5">
+        <div className="flex items-center justify-between h-14 px-3 sm:px-5 bg-[#f5f9ff]/85 backdrop-blur-md border-b border-white/5">
           <Link to="/dashboard" className="flex items-center gap-2 min-w-0">
-            <img src={logo} alt="OrganicSMM Pro" className="w-8 h-8 rounded-lg object-cover ring-1 ring-white/10 shrink-0" />
+            <img src={logo} alt="Extips Panel Pro" className="w-8 h-8 rounded-lg object-cover ring-1 ring-white/10 shrink-0" />
             <div className="flex flex-col min-w-0">
-              <span className="text-[14px] font-bold tracking-tight leading-tight !text-white truncate">OrganicSMM Pro</span>
+              <span className="text-[14px] font-bold tracking-tight leading-tight !text-white truncate">Extips Panel Pro</span>
               <span className="text-[8px] font-semibold uppercase tracking-[0.18em] leading-tight text-purple-300/80">✦ v2.0</span>
             </div>
           </Link>
@@ -61,7 +61,7 @@ export function MobileBottomNav() {
       {/* Bottom nav — all viewports */}
       <nav className="fixed bottom-0 left-0 right-0 z-40">
         <div className="w-full px-0 pb-[env(safe-area-inset-bottom)] pt-0">
-          <div className="grid grid-cols-5 gap-1 rounded-none bg-[#070710]/95 backdrop-blur-xl border-t border-white/10 shadow-[0_-10px_40px_rgba(0,0,0,0.6)] px-2 py-2">
+          <div className="grid grid-cols-5 gap-1 rounded-none bg-[#ffffff]/95 backdrop-blur-xl border-t border-white/10 shadow-[0_-10px_40px_rgba(0,0,0,0.6)] px-2 py-2">
             {primary.map((item) => {
               const active = isActive(item.path);
               return (
@@ -88,8 +88,8 @@ export function MobileBottomNav() {
       {open && (
         <>
           <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm" onClick={() => setOpen(false)} />
-          <div className="fixed bottom-0 left-0 right-0 z-50 max-h-[88vh] overflow-y-auto rounded-t-3xl bg-[#070710]/98 backdrop-blur-xl border-t border-white/10 pb-[max(1rem,env(safe-area-inset-bottom))]">
-            <div className="sticky top-0 flex items-center justify-between px-5 py-3 border-b border-white/5 bg-[#070710]/98">
+          <div className="fixed bottom-0 left-0 right-0 z-50 max-h-[88vh] overflow-y-auto rounded-t-3xl bg-[#ffffff]/98 backdrop-blur-xl border-t border-white/10 pb-[max(1rem,env(safe-area-inset-bottom))]">
+            <div className="sticky top-0 flex items-center justify-between px-5 py-3 border-b border-white/5 bg-[#ffffff]/98">
               <span className="text-[13px] font-bold !text-white">Menu</span>
               <button onClick={() => setOpen(false)} className="w-8 h-8 rounded-lg flex items-center justify-center text-white/85 hover:text-white hover:bg-white/5">
                 <X className="w-4 h-4" />

@@ -51,7 +51,7 @@ export function AISpeedRecommender({ link, platform, types, totalQuantity, onApp
   };
 
   const safety = rec?.safety_score || 0;
-  const safetyColor = safety >= 80 ? "#4a6741" : safety >= 60 ? "#f59e0b" : "#ef4444";
+  const safetyColor = safety >= 80 ? "#1d4ed8" : safety >= 60 ? "#f59e0b" : "#ef4444";
 
   return (
     <Dialog open={open} onOpenChange={(o) => { setOpen(o); if (o) askAI(); }}>

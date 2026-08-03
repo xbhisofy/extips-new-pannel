@@ -59,16 +59,16 @@ export default function Dashboard() {
 
   const typeIcon: Record<string, any> = { views: Eye, likes: Heart, comments: MessageCircle };
 
-  const cardStyle = { background: '#1a1614', border: '1px solid rgba(255,255,255,.06)', boxShadow: '0 2px 12px rgba(0,0,0,.25)' };
-  const TEXT = '#f5f2ee';
-  const MUTED = '#8a8078';
-  const FAINT = '#5a534d';
+  const cardStyle = { background: '#ffffff', border: '1px solid rgba(255,255,255,.06)', boxShadow: '0 2px 12px rgba(0,0,0,.25)' };
+  const TEXT = '#0f172a';
+  const MUTED = '#64748b';
+  const FAINT = '#94a3b8';
   const DIVIDER = '1px solid rgba(255,255,255,.05)';
   const HOVER = 'hover:bg-white/[.03]';
 
   return (
     <DashboardLayout>
-      <PageMeta title="Dashboard" description="Manage your OrganicSMM Pro social media growth orders, track wallet balance, monitor active engagement campaigns and view delivery progress." noIndex />
+      <PageMeta title="Dashboard" description="Manage your Extips Panel Pro social media growth orders, track wallet balance, monitor active engagement campaigns and view delivery progress." noIndex />
       <OxapaySubscriptionPoller />
       <div className="space-y-6">
         {/* Header */}
@@ -82,10 +82,10 @@ export default function Dashboard() {
             </h1>
           </div>
           <div className="flex gap-2">
-            <button onClick={() => navigate('/engagement-order')} className="h-10 px-4 rounded-lg text-[12px] font-semibold flex items-center gap-1.5" style={{ border: '1px solid rgba(255,255,255,.1)', color: TEXT, background: '#1a1614' }}>
-              <Sparkles className="w-3.5 h-3.5" style={{ color: '#c97a52' }} /> Engagement
+            <button onClick={() => navigate('/engagement-order')} className="h-10 px-4 rounded-lg text-[12px] font-semibold flex items-center gap-1.5" style={{ border: '1px solid rgba(255,255,255,.1)', color: TEXT, background: '#ffffff' }}>
+              <Sparkles className="w-3.5 h-3.5" style={{ color: '#2563eb' }} /> Engagement
             </button>
-            <button onClick={() => navigate('/mass-order')} className="h-10 px-4 rounded-lg text-[12px] font-semibold text-white flex items-center gap-1.5" style={{ background: '#c97a52' }}>
+            <button onClick={() => navigate('/mass-order')} className="h-10 px-4 rounded-lg text-[12px] font-semibold text-white flex items-center gap-1.5" style={{ background: '#2563eb' }}>
               <Zap className="w-3.5 h-3.5" /> Mass Order
             </button>
           </div>
@@ -97,7 +97,7 @@ export default function Dashboard() {
             { icon: Wallet, label: 'Balance', value: formatPrice(wallet?.balance || 0), sub: 'Available funds', accent: '#87a878' },
             { icon: ShoppingCart, label: 'Total Orders', value: stats?.totalOrders || 0, sub: `${stats?.completedOrders || 0} completed`, accent: '#3b82f6' },
             { icon: Activity, label: 'Active', value: stats?.activeOrders || 0, sub: 'In progress', accent: '#f59e0b' },
-            { icon: TrendingUp, label: 'Total Spent', value: formatPrice(stats?.totalSpent || 0), sub: 'All time', accent: '#c97a52' },
+            { icon: TrendingUp, label: 'Total Spent', value: formatPrice(stats?.totalSpent || 0), sub: 'All time', accent: '#2563eb' },
           ].map((s, i) => (
             <div key={i} className="rounded-xl p-5" style={cardStyle}>
               <div className="w-9 h-9 rounded-lg flex items-center justify-center mb-3" style={{ background: s.accent + '1f', color: s.accent }}>
@@ -115,10 +115,10 @@ export default function Dashboard() {
           <div className="lg:col-span-3 rounded-xl overflow-hidden" style={cardStyle}>
             <div className="flex items-center justify-between px-5 py-4" style={{ borderBottom: DIVIDER }}>
               <div className="flex items-center gap-2">
-                <BarChart3 className="w-4 h-4" style={{ color: '#c97a52' }} />
+                <BarChart3 className="w-4 h-4" style={{ color: '#2563eb' }} />
                 <h2 className="text-[14px] font-bold" style={{ color: TEXT }}>Engagement Orders</h2>
               </div>
-              <Link to="/engagement-orders" className="text-[11px] font-medium flex items-center gap-0.5" style={{ color: '#c97a52' }}>
+              <Link to="/engagement-orders" className="text-[11px] font-medium flex items-center gap-0.5" style={{ color: '#2563eb' }}>
                 View all <ChevronRight className="w-3 h-3" />
               </Link>
             </div>
@@ -144,7 +144,7 @@ export default function Dashboard() {
               )) : (
                 <div className="px-5 py-12 text-center">
                   <p className="text-[13px] mb-3" style={{ color: MUTED }}>No engagement orders yet</p>
-                  <button onClick={() => navigate('/engagement-order')} className="text-[12px] font-semibold px-4 py-2 rounded-lg text-white" style={{ background: '#c97a52' }}>Create First Order</button>
+                  <button onClick={() => navigate('/engagement-order')} className="text-[12px] font-semibold px-4 py-2 rounded-lg text-white" style={{ background: '#2563eb' }}>Create First Order</button>
                 </div>
               )}
             </div>
@@ -156,7 +156,7 @@ export default function Dashboard() {
                 <Package className="w-4 h-4" style={{ color: MUTED }} />
                 <h2 className="text-[14px] font-bold" style={{ color: TEXT }}>Single Orders</h2>
               </div>
-              <Link to="/orders" className="text-[11px] font-medium flex items-center gap-0.5" style={{ color: '#c97a52' }}>
+              <Link to="/orders" className="text-[11px] font-medium flex items-center gap-0.5" style={{ color: '#2563eb' }}>
                 View all <ChevronRight className="w-3 h-3" />
               </Link>
             </div>
@@ -172,7 +172,7 @@ export default function Dashboard() {
               )) : (
                 <div className="px-5 py-12 text-center">
                   <p className="text-[13px] mb-3" style={{ color: MUTED }}>No orders yet</p>
-                  <button onClick={() => navigate('/engagement-order')} className="text-[12px] font-semibold px-4 py-2 rounded-lg text-white" style={{ background: '#c97a52' }}>Place Order</button>
+                  <button onClick={() => navigate('/engagement-order')} className="text-[12px] font-semibold px-4 py-2 rounded-lg text-white" style={{ background: '#2563eb' }}>Place Order</button>
                 </div>
               )}
             </div>
@@ -182,7 +182,7 @@ export default function Dashboard() {
         {/* Quick actions */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
           {[
-            { icon: Sparkles, label: 'Full Engagement', desc: 'Views + Likes + Comments', path: '/engagement-order', accent: '#c97a52' },
+            { icon: Sparkles, label: 'Full Engagement', desc: 'Views + Likes + Comments', path: '/engagement-order', accent: '#2563eb' },
             { icon: Wallet, label: 'Add Funds', desc: 'Deposit to wallet', path: '/wallet', accent: '#87a878' },
             { icon: Package, label: 'All Services', desc: 'Browse catalog', path: '/services', accent: '#3b82f6' },
           ].map((a, i) => (

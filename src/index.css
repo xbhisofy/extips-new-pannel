@@ -19,45 +19,45 @@ input[type="number"] {
 
 @layer base {
   :root {
-    /* ════ VIOLET AURORA — Dark SaaS ════ */
-    --background: 0 0% 0%;
-    --foreground: 0 0% 100%;
+    /* ════ EXTIPS BLUE — Light SaaS ════ */
+    --background: 214 100% 98%;
+    --foreground: 222 47% 11%;
 
-    --card: 240 20% 6%;
-    --card-foreground: 0 0% 100%;
+    --card: 0 0% 100%;
+    --card-foreground: 222 47% 11%;
 
-    --popover: 240 20% 5%;
-    --popover-foreground: 0 0% 100%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 222 47% 11%;
 
-    --primary: 270 95% 65%;
+    --primary: 221 83% 53%;
     --primary-foreground: 0 0% 100%;
 
-    --secondary: 240 15% 12%;
-    --secondary-foreground: 0 0% 100%;
+    --secondary: 214 60% 96%;
+    --secondary-foreground: 222 47% 11%;
 
-    --muted: 240 12% 14%;
-    --muted-foreground: 240 8% 82%;
+    --muted: 214 40% 95%;
+    --muted-foreground: 215 20% 45%;
 
-    --accent: 280 90% 70%;
+    --accent: 210 90% 60%;
     --accent-foreground: 0 0% 100%;
 
-    --success: 160 70% 45%;
+    --success: 160 70% 40%;
     --success-foreground: 0 0% 100%;
 
-    --warning: 38 92% 60%;
+    --warning: 38 92% 48%;
     --warning-foreground: 0 0% 100%;
 
-    --destructive: 0 75% 60%;
+    --destructive: 0 72% 51%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 240 15% 16%;
-    --input: 240 15% 14%;
-    --ring: 270 95% 65%;
+    --border: 214 32% 89%;
+    --input: 214 32% 91%;
+    --ring: 221 83% 53%;
 
     --radius: 1rem;
 
-    --shadow-soft: 0 4px 20px rgba(0,0,0,.4);
-    --shadow-glow: 0 0 30px rgba(168,85,247,.25);
+    --shadow-soft: 0 4px 20px rgba(15,23,42,.08);
+    --shadow-glow: 0 0 30px rgba(37,99,235,.18);
   }
 }
 
@@ -95,7 +95,7 @@ html {
   }
 
   ::selection {
-    background: hsla(142,71%,45%, 0.2);
+    background: hsl(var(--primary) / 0.18);
     color: hsl(var(--foreground));
   }
 }
@@ -104,9 +104,9 @@ html {
 
   .glass-card {
     @apply relative overflow-hidden rounded-2xl border;
-    background: rgba(255,255,255,.03);
-    border-color: rgba(255,255,255,.10);
-    box-shadow: 0 8px 32px rgba(0,0,0,.4), inset 0 1px 0 rgba(255,255,255,.04);
+    background: rgba(255,255,255,.85);
+    border-color: hsl(var(--border));
+    box-shadow: 0 8px 28px rgba(15,23,42,.07), inset 0 1px 0 rgba(255,255,255,.6);
     backdrop-filter: blur(12px);
     color: hsl(var(--foreground));
   }
@@ -121,20 +121,20 @@ html {
 
   .gradient-text {
     @apply bg-clip-text text-transparent font-extrabold;
-    background-image: linear-gradient(135deg, hsl(270 95% 75%), hsl(290 90% 75%));
+    background-image: linear-gradient(135deg, hsl(221 83% 48%), hsl(205 90% 52%));
   }
 
   /* ════ BUTTONS ════ */
   .btn-3d {
     @apply relative overflow-hidden font-bold rounded-xl flex items-center justify-center transition-all duration-200;
-    background: linear-gradient(135deg, hsl(270 95% 65%), hsl(280 90% 55%));
+    background: linear-gradient(135deg, hsl(221 83% 53%), hsl(210 90% 48%));
     color: white;
-    box-shadow: 0 4px 16px rgba(168,85,247, 0.32);
+    box-shadow: 0 4px 16px rgba(37,99,235, 0.28);
   }
 
   .btn-3d:hover {
     transform: translateY(-1px);
-    box-shadow: 0 6px 24px rgba(168,85,247, 0.45);
+    box-shadow: 0 6px 24px rgba(37,99,235, 0.38);
   }
 
   .btn-3d:active { transform: translateY(0); }
@@ -153,12 +153,12 @@ html {
   }
 
   .nav-link-active {
-    @apply text-foreground bg-primary/10 border border-primary/20;
+    @apply text-primary bg-primary/10 border border-primary/20;
   }
 
   /* ════ INPUTS ════ */
   .input-3d {
-    @apply bg-secondary border-border rounded-xl font-medium transition-all text-foreground;
+    @apply bg-card border-border rounded-xl font-medium transition-all text-foreground;
   }
 
   .input-3d:focus {
@@ -166,115 +166,23 @@ html {
   }
 
   .glow-neon {
-    box-shadow: 0 0 16px rgba(168,85,247, 0.25);
+    box-shadow: 0 0 16px rgba(37,99,235, 0.20);
   }
 
-  /* Chrome autofill fix — dark */
+  /* Chrome autofill fix — light */
   input:-webkit-autofill,
   input:-webkit-autofill:hover,
   input:-webkit-autofill:focus,
   input:-webkit-autofill:active {
-    -webkit-box-shadow: 0 0 0 100px hsl(240 15% 12%) inset !important;
-    -webkit-text-fill-color: hsl(0 0% 100%) !important;
-    caret-color: white !important;
+    -webkit-box-shadow: 0 0 0 100px hsl(0 0% 100%) inset !important;
+    -webkit-text-fill-color: hsl(222 47% 11%) !important;
+    caret-color: hsl(222 47% 11%) !important;
     transition: background-color 5000s ease-in-out 0s;
   }
 
-  /* ════ GLOBAL DARK OVERRIDES for inner dashboard pages ════
-     Many inner pages use hardcoded light Tailwind classes. Remap them
-     inside <main> (dashboard scope) to glass-dark equivalents. */
-  main .bg-white,
-  main .bg-stone-50,
-  main .bg-stone-100,
-  main .bg-neutral-50,
-  main .bg-neutral-100,
-  main .bg-gray-50,
-  main .bg-gray-100,
-  main .bg-slate-50,
-  main .bg-slate-100,
-  main .bg-zinc-50,
-  main .bg-zinc-100 {
-    background-color: rgba(255,255,255,0.035) !important;
-    backdrop-filter: blur(10px);
-  }
-
-  main .text-black,
-  main .text-stone-900,
-  main .text-neutral-900,
-  main .text-gray-900,
-  main .text-slate-900,
-  main .text-zinc-900 {
-    color: rgba(255,255,255,0.95) !important;
-  }
-  main .text-stone-800, main .text-neutral-800, main .text-gray-800, main .text-slate-800, main .text-zinc-800 { color: rgba(255,255,255,0.88) !important; }
-  main .text-stone-700, main .text-neutral-700, main .text-gray-700, main .text-slate-700, main .text-zinc-700 { color: rgba(255,255,255,0.78) !important; }
-  main .text-stone-600, main .text-neutral-600, main .text-gray-600, main .text-slate-600, main .text-zinc-600 { color: rgba(255,255,255,0.65) !important; }
-  main .text-stone-500, main .text-neutral-500, main .text-gray-500, main .text-slate-500, main .text-zinc-500 { color: rgba(255,255,255,0.55) !important; }
-  main .text-stone-400, main .text-neutral-200, main .text-gray-200, main .text-slate-200, main .text-zinc-200 { color: rgba(255,255,255,0.45) !important; }
-
-  main .border-stone-200, main .border-neutral-200, main .border-gray-200, main .border-slate-200, main .border-zinc-200,
-  main .border-stone-100, main .border-neutral-100, main .border-gray-100, main .border-slate-100, main .border-zinc-100 {
-    border-color: rgba(255,255,255,0.10) !important;
-  }
-  main .border-stone-300, main .border-neutral-300, main .border-gray-300, main .border-slate-300, main .border-zinc-300 {
-    border-color: rgba(255,255,255,0.14) !important;
-  }
-
-  /* Inputs/textareas/selects inside dashboard */
-  main input:not([type='checkbox']):not([type='radio']):not([type='range']),
-  main textarea,
-  main select {
-    background-color: rgba(255,255,255,0.04) !important;
-    color: white !important;
-    border-color: rgba(255,255,255,0.12) !important;
-  }
-  main input::placeholder,
-  main textarea::placeholder { color: rgba(255,255,255,0.35) !important; }
-
-  /* Common subtle backgrounds */
-  main .bg-amber-50, main .bg-yellow-50 { background-color: rgba(251,191,36,0.10) !important; }
-  main .bg-red-50, main .bg-rose-50 { background-color: rgba(248,113,113,0.10) !important; }
-  main .bg-green-50, main .bg-emerald-50 { background-color: rgba(52,211,153,0.10) !important; }
-  main .bg-blue-50, main .bg-sky-50, main .bg-indigo-50 { background-color: rgba(96,165,250,0.10) !important; }
-  main .bg-purple-50, main .bg-violet-50, main .bg-fuchsia-50 { background-color: rgba(168,85,247,0.12) !important; }
-  main .bg-orange-50 { background-color: rgba(251,146,60,0.10) !important; }
-  main .bg-emerald-100, main .bg-green-100 { background-color: rgba(52,211,153,0.18) !important; }
-  main .bg-amber-100, main .bg-yellow-100 { background-color: rgba(251,191,36,0.18) !important; }
-  main .bg-red-100, main .bg-rose-100 { background-color: rgba(248,113,113,0.18) !important; }
-  main .bg-blue-100, main .bg-sky-100, main .bg-indigo-100 { background-color: rgba(96,165,250,0.18) !important; }
-  main .bg-purple-100, main .bg-violet-100, main .bg-fuchsia-100 { background-color: rgba(168,85,247,0.20) !important; }
-  main .bg-orange-100 { background-color: rgba(251,146,60,0.18) !important; }
-
-  /* Brighten dark colored text on dark backgrounds */
-  main .text-emerald-900, main .text-green-900,
-  main .text-emerald-800, main .text-green-800,
-  main .text-emerald-700, main .text-green-700 { color: rgb(110,231,183) !important; }
-  main .text-amber-900, main .text-yellow-900,
-  main .text-amber-800, main .text-yellow-800,
-  main .text-amber-700, main .text-yellow-700 { color: rgb(252,211,77) !important; }
-  main .text-red-900, main .text-rose-900,
-  main .text-red-800, main .text-rose-800,
-  main .text-red-700, main .text-rose-700 { color: rgb(252,165,165) !important; }
-  main .text-blue-900, main .text-sky-900, main .text-indigo-900,
-  main .text-blue-800, main .text-sky-800, main .text-indigo-800,
-  main .text-blue-700, main .text-sky-700, main .text-indigo-700 { color: rgb(147,197,253) !important; }
-  main .text-purple-900, main .text-violet-900, main .text-fuchsia-900,
-  main .text-purple-800, main .text-violet-800, main .text-fuchsia-800,
-  main .text-purple-700, main .text-violet-700, main .text-fuchsia-700 { color: rgb(216,180,254) !important; }
-  main .text-orange-900, main .text-orange-800, main .text-orange-700 { color: rgb(253,186,116) !important; }
-
-  /* Colored borders that disappear on dark */
-  main .border-emerald-200, main .border-green-200,
-  main .border-emerald-300, main .border-green-300 { border-color: rgba(52,211,153,0.35) !important; }
-  main .border-amber-200, main .border-yellow-200,
-  main .border-amber-300, main .border-yellow-300 { border-color: rgba(251,191,36,0.35) !important; }
-  main .border-red-200, main .border-rose-200,
-  main .border-red-300, main .border-rose-300 { border-color: rgba(248,113,113,0.35) !important; }
-  main .border-blue-200, main .border-sky-200, main .border-indigo-200,
-  main .border-blue-300, main .border-sky-300, main .border-indigo-300 { border-color: rgba(96,165,250,0.35) !important; }
-  main .border-purple-200, main .border-violet-200, main .border-fuchsia-200,
-  main .border-purple-300, main .border-violet-300, main .border-fuchsia-300 { border-color: rgba(168,85,247,0.40) !important; }
-  main .border-orange-200, main .border-orange-300 { border-color: rgba(251,146,60,0.35) !important; }
+  /* Light-theme polish for inner dashboard pages */
+  main .bg-white { background-color: hsl(var(--card)) !important; }
+  main .text-black { color: hsl(var(--foreground)) !important; }
 }
 
 
@@ -306,3 +214,144 @@ html {
   from { transform: rotate(0deg); }
   to { transform: rotate(360deg); }
 }
+
+/* ════════════════════════════════════════════════════════════════
+   LIGHT THEME REMAP
+   Many pages were authored with hardcoded dark surfaces
+   (bg-black, bg-[#0a0a14], bg-white/5, border-white/10, text-white/70).
+   Remap them to the light Extips Blue palette app-wide.
+   ════════════════════════════════════════════════════════════════ */
+body .bg-black,
+body .bg-black\/80,
+body .bg-black\/70,
+body .bg-black\/60,
+body .bg-black\/40,
+body .bg-zinc-950,
+body .bg-zinc-950\/95,
+body .bg-zinc-900,
+body .bg-zinc-900\/60,
+body .bg-zinc-800,
+body .bg-neutral-900,
+body .bg-neutral-950,
+body .bg-slate-900,
+body .bg-slate-950,
+body .bg-gray-900,
+body .bg-gray-950,
+body .bg-\[\#030303\],
+body .bg-\[\#0a0a14\],
+body .bg-\[\#070710\],
+body .bg-\[\#0d0d0d\],
+body .bg-\[\#0a0a0a\] {
+  background-color: hsl(var(--card)) !important;
+}
+
+/* translucent white glass -> soft blue-tinted surfaces */
+body .bg-white\/5,
+body .hover\:bg-white\/5:hover,
+body .bg-white\/10,
+body .hover\:bg-white\/10:hover,
+body .bg-white\/20 {
+  background-color: hsl(214 60% 96%) !important;
+}
+
+/* hairline borders */
+body .border-white\/5,
+body .border-white\/10,
+body .border-white\/20,
+body .border-white\/25 {
+  border-color: hsl(var(--border)) !important;
+}
+
+/* translucent white text -> readable dark text */
+body .text-white\/90 { color: hsl(222 47% 11%) !important; }
+body .text-white\/85 { color: hsl(222 40% 16%) !important; }
+body .text-white\/80 { color: hsl(222 30% 24%) !important; }
+body .text-white\/75 { color: hsl(220 24% 30%) !important; }
+body .text-white\/70 { color: hsl(215 22% 34%) !important; }
+body .text-white\/65 { color: hsl(215 20% 38%) !important; }
+body .text-white\/60 { color: hsl(215 18% 42%) !important; }
+body .text-white\/55 { color: hsl(215 16% 46%) !important; }
+body .text-white\/50 { color: hsl(215 16% 50%) !important; }
+body .text-white\/45 { color: hsl(215 14% 54%) !important; }
+body .text-white\/40 { color: hsl(215 14% 58%) !important; }
+body .text-white\/35 { color: hsl(215 12% 62%) !important; }
+body .text-white\/20 { color: hsl(215 12% 72%) !important; }
+body .text-white { color: hsl(222 47% 11%) !important; }
+
+/* …but keep white text on filled / gradient / colored surfaces */
+.btn-3d .text-white, .btn-3d.text-white,
+[class*="bg-primary"] .text-white, [class*="bg-primary"].text-white,
+[class*="bg-gradient"] .text-white, [class*="bg-gradient"].text-white,
+[class*="bg-blue-5"] .text-white, [class*="bg-blue-5"].text-white,
+[class*="bg-blue-6"] .text-white, [class*="bg-blue-6"].text-white,
+[class*="bg-emerald"] .text-white, [class*="bg-emerald"].text-white,
+[class*="bg-green-5"] .text-white, [class*="bg-green-5"].text-white,
+[class*="bg-red-5"] .text-white, [class*="bg-red-5"].text-white,
+[class*="bg-rose-5"] .text-white, [class*="bg-rose-5"].text-white,
+[class*="bg-amber"] .text-white, [class*="bg-amber"].text-white,
+[class*="bg-orange"] .text-white, [class*="bg-orange"].text-white,
+[class*="bg-violet"] .text-white, [class*="bg-violet"].text-white,
+[class*="bg-purple"] .text-white, [class*="bg-purple"].text-white,
+[class*="bg-indigo"] .text-white, [class*="bg-indigo"].text-white,
+button[class*="bg-"] .text-white,
+.btn-3d, [class*="bg-primary"] > span, .btn-3d > span {
+  color: #fff !important;
+}
+
+/* Catch-all: any arbitrary near-black background utility (with or without
+   opacity modifier) becomes a light surface. */
+body [class*="bg-[#0"],
+body [class*="bg-[#1"],
+body [class*="bg-[#2"],
+body [class*="bg-zinc-9"],
+body [class*="bg-neutral-9"],
+body [class*="bg-slate-9"],
+body [class*="bg-gray-9"],
+body [class*="bg-black"] {
+  background-color: hsl(var(--card)) !important;
+}
+body [class*="border-white/"] { border-color: hsl(var(--border)) !important; }
+
+/* purple ambient blobs -> blue */
+body [class*="bg-purple-6"], body [class*="bg-purple-5"] { background-color: hsl(221 83% 53% / .18) !important; }
+body [class*="bg-fuchsia-6"] { background-color: hsl(205 90% 55% / .12) !important; }
+body [class*="bg-indigo-6"] { background-color: hsl(215 90% 55% / .14) !important; }
+
+/* Forced-white text utilities (!text-white) -> dark, except on filled surfaces */
+body [class*="text-white"] { color: hsl(222 47% 11%) !important; }
+[class*="bg-gradient"] [class*="text-white"],
+[class*="bg-gradient"][class*="text-white"],
+[class*="bg-primary"] [class*="text-white"],
+[class*="bg-primary"][class*="text-white"],
+.btn-3d [class*="text-white"], .btn-3d[class*="text-white"],
+button[class*="bg-blue-6"] [class*="text-white"],
+[class*="bg-blue-6"][class*="text-white"] { color: #fff !important; }
+
+/* arbitrary translucent white surfaces bg-white/[0.0x] */
+body [class*="bg-white/["] { background-color: hsl(214 60% 96%) !important; }
+
+/* pale accent text -> readable blue/dark tones */
+body [class*="text-purple-2"], body [class*="text-purple-3"],
+body [class*="text-fuchsia-2"], body [class*="text-fuchsia-3"],
+body [class*="text-sky-2"], body [class*="text-sky-3"],
+body [class*="text-indigo-2"], body [class*="text-indigo-3"],
+body [class*="text-blue-2"], body [class*="text-blue-3"] { color: hsl(221 83% 45%) !important; }
+body [class*="text-emerald-2"], body [class*="text-emerald-3"],
+body [class*="text-green-2"], body [class*="text-green-3"] { color: hsl(160 70% 32%) !important; }
+body [class*="text-amber-2"], body [class*="text-amber-3"],
+body [class*="text-yellow-2"], body [class*="text-yellow-3"] { color: hsl(35 90% 35%) !important; }
+body [class*="text-red-3"], body [class*="text-red-2"],
+body [class*="text-rose-3"], body [class*="text-rose-2"] { color: hsl(0 72% 45%) !important; }
+body [class*="text-zinc-4"], body [class*="text-zinc-5"],
+body [class*="text-gray-4"], body [class*="text-slate-4"] { color: hsl(215 20% 45%) !important; }
+
+/* purple/fuchsia tinted surfaces -> blue tint */
+body [class*="bg-purple-5"], body [class*="bg-purple-6"],
+body [class*="bg-fuchsia-5"], body [class*="bg-fuchsia-6"],
+body [class*="bg-violet-5"], body [class*="bg-violet-6"],
+body [class*="bg-indigo-5"], body [class*="bg-indigo-6"] { background-color: hsl(221 83% 53% / .10) !important; }
+body [class*="border-purple-"], body [class*="border-fuchsia-"],
+body [class*="border-violet-"], body [class*="border-indigo-"] { border-color: hsl(221 83% 53% / .22) !important; }
+
+/* heavy dark shadows -> soft */
+body [class*="shadow-[0_-10px_40px"], body [class*="shadow-[0_0_18px"] { box-shadow: 0 4px 20px rgba(15,23,42,.08) !important; }

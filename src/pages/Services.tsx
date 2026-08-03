@@ -53,8 +53,8 @@ export default function Services() {
   return (
     <DashboardLayout>
       <PageMeta
-        title="Services & Pricing — OrganicSMM Pro"
-        description="Browse OrganicSMM Pro services: Instagram, YouTube, TikTok and Twitter/X engagement with transparent pricing and natural delivery."
+        title="Services & Pricing — Extips Panel Pro"
+        description="Browse Extips Panel Pro services: Instagram, YouTube, TikTok and Twitter/X engagement with transparent pricing and natural delivery."
         canonicalPath="/services"
         breadcrumbs={[
           { name: 'Home', path: '/' },

@@ -71,7 +71,7 @@ export function computeHealth(runs: RunLike[]): HealthBreakdown {
 }
 
 function tierFor(score: number) {
-  if (score >= 85) return { label: "Excellent", color: "#4a6741", bg: "#f3ede2", border: "#e2dcc7", icon: ShieldCheck };
+  if (score >= 85) return { label: "Excellent", color: "#1d4ed8", bg: "#f5f9ff", border: "#dbeafe", icon: ShieldCheck };
   if (score >= 70) return { label: "Good", color: "#0ea5e9", bg: "#f0f9ff", border: "#e0f2fe", icon: Activity };
   if (score >= 50) return { label: "Fair", color: "#f59e0b", bg: "#fffbeb", border: "#fef3c7", icon: Activity };
   return { label: "Poor", color: "#ef4444", bg: "#fef2f2", border: "#fecaca", icon: AlertTriangle };
@@ -124,7 +124,7 @@ export function HealthScoreBadge({ runs, compact = false }: Props) {
 }
 
 function Row({ label, value, hint }: { label: string; value: number; hint: string }) {
-  const c = value >= 75 ? "#4a6741" : value >= 50 ? "#f59e0b" : "#ef4444";
+  const c = value >= 75 ? "#1d4ed8" : value >= 50 ? "#f59e0b" : "#ef4444";
   return (
     <div>
       <div className="flex justify-between text-[11px] mb-1">

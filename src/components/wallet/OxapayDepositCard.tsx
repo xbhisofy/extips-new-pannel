@@ -95,9 +95,9 @@ export default function OxapayDepositCard() {
           </div>
         </div>
         <div className="flex -space-x-1.5">
-          <div className="w-6 h-6 rounded-full bg-[#26a17b] border-2 border-[#030303] flex items-center justify-center text-[8px] font-bold text-white">T</div>
-          <div className="w-6 h-6 rounded-full bg-[#f7931a] border-2 border-[#030303] flex items-center justify-center text-[8px] font-bold text-white">B</div>
-          <div className="w-6 h-6 rounded-full bg-[#627eea] border-2 border-[#030303] flex items-center justify-center text-[8px] font-bold text-white">E</div>
+          <div className="w-6 h-6 rounded-full bg-[#26a17b] border-2 border-[#f5f9ff] flex items-center justify-center text-[8px] font-bold text-white">T</div>
+          <div className="w-6 h-6 rounded-full bg-[#f7931a] border-2 border-[#f5f9ff] flex items-center justify-center text-[8px] font-bold text-white">B</div>
+          <div className="w-6 h-6 rounded-full bg-[#627eea] border-2 border-[#f5f9ff] flex items-center justify-center text-[8px] font-bold text-white">E</div>
         </div>
       </div>
 

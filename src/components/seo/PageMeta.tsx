@@ -19,9 +19,9 @@ interface PageMetaProps {
   faqItems?: FaqItem[];
 }
 
-const DEFAULT_DESCRIPTION = "OrganicSMM Pro — World's first AI-organic SMM panel. Real Instagram, YouTube & TikTok engagement with natural delivery. 50,000+ orders, zero bans, 100% safe.";
-const SITE_NAME = 'OrganicSMM Pro';
-const BASE_URL = 'https://organicsmm.app';
+const DEFAULT_DESCRIPTION = "Extips Panel Pro — World's first AI-organic SMM panel. Real Instagram, YouTube & TikTok engagement with natural delivery. 50,000+ orders, zero bans, 100% safe.";
+const SITE_NAME = 'Extips Panel Pro';
+const BASE_URL = 'https://extipspanel.pro';
 const BREADCRUMB_SCRIPT_ID = 'breadcrumb-jsonld';
 const FAQ_SCRIPT_ID = 'faq-page-jsonld';
 

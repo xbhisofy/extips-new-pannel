@@ -12,7 +12,7 @@ const WHATSAPP_NUMBER = '255637520201'; // +255 637 520 201
 function buildSupportMessage(email?: string) {
   return (
     `Hi! 👋\n\n` +
-    `Mujhe apne OrganicSMM Pro wallet me funds add karne hain.\n` +
+    `Mujhe apne Extips Panel Pro wallet me funds add karne hain.\n` +
     (email ? `My account email: ${email}\n` : '') +
     `\nPlease help me with the payment process. 🙏`
   );
@@ -49,7 +49,7 @@ export default function RazorpayDepositCard() {
         {/* Top gradient strip */}
         <div
           className="h-1.5"
-          style={{ background: 'linear-gradient(90deg, #dc2626, #1a1a1a, #dc2626)' }}
+          style={{ background: 'linear-gradient(90deg, #dc2626, #ffffff, #dc2626)' }}
         />
 
         {/* Header */}
@@ -58,14 +58,14 @@ export default function RazorpayDepositCard() {
             <div
               className="w-11 h-11 rounded-2xl flex items-center justify-center"
               style={{
-                background: 'linear-gradient(135deg, #1a1a1a, #2a2a2a)',
+                background: 'linear-gradient(135deg, #ffffff, #e9eefb)',
                 boxShadow: '0 4px 12px rgba(0,0,0,.25)',
               }}
             >
               <WalletIcon className="h-5 w-5 text-white" />
             </div>
             <div className="flex-1 min-w-0">
-              <h2 className="text-[18px] font-bold" style={{ color: '#2a2418' }}>
+              <h2 className="text-[18px] font-bold" style={{ color: '#eef4ff' }}>
                 💰 Add Funds — Manual
               </h2>
               <p className="text-[12px] mt-0.5" style={{ color: '#888' }}>
@@ -94,7 +94,7 @@ export default function RazorpayDepositCard() {
           <div
             className="rounded-2xl overflow-hidden relative"
             style={{
-              background: 'linear-gradient(135deg, #0f0f10, #1a1a1d)',
+              background: 'linear-gradient(135deg, #ffffff, #ffffff)',
               border: '1px solid rgba(220,38,38,.35)',
               boxShadow: '0 10px 28px rgba(0,0,0,.35), inset 0 1px 0 rgba(255,255,255,.05)',
             }}
@@ -129,7 +129,7 @@ export default function RazorpayDepositCard() {
               <p className="text-[13px] font-bold tracking-wide text-white">
                 💬 Talk to Support
               </p>
-              <p className="text-[11px] mt-1 mb-4" style={{ color: '#a1a1aa' }}>
+              <p className="text-[11px] mt-1 mb-4" style={{ color: '#64748b' }}>
                 24/7 available — instant fund add karwa lo
               </p>
 
@@ -167,7 +167,7 @@ export default function RazorpayDepositCard() {
                 </a>
               </div>
 
-              <p className="text-[10px] mt-4 leading-relaxed" style={{ color: '#a1a1aa' }}>
+              <p className="text-[10px] mt-4 leading-relaxed" style={{ color: '#64748b' }}>
                 Telegram pe click karte hi message <b style={{ color: '#fff' }}>auto-copy</b> ho
                 jayega — chat me sirf paste karke send karna.
               </p>

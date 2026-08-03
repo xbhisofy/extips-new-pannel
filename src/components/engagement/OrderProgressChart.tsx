@@ -33,13 +33,13 @@ interface OrderProgressChartProps {
 // Distinct vibrant colors for each engagement type - easily distinguishable
 const TYPE_COLORS: Record<string, string> = {
   views: "#3b82f6",      // Blue - Primary, most visible
-  likes: "#4a6741",      // Pink - Warm, distinct from blue
+  likes: "#1d4ed8",      // Pink - Warm, distinct from blue
   comments: "#5e8a5c",   // Emerald Green - Cool, stands out
   saves: "#f59e0b",      // Amber/Orange - Warm accent
   shares: "#8b5cf6",     // Violet/Purple - Distinct cool tone
   followers: "#06b6d4",  // Cyan - Fresh, tech feel
   subscribers: "#ef4444", // Red - Strong contrast
-  watch_hours: "#c97a52", // Orange - Warm, energetic
+  watch_hours: "#2563eb", // Orange - Warm, energetic
   retweets: "#14b8a6",   // Teal - Cool, calm
   reposts: "#a855f7",    // Purple - Rich, distinct
 };
