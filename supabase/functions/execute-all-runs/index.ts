@@ -1386,7 +1386,7 @@ async function processAllRuns(supabase: any, executionId: string, startTime: num
           const newScheduledAt = new Date(Date.now() + postponeMs).toISOString()
           await supabase.from('organic_run_schedule').update({
             scheduled_at: newScheduledAt,
-            error_message: `[Postponed] All providers busy for this link`,
+            error_message: `Waiting: all providers busy on this link`,
             last_status_check: new Date().toISOString(),
           }).eq('id', run.id)
           skipped++
