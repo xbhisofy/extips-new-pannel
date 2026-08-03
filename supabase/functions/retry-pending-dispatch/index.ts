@@ -21,11 +21,18 @@ Deno.serve(async (req) => {
       .eq('user_id', user.id).eq('role', 'admin').maybeSingle()
     if (!role) return json({ error: 'Forbidden' }, 403)
   }
-  const before = await admin.from('organic_run_schedule').select('*', { count: 'exact', head: true })
+  let body: { run_id?: string } = {}
+  try { body = await req.json() } catch { /* an empty body means retry all safe candidates */ }
+  const runId = typeof body.run_id === 'string' && body.run_id.length > 0 ? body.run_id : null
+  let beforeQuery = admin.from('organic_run_schedule').select('*', { count: 'exact', head: true })
     .in('status', ['pending', 'failed']).is('provider_order_id', null)
+  if (runId) beforeQuery = beforeQuery.eq('id', runId)
+  const before = await beforeQuery
   if (before.error) return json({ error: before.error.message }, 500)
-  const candidates = await admin.from('organic_run_schedule').select('id,error_message')
-    .in('status', ['pending', 'failed']).is('provider_order_id', null).limit(1000)
+  let candidateQuery = admin.from('organic_run_schedule').select('id,error_message')
+    .in('status', ['pending', 'failed']).is('provider_order_id', null)
+  if (runId) candidateQuery = candidateQuery.eq('id', runId)
+  const candidates = await candidateQuery.limit(runId ? 1 : 1000)
   if (candidates.error) return json({ error: candidates.error.message }, 500)
   const retryIds = (candidates.data ?? []).filter((row) => {
     const message = (row.error_message ?? '').toLowerCase()
@@ -47,8 +54,10 @@ Deno.serve(async (req) => {
   const text = await response.text()
   let dispatch: unknown = text
   try { dispatch = JSON.parse(text) } catch { /* keep raw body */ }
-  const after = await admin.from('organic_run_schedule').select('*', { count: 'exact', head: true })
+  let afterQuery = admin.from('organic_run_schedule').select('*', { count: 'exact', head: true })
     .in('status', ['pending', 'failed']).is('provider_order_id', null)
+  if (runId) afterQuery = afterQuery.eq('id', runId)
+  const after = await afterQuery
   return json({ success: response.ok, before: before.count ?? 0, queued: rows?.length ?? 0,
-    after: after.count ?? 0, dispatch_http_status: response.status, dispatch }, response.ok ? 200 : 502)
+    after: after.count ?? 0, run_id: runId, dispatch_http_status: response.status, dispatch }, response.ok ? 200 : 502)
 })

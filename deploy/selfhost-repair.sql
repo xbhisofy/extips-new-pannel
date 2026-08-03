@@ -8,6 +8,35 @@ ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS referred_by uuid;
 ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS referral_earnings numeric NOT NULL DEFAULT 0;
 CREATE INDEX IF NOT EXISTS idx_profiles_referral_code_upper ON public.profiles ((upper(referral_code))) WHERE referral_code IS NOT NULL;
 
+-- Some hosted histories granted this RPC before its CREATE reached the VPS.
+-- Recreate the canonical, authenticated-user-only implementation first.
+CREATE OR REPLACE FUNCTION public.set_referrer_by_code(p_code text) RETURNS json
+LANGUAGE plpgsql SECURITY DEFINER SET search_path=public AS $$
+DECLARE
+  v_user_id uuid := auth.uid();
+  v_referrer_id uuid;
+BEGIN
+  IF v_user_id IS NULL THEN RAISE EXCEPTION 'Not authenticated'; END IF;
+  IF coalesce(btrim(p_code), '') = '' THEN RAISE EXCEPTION 'Referral code required'; END IF;
+
+  SELECT user_id INTO v_referrer_id
+    FROM public.profiles
+   WHERE upper(referral_code) = upper(btrim(p_code))
+   LIMIT 1;
+  IF v_referrer_id IS NULL THEN RAISE EXCEPTION 'Invalid referral code'; END IF;
+  IF v_referrer_id = v_user_id THEN RAISE EXCEPTION 'You cannot refer yourself'; END IF;
+
+  UPDATE public.profiles
+     SET referred_by = v_referrer_id, updated_at = now()
+   WHERE user_id = v_user_id AND referred_by IS NULL;
+  IF NOT FOUND THEN
+    RETURN json_build_object('success', false, 'already_set', true);
+  END IF;
+  RETURN json_build_object('success', true, 'referrer_id', v_referrer_id);
+END $$;
+REVOKE EXECUTE ON FUNCTION public.set_referrer_by_code(text) FROM PUBLIC, anon;
+GRANT EXECUTE ON FUNCTION public.set_referrer_by_code(text) TO authenticated;
+
 -- Repair services.provider_id FK prerequisites before failed historical migrations retry.
 INSERT INTO public.providers(id,name,api_url,api_key,is_active)
 SELECT DISTINCT s.provider_id,coalesce(pa.name,s.provider_id),coalesce(nullif(pa.api_url,''),'http://invalid.local'),
@@ -15,6 +44,25 @@ SELECT DISTINCT s.provider_id,coalesce(pa.name,s.provider_id),coalesce(nullif(pa
 FROM public.services s LEFT JOIN public.provider_accounts pa ON pa.provider_id=s.provider_id
 WHERE s.provider_id IS NOT NULL AND NOT EXISTS(SELECT 1 FROM public.providers p WHERE p.id=s.provider_id)
 ON CONFLICT(id) DO NOTHING;
+-- Historical seed 20260703075454 references this provider before any tracked
+-- migration creates it. Keep it inactive until a real account is configured.
+INSERT INTO public.providers(id,name,api_url,api_key,is_active)
+VALUES ('chpst','CHPST (configuration required)','http://invalid.local','',false)
+ON CONFLICT(id) DO NOTHING;
+
+-- A unique Razorpay idempotency index cannot be created over historical
+-- duplicate references. Preserve every transaction but quarantine duplicate
+-- references with a stable suffix before the canonical migration adds UNIQUE.
+WITH ranked AS (
+  SELECT id, payment_reference,
+         row_number() OVER (PARTITION BY payment_reference ORDER BY created_at, id) AS rn
+    FROM public.transactions
+   WHERE payment_method='razorpay_auto' AND payment_reference IS NOT NULL
+)
+UPDATE public.transactions t
+   SET payment_reference = t.payment_reference || '-duplicate-' || t.id::text
+  FROM ranked r
+ WHERE t.id=r.id AND r.rn>1;
 
 CREATE TABLE IF NOT EXISTS public.zapupi_deposits (
  id uuid PRIMARY KEY DEFAULT gen_random_uuid(), user_id uuid NOT NULL, order_id text NOT NULL UNIQUE,

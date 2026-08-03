@@ -51,40 +51,14 @@ rm -rf dist-prev
 [ -d dist ] && cp -a dist dist-prev
 rm -rf dist && mv dist-new dist
 
-log "4/6 Migrations"
+log "4/6 Strict migrations"
 if [ -d "$SUPA_DIR" ] && [ -d supabase/migrations ]; then
-  cd "$SUPA_DIR"
-  if [ -f "$REPO_DIR/deploy/fix-missing-tables.sql" ]; then
-    echo "   -> VPS missing-table repair"
-    docker compose exec -T db psql -U postgres -d postgres -v ON_ERROR_STOP=1 -f - \
-      < "$REPO_DIR/deploy/fix-missing-tables.sql" || die "VPS missing-table repair failed"
-  fi
-  if [ -f "$REPO_DIR/deploy/selfhost-repair.sql" ]; then
-    echo "   -> self-host idempotent migration repair"
-    docker compose exec -T db psql -U postgres -d postgres -v ON_ERROR_STOP=1 -f - \
-      < "$REPO_DIR/deploy/selfhost-repair.sql" || die "self-host migration repair failed"
-  fi
-  docker compose exec -T db psql -U postgres -d postgres -c \
-    "CREATE TABLE IF NOT EXISTS public._applied_migrations(name text PRIMARY KEY, applied_at timestamptz DEFAULT now());" >/dev/null
-  for f in $(ls "$REPO_DIR"/supabase/migrations/*.sql | sort); do
-    name="$(basename "$f")"
-    already="$(docker compose exec -T db psql -U postgres -d postgres -tAc \
-      "SELECT 1 FROM public._applied_migrations WHERE name='$name'" || true)"
-    [ "$already" = "1" ] && continue
-    echo "   -> $name"
-    if docker compose exec -T db psql -U postgres -d postgres -v ON_ERROR_STOP=1 -f - < "$f" >/tmp/upd-mig.log 2>&1; then
-      docker compose exec -T db psql -U postgres -d postgres -c \
-        "INSERT INTO public._applied_migrations(name) VALUES ('$name') ON CONFLICT DO NOTHING" >/dev/null
-    else
-      warn "migration failed: $name"; tail -n 6 /tmp/upd-mig.log
-    fi
-  done
-  cd "$REPO_DIR"
+  bash "$REPO_DIR/deploy/repair-vps-migrations.sh" || die "strict migration repair failed; app was not restarted"
 fi
 
 log "5/6 Edge functions + restart"
-bash "$REPO_DIR/deploy/deploy-edge-functions.sh" >/dev/null 2>&1 || warn "edge deploy step reported issues"
-bash "$REPO_DIR/deploy/schedule-cron.sh" >/dev/null 2>&1 || warn "cron scheduling step reported issues"
+# Strict migration repair already deploys functions and registers cron. Keep
+# this phase focused on pending-order recovery and the frontend restart.
 
 if ! bash "$REPO_DIR/deploy/repair-pending-orders.sh"; then
   warn "pending-order repair failed; diagnostic output is shown above"
