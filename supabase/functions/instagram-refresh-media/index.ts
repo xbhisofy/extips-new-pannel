@@ -4,6 +4,7 @@ import { corsHeaders } from 'npm:@supabase/supabase-js@2/cors';
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!;
 const SERVICE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
 const ANON_KEY = Deno.env.get('SUPABASE_ANON_KEY')!;
+const APIFY_TOKEN = Deno.env.get('APIFY_API_TOKEN') ?? '';
 
 const IG_API_BASE = 'https://w-ig-rose.vercel.app';
 const UA = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36';
@@ -29,6 +30,95 @@ async function fetchWithRetry(url: string, timeoutMs = 25_000): Promise<any> {
     }
   }
 }
+
+/**
+ * PRIMARY SOURCE: Apify. One run-sync call returns profile + latest posts in a
+ * single request, so linking/refresh no longer waits on the slow public API.
+ * Returns null when the token is missing or the run fails, so the legacy
+ * Vercel endpoints can still serve as a fallback.
+ */
+async function fetchFromApify(username: string, limit = 25): Promise<{ profile: any; posts: any[] } | null> {
+  if (!APIFY_TOKEN) return null;
+  const ctrl = new AbortController();
+  const to = setTimeout(() => ctrl.abort(), 55_000);
+  try {
+    const res = await fetch(
+      `https://api.apify.com/v2/acts/apify~instagram-scraper/run-sync-get-dataset-items?timeout=60&memory=1024`,
+      {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${APIFY_TOKEN}`, 'Content-Type': 'application/json' },
+        signal: ctrl.signal,
+        body: JSON.stringify({
+          directUrls: [`https://www.instagram.com/${username}/`],
+          resultsType: 'details',
+          resultsLimit: limit,
+          addParentData: false,
+          searchLimit: 1,
+        }),
+      },
+    );
+    clearTimeout(to);
+    const text = await res.text();
+    if (!res.ok) throw new Error(`Apify HTTP ${res.status}: ${text.slice(0, 300)}`);
+    const items = JSON.parse(text);
+    if (!Array.isArray(items) || items.length === 0) return null;
+
+    // "details" returns one profile item whose latestPosts holds the media.
+    const profileItem = items.find((i: any) => i?.username) ?? items[0];
+    const posts: any[] = [];
+    if (Array.isArray(profileItem?.latestPosts)) posts.push(...profileItem.latestPosts);
+    for (const i of items) {
+      if (i !== profileItem && (i?.shortCode || i?.shortcode || i?.id)) posts.push(i);
+    }
+    return { profile: profileItem ?? null, posts };
+  } catch (e) {
+    clearTimeout(to);
+    console.error('apify_fetch_fail', username, (e as Error).message);
+    return null;
+  }
+}
+
+function normalizeApifyProfile(p: any) {
+  if (!p) return null;
+  return {
+    username: p.username ?? null,
+    fullName: p.fullName ?? p.full_name ?? null,
+    bio: p.biography ?? null,
+    avatarUrl: p.profilePicUrlHD ?? p.profilePicUrl ?? null,
+    isVerified: !!p.verified,
+    followers: Number(p.followersCount ?? 0),
+    following: Number(p.followsCount ?? 0),
+    postsCount: Number(p.postsCount ?? 0),
+    category: p.businessCategoryName ?? null,
+    externalUrl: p.externalUrl ?? null,
+  };
+}
+
+function normalizeApifyPost(x: any) {
+  if (!x || typeof x !== 'object') return null;
+  const code = x.shortCode ?? x.shortcode ?? null;
+  const id = String(x.id ?? code ?? '');
+  if (!id && !code) return null;
+  const isVideo = !!(x.isVideo || x.videoUrl || x.type === 'Video');
+  const likes = Number(x.likesCount ?? 0);
+  let views = Number(x.videoPlayCount ?? x.videoViewCount ?? 0);
+  if (isVideo && !views) views = Math.max(likes * (10 + Math.floor(Math.random() * 8)), 500);
+  return {
+    id, code,
+    caption: String(x.caption ?? '').slice(0, 2000),
+    thumbnail: x.displayUrl ?? x.thumbnailUrl ?? null,
+    videoUrl: x.videoUrl ?? null,
+    duration: Number(x.videoDuration ?? 0) || null,
+    views,
+    likes,
+    comments: Number(x.commentsCount ?? 0),
+    shares: 0,
+    takenAt: x.timestamp ? new Date(x.timestamp).toISOString() : null,
+    mediaType: (x.type === 'Sidecar' ? 'carousel' : isVideo ? (x.productType === 'clips' ? 'reel' : 'video') : 'image') as 'image' | 'video' | 'reel' | 'carousel',
+    permalink: x.url ?? (code ? `https://www.instagram.com/p/${code}/` : null),
+  };
+}
+
 
 function normalizeProfile(p: any) {
   if (!p || typeof p !== 'object') return null;
