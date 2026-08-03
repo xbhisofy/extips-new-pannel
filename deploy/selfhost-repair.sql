@@ -46,8 +46,20 @@ WHERE s.provider_id IS NOT NULL AND NOT EXISTS(SELECT 1 FROM public.providers p 
 ON CONFLICT(id) DO NOTHING;
 -- Historical seed 20260703075454 references this provider before any tracked
 -- migration creates it. Keep it inactive until a real account is configured.
+-- Provider codes that historical seed migrations reference before any tracked
+-- migration creates them. Kept inactive until a real account is configured.
 INSERT INTO public.providers(id,name,api_url,api_key,is_active)
-VALUES ('chpst','CHPST (configuration required)','http://invalid.local','',false)
+SELECT v.id, v.id || ' (configuration required)','http://invalid.local','',false
+FROM (VALUES ('chpst'),('smmfollows'),('justanotherpanel'),('smmkings'),('peakerr'))
+  AS v(id)
+ON CONFLICT(id) DO NOTHING;
+-- Any provider code referenced by an account/mapping but missing from providers.
+INSERT INTO public.providers(id,name,api_url,api_key,is_active)
+SELECT DISTINCT pa.provider_id, coalesce(pa.name,pa.provider_id),
+  coalesce(nullif(pa.api_url,''),'http://invalid.local'), coalesce(pa.api_key,''), false
+FROM public.provider_accounts pa
+WHERE pa.provider_id IS NOT NULL
+  AND NOT EXISTS(SELECT 1 FROM public.providers p WHERE p.id=pa.provider_id)
 ON CONFLICT(id) DO NOTHING;
 
 -- A unique Razorpay idempotency index cannot be created over historical
