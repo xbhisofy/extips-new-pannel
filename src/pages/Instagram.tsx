@@ -28,7 +28,12 @@ export default function InstagramPage() {
       return data;
     },
     enabled: !!user?.id,
+    // While a freshly linked row is still being scraped, poll so the profile
+    // and post counts appear without a manual reload.
+    refetchInterval: (q) =>
+      (q.state.data as any[] | undefined)?.some((a) => a.status === 'pending_refresh') ? 4000 : false,
   });
+
 
   // Persistent 30-day link usage from audit log (survives account deletion).
   const { data: linkEvents = [] } = useQuery({
