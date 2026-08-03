@@ -638,24 +638,35 @@ serve(async (req) => {
       }
     }
 
+    let requestBody: { instant?: boolean } = {}
+    try {
+      requestBody = await req.json()
+    } catch {
+      requestBody = {}
+    }
+
     const executionId = crypto.randomUUID().slice(0, 8)
     console.log(`=== EXECUTE ALL ORGANIC RUNS [${executionId}] ===`)
 
-    // Return 202 immediately, process in background to avoid context-canceled
+    // Order-placement calls need a guaranteed execution on self-hosted runtimes.
+    // Cron calls remain background jobs so the scheduler responds quickly.
     const backgroundWork = processAllRuns(supabase, executionId, startTime)
-    
-    try {
-      EdgeRuntime.waitUntil(backgroundWork)
-    } catch {
-      // Fallback: if EdgeRuntime not available, await directly
+
+    if (requestBody.instant) {
       await backgroundWork
+    } else {
+      try {
+        EdgeRuntime.waitUntil(backgroundWork)
+      } catch {
+        await backgroundWork
+      }
     }
 
     return new Response(JSON.stringify({
       success: true, execution_id: executionId,
-      message: 'Processing started in background'
+      message: requestBody.instant ? 'Processing completed' : 'Processing started in background'
     }), {
-      status: 202,
+      status: requestBody.instant ? 200 : 202,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' }
     })
 

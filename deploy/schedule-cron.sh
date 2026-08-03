@@ -48,7 +48,7 @@ BEGIN
     PERFORM cron.schedule(j[1], j[2], format(
       \$q\$SELECT net.http_post(
             url := '$BASE/functions/v1/%s',
-            headers := '{"Content-Type":"application/json","Authorization":"Bearer $SRK"}'::jsonb,
+            headers := '{"Content-Type":"application/json","Authorization":"Bearer $SRK","apikey":"$SRK"}'::jsonb,
             body := '{}'::jsonb
           );\$q\$, j[3]));
   END LOOP;

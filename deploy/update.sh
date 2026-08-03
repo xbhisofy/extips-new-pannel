@@ -60,6 +60,7 @@ fi
 
 log "5/6 Edge functions + restart"
 bash "$REPO_DIR/deploy/deploy-edge-functions.sh" >/dev/null 2>&1 || warn "edge deploy step reported issues"
+bash "$REPO_DIR/deploy/schedule-cron.sh" >/dev/null 2>&1 || warn "cron scheduling step reported issues"
 systemctl restart smmpanel
 
 log "6/6 Health check"
