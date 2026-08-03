@@ -1626,8 +1626,7 @@ async function processAllRuns(supabase: any, executionId: string, startTime: num
 
           runClaimed = true
         } else {
-
-          await supabase.from('organic_run_schedule').update({
+          const { error: switchError } = await supabase.from('organic_run_schedule').update({
             error_message: `Trying ${selectedAccount.name}...`,
             provider_account_id: selectedAccount.id,
             provider_account_name: selectedAccount.name,
@@ -1636,7 +1635,20 @@ async function processAllRuns(supabase: any, executionId: string, startTime: num
             provider_response: null,
             last_status_check: new Date().toISOString(),
           }).eq('id', run.id).eq('status', 'started')
+
+          if (switchError) {
+            const msg = switchError.message || ''
+            if ((switchError as any).code === '23505' || /duplicate key|unique constraint/i.test(msg)) {
+              lastError = `Provider ${selectedAccount.name} claimed concurrently for this link`
+              console.log(`🔒 ${lastError}, trying next provider`)
+              continue
+            }
+            console.error(`❌ Failed to switch provider on run ${run.id}:`, switchError)
+            lastError = `Provider switch failed: ${msg || 'unknown error'}`
+            break
+          }
         }
+
 
         try {
           const formData = new URLSearchParams()
