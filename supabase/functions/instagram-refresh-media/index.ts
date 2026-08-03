@@ -37,10 +37,9 @@ async function fetchWithRetry(url: string, timeoutMs = 25_000): Promise<any> {
  * Returns null when the token is missing or the run fails, so the legacy
  * Vercel endpoints can still serve as a fallback.
  */
-async function fetchFromApify(username: string, limit = 25): Promise<{ profile: any; posts: any[] } | null> {
-  if (!APIFY_TOKEN) return null;
+async function runApify(body: Record<string, unknown>, timeoutMs = 55_000): Promise<any[] | null> {
   const ctrl = new AbortController();
-  const to = setTimeout(() => ctrl.abort(), 55_000);
+  const to = setTimeout(() => ctrl.abort(), timeoutMs);
   try {
     const res = await fetch(
       `https://api.apify.com/v2/acts/apify~instagram-scraper/run-sync-get-dataset-items?timeout=60&memory=1024`,
@@ -48,35 +47,67 @@ async function fetchFromApify(username: string, limit = 25): Promise<{ profile: 
         method: 'POST',
         headers: { Authorization: `Bearer ${APIFY_TOKEN}`, 'Content-Type': 'application/json' },
         signal: ctrl.signal,
-        body: JSON.stringify({
-          directUrls: [`https://www.instagram.com/${username}/`],
-          resultsType: 'details',
-          resultsLimit: limit,
-          addParentData: false,
-          searchLimit: 1,
-        }),
+        body: JSON.stringify(body),
       },
     );
     clearTimeout(to);
     const text = await res.text();
     if (!res.ok) throw new Error(`Apify HTTP ${res.status}: ${text.slice(0, 300)}`);
     const items = JSON.parse(text);
-    if (!Array.isArray(items) || items.length === 0) return null;
-
-    // "details" returns one profile item whose latestPosts holds the media.
-    const profileItem = items.find((i: any) => i?.username) ?? items[0];
-    const posts: any[] = [];
-    if (Array.isArray(profileItem?.latestPosts)) posts.push(...profileItem.latestPosts);
-    for (const i of items) {
-      if (i !== profileItem && (i?.shortCode || i?.shortcode || i?.id)) posts.push(i);
-    }
-    return { profile: profileItem ?? null, posts };
+    return Array.isArray(items) ? items : null;
   } catch (e) {
     clearTimeout(to);
-    console.error('apify_fetch_fail', username, (e as Error).message);
+    console.error('apify_run_fail', (e as Error).message);
     return null;
   }
 }
+
+async function fetchFromApify(username: string, limit = 25): Promise<{ profile: any; posts: any[] } | null> {
+  if (!APIFY_TOKEN) return null;
+  const url = `https://www.instagram.com/${username}/`;
+
+  const details = await runApify({
+    directUrls: [url],
+    resultsType: 'details',
+    resultsLimit: limit,
+    addParentData: false,
+    searchLimit: 1,
+  });
+
+  let profileItem: any = null;
+  const posts: any[] = [];
+  if (details && details.length) {
+    profileItem = details.find((i: any) => i?.username) ?? details[0];
+    if (Array.isArray(profileItem?.latestPosts)) posts.push(...profileItem.latestPosts);
+    for (const i of details) {
+      if (i !== profileItem && (i?.shortCode || i?.shortcode || i?.id)) posts.push(i);
+    }
+  }
+
+  // "details" sometimes returns the profile with an empty latestPosts array —
+  // a dedicated posts run is the only way to get media for those accounts.
+  if (posts.length === 0) {
+    const media = await runApify({
+      directUrls: [url],
+      resultsType: 'posts',
+      resultsLimit: limit,
+      addParentData: false,
+      searchLimit: 1,
+    });
+    if (media && media.length) {
+      for (const i of media) {
+        if (i?.shortCode || i?.shortcode || i?.id) posts.push(i);
+        if (!profileItem && i?.ownerUsername) {
+          profileItem = { username: i.ownerUsername, fullName: i.ownerFullName ?? null };
+        }
+      }
+    }
+  }
+
+  if (!profileItem && posts.length === 0) return null;
+  return { profile: profileItem, posts };
+}
+
 
 function normalizeApifyProfile(p: any) {
   if (!p) return null;
