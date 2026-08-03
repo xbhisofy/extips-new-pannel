@@ -158,14 +158,25 @@ export default function AdminTopupPlan() {
     try {
       const { data, error } = await supabase.functions.invoke("check-provider-balance", { body: { source: "manual" } });
       if (error) throw error;
-      const n = (data as { checked?: number })?.checked ?? 0;
-      toast.success(`Checked ${n} provider${n === 1 ? "" : "s"} live`);
+      const res = data as { checked?: number; results?: { name: string; error?: string }[] };
+      const n = res?.checked ?? 0;
+      const failed = (res?.results || []).filter((r) => r.error);
+      // Pull the freshly written balances into the UI
+      await Promise.all([accounts.refetch(), plan.refetch(), breakdown.refetch()]);
+      if (failed.length > 0) {
+        toast.error(`${failed.length} provider${failed.length === 1 ? "" : "s"} failed`, {
+          description: failed.map((f) => `${f.name}: ${String(f.error)}`).join(" | "),
+        });
+      } else {
+        toast.success(`Checked ${n} provider${n === 1 ? "" : "s"} live`);
+      }
     } catch (e) {
       toast.error("Live balance check failed", { description: (e as Error).message });
     } finally {
       setCheckingAll(false);
     }
   };
+
 
   const refreshAll = () => {
     plan.refetch();
