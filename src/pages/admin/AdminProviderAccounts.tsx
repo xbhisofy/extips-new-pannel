@@ -396,7 +396,7 @@ export default function AdminProviderAccounts() {
         {/* Info Card */}
         <Card className="border-primary/20 bg-primary/5">
           <CardContent className="p-4">
-            <p className="text-sm text-primary-foreground/80">
+            <p className="text-sm text-foreground/80">
               <strong>Round-Robin System:</strong> Add multiple accounts for the same provider. 
               When sending orders, the system will automatically rotate between accounts 
               using LRU (Least Recently Used) selection to prevent "active order on this link" errors.
