@@ -319,13 +319,41 @@ body [class*="bg-indigo-6"] { background-color: hsl(215 90% 55% / .14) !importan
 
 /* Forced-white text utilities (!text-white) -> dark, except on filled surfaces */
 body [class*="text-white"] { color: hsl(222 47% 11%) !important; }
-[class*="bg-gradient"] [class*="text-white"],
+
+/* keep white only when the element ITSELF (or its direct icon/span child)
+   sits on a filled colored surface */
 [class*="bg-gradient"][class*="text-white"],
-[class*="bg-primary"] [class*="text-white"],
 [class*="bg-primary"][class*="text-white"],
-.btn-3d [class*="text-white"], .btn-3d[class*="text-white"],
-button[class*="bg-blue-6"] [class*="text-white"],
-[class*="bg-blue-6"][class*="text-white"] { color: #fff !important; }
+.btn-3d[class*="text-white"],
+[class*="bg-blue-5"][class*="text-white"],
+[class*="bg-blue-6"][class*="text-white"],
+[class*="bg-blue-7"][class*="text-white"],
+[class*="bg-emerald-5"][class*="text-white"],
+[class*="bg-emerald-6"][class*="text-white"],
+[class*="bg-green-5"][class*="text-white"],
+[class*="bg-green-6"][class*="text-white"],
+[class*="bg-red-5"][class*="text-white"],
+[class*="bg-red-6"][class*="text-white"],
+[class*="bg-rose-5"][class*="text-white"],
+[class*="bg-amber-5"][class*="text-white"],
+[class*="bg-orange-5"][class*="text-white"],
+[class*="bg-violet-5"][class*="text-white"],
+[class*="bg-violet-6"][class*="text-white"],
+[class*="bg-purple-5"][class*="text-white"],
+[class*="bg-purple-6"][class*="text-white"],
+[class*="bg-indigo-5"][class*="text-white"],
+[class*="bg-indigo-6"][class*="text-white"],
+[class*="bg-gradient"] > [class*="text-white"],
+[class*="bg-primary"] > [class*="text-white"],
+.btn-3d > [class*="text-white"] { color: #fff !important; }
+
+/* white CTA buttons (authored for dark bg) -> primary blue button */
+body a[class*="bg-white"][class*="text-black"],
+body button[class*="bg-white"][class*="text-black"],
+body a[class*="bg-white"][class*="text-primary-foreground"] {
+  background-color: hsl(var(--primary)) !important;
+  color: #fff !important;
+}
 
 /* arbitrary translucent white surfaces bg-white/[0.0x] */
 body [class*="bg-white/["] { background-color: hsl(214 60% 96%) !important; }
