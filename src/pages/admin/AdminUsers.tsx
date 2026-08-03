@@ -121,36 +121,52 @@ export default function AdminUsers() {
     },
   });
 
+  // The users RPC may return the auth id under different keys depending on
+  // backend version — resolve it defensively so admin actions never send "null".
+  const resolveUserId = (u: UserProfile | null): string => {
+    const id = (u as any)?.user_id || (u as any)?.id || (u as any)?.uid;
+    if (!id || typeof id !== 'string') throw new Error('User ID missing — reload the page and try again');
+    return id;
+  };
+
   const updateBalanceMutation = useMutation({
     mutationFn: async () => {
       if (!selectedUser || !balanceAmount) return;
+      const targetUserId = resolveUserId(selectedUser);
 
       const INR_RATE = 83.5; // Same rate used by Razorpay credit flow
       const inrAmount = parseFloat(balanceAmount);
       if (!inrAmount || inrAmount <= 0) throw new Error('Enter a valid INR amount');
       // Convert INR → USD because wallets are stored in USD internally
       const amount = Math.trunc((inrAmount / INR_RATE) * 10000) / 10000;
-      const currentBalance = selectedUser.wallet?.balance || 0;
+
+      // Read live balance instead of trusting the cached list row.
+      const { data: liveWallet } = await supabase
+        .from('wallets')
+        .select('balance, total_deposited')
+        .eq('user_id', targetUserId)
+        .maybeSingle();
+
+      const currentBalance = Number(liveWallet?.balance ?? selectedUser.wallet?.balance ?? 0);
+      const currentDeposited = Number(liveWallet?.total_deposited ?? selectedUser.wallet?.total_deposited ?? 0);
       const newBalance =
-        balanceAction === 'add' ? currentBalance + amount : currentBalance - amount;
+        Math.trunc((balanceAction === 'add' ? currentBalance + amount : currentBalance - amount) * 10000) / 10000;
 
       if (newBalance < 0) throw new Error('Balance cannot be negative');
 
+      // Upsert so a missing wallet row is created instead of silently doing nothing.
       const { error: walletError } = await supabase
         .from('wallets')
-        .update({
+        .upsert({
+          user_id: targetUserId,
           balance: newBalance,
-          total_deposited:
-            balanceAction === 'add'
-              ? (selectedUser.wallet?.total_deposited || 0) + amount
-              : selectedUser.wallet?.total_deposited || 0,
-        })
-        .eq('user_id', selectedUser.user_id);
+          total_deposited: balanceAction === 'add' ? currentDeposited + amount : currentDeposited,
+        }, { onConflict: 'user_id' });
 
       if (walletError) throw walletError;
 
       const { error: txError } = await supabase.from('transactions').insert({
-        user_id: selectedUser.user_id,
+        user_id: targetUserId,
         type: balanceAction === 'add' ? 'deposit' : 'withdrawal',
         amount: balanceAction === 'add' ? amount : -amount,
         balance_after: newBalance,
