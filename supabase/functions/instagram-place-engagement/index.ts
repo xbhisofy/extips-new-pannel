@@ -177,17 +177,24 @@ Deno.serve(async (req) => {
     const { error: itemsErr } = await admin.from("engagement_order_items").insert(itemRows);
     if (itemsErr) throw itemsErr;
 
-    // Kick off run creation in background
-    try {
-      // @ts-ignore
-      const bg = fetch(`${SUPABASE_URL}/functions/v1/process-engagement-order`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json", Authorization: `Bearer ${SERVICE_KEY}`, apikey: SERVICE_KEY },
-        body: JSON.stringify({ engagement_order_id: order.id }),
-      }).catch((e) => console.error("process-engagement-order bg failed", e));
-      // @ts-ignore
-      if (typeof EdgeRuntime !== "undefined" && EdgeRuntime.waitUntil) EdgeRuntime.waitUntil(bg);
-    } catch (_) { /* noop */ }
+    // Schedule creation is part of a successful order. Self-hosted edge
+    // runtimes may terminate detached work as soon as this response returns,
+    // so wait for the scheduler and surface failures instead of confirming an
+    // order that has no organic runs.
+    const scheduleResponse = await fetch(`${SUPABASE_URL}/functions/v1/process-engagement-order`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${SERVICE_KEY}`, apikey: SERVICE_KEY },
+      body: JSON.stringify({ engagement_order_id: order.id }),
+    });
+    if (!scheduleResponse.ok) {
+      const scheduleError = await scheduleResponse.text();
+      console.error("process-engagement-order failed", scheduleResponse.status, scheduleError);
+      await admin.from("engagement_orders").update({
+        status: "failed",
+        error_message: `Schedule creation failed: ${scheduleError.slice(0, 500)}`,
+      }).eq("id", order.id);
+      throw new Error(`Order schedule failed (${scheduleResponse.status})`);
+    }
 
     // Send Telegram confirmation with order id (if user has linked)
     try {

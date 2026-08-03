@@ -26,6 +26,20 @@ log "2/6 pnpm install"
 pnpm install --no-frozen-lockfile
 
 log "3/6 Atomic build (dist-new -> dist)"
+# git reset restores the repository's development .env. Always regenerate the
+# production frontend configuration from the local backend before every build,
+# otherwise browser orders can silently go to the old cloud database while VPS
+# cron/repair checks an empty local database.
+[ -f "$SUPA_DIR/.env" ] || die "backend env missing at $SUPA_DIR/.env"
+API_URL="$(grep -E '^API_EXTERNAL_URL=' "$SUPA_DIR/.env" | head -1 | cut -d= -f2- | tr -d '"\r')"
+ANON="$(grep -E '^ANON_KEY=' "$SUPA_DIR/.env" | head -1 | cut -d= -f2- | tr -d '"\r')"
+[ -n "$API_URL" ] && [ -n "$ANON" ] || die "API_EXTERNAL_URL / ANON_KEY missing in backend env"
+case "$API_URL" in
+  http://127.0.0.1:*|http://localhost:*) die "API_EXTERNAL_URL must be browser-accessible, got $API_URL" ;;
+esac
+printf 'VITE_SUPABASE_URL=%s\nVITE_SUPABASE_PUBLISHABLE_KEY=%s\nVITE_SUPABASE_PROJECT_ID=selfhosted\n' \
+  "$API_URL" "$ANON" > "$REPO_DIR/.env"
+echo "   frontend backend -> $API_URL"
 rm -rf dist-new
 if ! pnpm run build --outDir dist-new; then
   rm -rf dist-new
