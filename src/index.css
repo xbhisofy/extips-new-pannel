@@ -371,3 +371,55 @@ body [class*="text-gray-1"], body [class*="text-gray-2"], body [class*="text-gra
 body [class*="text-neutral-1"], body [class*="text-neutral-2"], body [class*="text-neutral-3"] {
   color: hsl(215 20% 40%) !important;
 }
+
+/* ════════════════════════════════════════════════════════════════
+   CONTRAST PASS — kill the washed-out pale canvas, deep blue ink
+   ════════════════════════════════════════════════════════════════ */
+
+/* pale page canvas -> clean white */
+body [class*="bg-[#f5f9ff]"] { background-color: #ffffff !important; }
+
+/* ambient aurora blobs: barely-there blue instead of pale purple wash */
+body [class*="blur-[140px]"],
+body [class*="blur-[120px]"],
+body [class*="blur-[100px]"] { opacity: .28 !important; }
+body [class*="bg-purple-6"], body [class*="bg-purple-5"] { background-color: hsl(226 78% 45% / .08) !important; }
+body [class*="bg-fuchsia-6"] { background-color: hsl(215 80% 45% / .06) !important; }
+body [class*="bg-indigo-6"] { background-color: hsl(224 76% 44% / .07) !important; }
+
+/* pale gradient text (authored for dark bg) -> deep royal blue */
+body [class*="bg-clip-text"][class*="text-transparent"],
+body .gradient-text {
+  background-image: linear-gradient(135deg, hsl(226 84% 34%), hsl(220 88% 46%)) !important;
+  -webkit-background-clip: text !important;
+  background-clip: text !important;
+  color: transparent !important;
+}
+
+/* body copy + muted text: readable navy-grey, not washed grey */
+:root { --muted-foreground: 220 32% 30%; }
+
+/* card surfaces stay crisp against white */
+body .glass-card, body .glass-premium, body .three-d-card {
+  background: #ffffff !important;
+  border-color: hsl(216 32% 86%) !important;
+  box-shadow: 0 6px 22px rgba(15,30,70,.08) !important;
+}
+
+/* translucent glass surfaces: a touch more blue so they read as panels */
+body .bg-white\/5, body .bg-white\/10, body .bg-white\/20,
+body [class*="bg-white/["] { background-color: hsl(214 48% 95%) !important; }
+
+/* pale accent text -> stronger blue */
+body [class*="text-purple-2"], body [class*="text-purple-3"],
+body [class*="text-fuchsia-2"], body [class*="text-fuchsia-3"],
+body [class*="text-sky-2"], body [class*="text-sky-3"],
+body [class*="text-indigo-2"], body [class*="text-indigo-3"],
+body [class*="text-blue-2"], body [class*="text-blue-3"] { color: hsl(226 82% 38%) !important; }
+
+/* borders visible on white */
+body [class*="border-white/"] { border-color: hsl(216 32% 86%) !important; }
+
+/* placeholders readable on light inputs */
+body input::placeholder, body textarea::placeholder { color: hsl(220 22% 52%) !important; opacity: 1 !important; }
+body input, body textarea, body select { color: hsl(224 64% 12%) !important; }
