@@ -264,3 +264,21 @@ DO $$ BEGIN
   DELETE FROM public.user_roles a USING public.user_roles b WHERE a.user_id = b.user_id AND a.role = b.role AND a.ctid < b.ctid;
   BEGIN CREATE UNIQUE INDEX IF NOT EXISTS user_roles_user_role_key ON public.user_roles(user_id, role); EXCEPTION WHEN OTHERS THEN NULL; END;
 END $$;
+
+-- ============ Provider concurrency lock per link ============
+-- A provider account may hold at most ONE active order for a given
+-- (link, engagement_type). rotation_lock_key stores "link|type" and the unique
+-- partial index makes a concurrent double-claim impossible at DB level.
+DO $$ BEGIN
+  BEGIN
+    ALTER TABLE public.organic_run_schedule ADD COLUMN IF NOT EXISTS rotation_lock_key text;
+  EXCEPTION WHEN OTHERS THEN NULL; END;
+
+  BEGIN
+    CREATE UNIQUE INDEX IF NOT EXISTS organic_run_rotation_lock_uniq
+      ON public.organic_run_schedule (rotation_lock_key, provider_account_id)
+      WHERE status = 'started'
+        AND rotation_lock_key IS NOT NULL
+        AND provider_account_id IS NOT NULL;
+  EXCEPTION WHEN OTHERS THEN NULL; END;
+END $$;
