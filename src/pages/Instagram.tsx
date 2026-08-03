@@ -70,14 +70,37 @@ export default function InstagramPage() {
       return data;
     },
     onSuccess: (d) => {
-      toast.success(`Linked @${d.account.username} · ${d.imported} posts imported`);
+      toast.success(
+        d.pending_refresh
+          ? `Linked @${d.account.username} · fetching profile & posts…`
+          : `Linked @${d.account.username} · ${d.imported} posts imported`,
+      );
       setUsername('');
-      qc.invalidateQueries({ queryKey: igQueryKeys.accounts() });
-      qc.invalidateQueries({ queryKey: igQueryKeys.linkEvents() });
-      qc.invalidateQueries({ queryKey: igQueryKeys.postsSummary() });
+      // Keys include the user id, so invalidate the exact key (a key with an
+      // undefined id never prefix-matches it) — otherwise the list stays empty.
+      qc.invalidateQueries({ queryKey: igQueryKeys.accounts(user?.id) });
+      qc.invalidateQueries({ queryKey: igQueryKeys.linkEvents(user?.id) });
+      qc.invalidateQueries({ queryKey: [IG_CACHE_PREFIX, 'posts-summary'] });
     },
     onError: (e: Error) => toast.error(e.message),
   });
+
+  const refreshMut = useMutation({
+    mutationFn: async (accountId: string) => {
+      const { data, error } = await supabase.functions.invoke('instagram-refresh-media', {
+        body: { account_id: accountId, source: 'manual' },
+      });
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      toast.success('Refreshing from Instagram…');
+      qc.invalidateQueries({ queryKey: igQueryKeys.accounts(user?.id) });
+      setTimeout(() => qc.invalidateQueries({ queryKey: igQueryKeys.accounts(user?.id) }), 6000);
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
 
   const removeMut = useMutation({
     mutationFn: async (id: string) => {
