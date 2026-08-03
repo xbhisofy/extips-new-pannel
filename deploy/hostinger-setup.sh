@@ -16,13 +16,15 @@ log()  { echo -e "\n\033[1;32m==>\033[0m $*"; }
 die()  { echo -e "\033[1;31m[error]\033[0m $*" >&2; exit 1; }
 [ "$(id -u)" -eq 0 ] || die "Run as root."
 
-log "1/6 Node 20 + pnpm"
-if ! command -v node >/dev/null 2>&1 || [ "$(node -v | cut -c2-3)" -lt 20 ]; then
-  curl -fsSL https://deb.nodesource.com/setup_20.x | bash -
+log "1/6 Node 22 + pnpm 9"
+if ! command -v node >/dev/null 2>&1 || [ "$(node -v | sed 's/v\([0-9]*\).*/\1/')" -lt 22 ]; then
+  curl -fsSL https://deb.nodesource.com/setup_22.x | bash -
   apt-get install -y nodejs
 fi
-corepack enable >/dev/null 2>&1 || npm i -g corepack
-corepack prepare pnpm@latest --activate >/dev/null 2>&1 || npm i -g pnpm
+# pnpm 10+/11 requires Node >= 22.13; pin 9.x which works everywhere
+corepack enable >/dev/null 2>&1 || true
+corepack prepare pnpm@9.15.9 --activate >/dev/null 2>&1 || npm i -g pnpm@9.15.9
+pnpm -v
 command -v serve >/dev/null 2>&1 || npm i -g serve
 
 log "2/6 Repo"
