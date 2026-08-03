@@ -252,18 +252,37 @@ END $$;
 
 -- ============ Dedupe user-scoped tables + unique indexes (upsert needs them) ============
 DO $$ BEGIN
-  DELETE FROM public.wallets a USING public.wallets b WHERE a.user_id = b.user_id AND a.ctid < b.ctid;
+  -- Wallets: keep the row that actually holds money/history, not an empty one.
+  DELETE FROM public.wallets w
+   WHERE w.ctid <> (
+     SELECT k.ctid FROM public.wallets k
+      WHERE k.user_id = w.user_id
+      ORDER BY (coalesce(k.balance,0) + coalesce(k.total_deposited,0) + coalesce(k.total_spent,0)) DESC,
+               k.created_at ASC NULLS LAST, k.ctid ASC
+      LIMIT 1
+   );
   BEGIN CREATE UNIQUE INDEX IF NOT EXISTS wallets_user_id_key ON public.wallets(user_id); EXCEPTION WHEN OTHERS THEN NULL; END;
 
-  -- A partially imported database may have duplicate profile rows. Keep one
-  -- deterministic row per auth user so email lookups can never return many.
-  DELETE FROM public.profiles a USING public.profiles b
-   WHERE a.user_id = b.user_id AND a.ctid < b.ctid;
+  -- Profiles: drop orphans (no matching auth user), then keep the ORIGINAL row
+  -- per auth user so admin/role and linked data stay attached to it.
+  BEGIN
+    DELETE FROM public.profiles p
+     WHERE NOT EXISTS (SELECT 1 FROM auth.users u WHERE u.id = p.user_id);
+  EXCEPTION WHEN OTHERS THEN NULL; END;
+
+  DELETE FROM public.profiles p
+   WHERE p.ctid <> (
+     SELECT k.ctid FROM public.profiles k
+      WHERE k.user_id = p.user_id
+      ORDER BY k.created_at ASC NULLS LAST, k.ctid ASC
+      LIMIT 1
+   );
   BEGIN CREATE UNIQUE INDEX IF NOT EXISTS profiles_user_id_key ON public.profiles(user_id); EXCEPTION WHEN OTHERS THEN NULL; END;
 
   DELETE FROM public.user_roles a USING public.user_roles b WHERE a.user_id = b.user_id AND a.role = b.role AND a.ctid < b.ctid;
   BEGIN CREATE UNIQUE INDEX IF NOT EXISTS user_roles_user_role_key ON public.user_roles(user_id, role); EXCEPTION WHEN OTHERS THEN NULL; END;
 END $$;
+
 
 -- ============ Provider concurrency lock per link ============
 -- A provider account may hold at most ONE active order for a given
