@@ -48,7 +48,7 @@ export default function AdminServiceProviderMapping() {
   const queryClient = useQueryClient();
   const [selectedServiceId, setSelectedServiceId] = useState<string>("");
   const [searchQuery, setSearchQuery] = useState("");
-  const [mappings, setMappings] = useState<Record<string, { checked: boolean; serviceId: string; sortOrder: number }>>({});
+  const [mappings, setMappings] = useState<Record<string, { checked: boolean; serviceId: string; sortOrder: number; active: boolean }>>({});
   const [hasChanges, setHasChanges] = useState(false);
 
   // Fetch services
@@ -102,13 +102,14 @@ export default function AdminServiceProviderMapping() {
     setHasChanges(false);
     
     // Build initial mappings from existing data
-    const newMappings: Record<string, { checked: boolean; serviceId: string; sortOrder: number }> = {};
+    const newMappings: Record<string, { checked: boolean; serviceId: string; sortOrder: number; active: boolean }> = {};
     accounts?.forEach(account => {
       const existing = existingMappings?.find(m => m.provider_account_id === account.id);
       newMappings[account.id] = {
         checked: !!existing,
         serviceId: existing?.provider_service_id || services?.find(s => s.id === serviceId)?.provider_service_id || "",
-        sortOrder: existing?.sort_order || account.priority,
+        sortOrder: existing?.sort_order ?? account.priority,
+        active: existing ? existing.is_active !== false : true,
       };
     });
     setMappings(newMappings);
@@ -119,14 +120,15 @@ export default function AdminServiceProviderMapping() {
     if (!accounts || !selectedServiceId) return;
     
     const selectedService = services?.find(s => s.id === selectedServiceId);
-    const newMappings: Record<string, { checked: boolean; serviceId: string; sortOrder: number }> = {};
+    const newMappings: Record<string, { checked: boolean; serviceId: string; sortOrder: number; active: boolean }> = {};
     
     accounts.forEach(account => {
       const existing = existingMappings?.find(m => m.provider_account_id === account.id);
       newMappings[account.id] = {
         checked: !!existing,
         serviceId: existing?.provider_service_id || selectedService?.provider_service_id || "",
-        sortOrder: existing?.sort_order || account.priority,
+        sortOrder: existing?.sort_order ?? account.priority,
+        active: existing ? existing.is_active !== false : true,
       };
     });
     setMappings(newMappings);
@@ -174,7 +176,7 @@ export default function AdminServiceProviderMapping() {
           provider_account_id: accountId,
           provider_service_id: data.serviceId,
           sort_order: data.sortOrder,
-          is_active: true,
+          is_active: data.active,
         }));
 
       if (toInsert.length > 0) {
@@ -192,7 +194,7 @@ export default function AdminServiceProviderMapping() {
             .update({
               provider_service_id: data.serviceId,
               sort_order: data.sortOrder,
-              is_active: true,
+              is_active: data.active,
             })
             .eq("service_id", selectedServiceId)
             .eq("provider_account_id", accountId)
@@ -210,7 +212,34 @@ export default function AdminServiceProviderMapping() {
     },
   });
 
-  const handleMappingChange = (accountId: string, field: "checked" | "serviceId" | "sortOrder", value: any) => {
+  const [verifyingId, setVerifyingId] = useState<string | null>(null);
+
+  // Queries the provider's own service list to confirm the mapped ID still exists.
+  const verifyMapping = async (accountId: string, providerServiceId: string) => {
+    if (!providerServiceId) {
+      toast.error("Enter the provider service ID first");
+      return;
+    }
+    setVerifyingId(accountId);
+    try {
+      const { data, error } = await supabase.functions.invoke("verify-provider-mapping", {
+        body: { provider_account_id: accountId, provider_service_id: providerServiceId },
+      });
+      if (error) throw error;
+      const result = data as any;
+      if (result?.verified) {
+        toast.success(`Verified on ${result.provider}: ${result.service?.name || providerServiceId}`);
+      } else {
+        toast.error(result?.error || "Mapping could not be verified");
+      }
+    } catch (e: any) {
+      toast.error(e.message || "Verification failed");
+    } finally {
+      setVerifyingId(null);
+    }
+  };
+
+  const handleMappingChange = (accountId: string, field: "checked" | "serviceId" | "sortOrder" | "active", value: any) => {
     setMappings(prev => ({
       ...prev,
       [accountId]: {
@@ -333,7 +362,9 @@ export default function AdminServiceProviderMapping() {
                       <TableHead className="w-12">Enable</TableHead>
                       <TableHead>Provider Account</TableHead>
                       <TableHead>Provider Service ID</TableHead>
-                      <TableHead>Sort Order</TableHead>
+                      <TableHead>Priority (sort order)</TableHead>
+                      <TableHead>Active</TableHead>
+                      <TableHead className="text-right">Verify</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -342,6 +373,7 @@ export default function AdminServiceProviderMapping() {
                         checked: false,
                         serviceId: selectedService?.provider_service_id || "",
                         sortOrder: account.priority,
+                        active: true,
                       };
                       
                       return (
@@ -386,6 +418,31 @@ export default function AdminServiceProviderMapping() {
                               disabled={!mapping.checked}
                             />
                           </TableCell>
+                          <TableCell>
+                            <Switch
+                              checked={mapping.active}
+                              disabled={!mapping.checked}
+                              onCheckedChange={(checked) =>
+                                handleMappingChange(account.id, "active", checked)
+                              }
+                            />
+                          </TableCell>
+                          <TableCell className="text-right">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="gap-1"
+                              disabled={!mapping.checked || verifyingId === account.id}
+                              onClick={() => verifyMapping(account.id, mapping.serviceId)}
+                            >
+                              {verifyingId === account.id ? (
+                                <RefreshCw className="h-3.5 w-3.5 animate-spin" />
+                              ) : (
+                                <ShieldCheck className="h-3.5 w-3.5" />
+                              )}
+                              Verify
+                            </Button>
+                          </TableCell>
                         </TableRow>
                       );
                     })}
@@ -401,8 +458,10 @@ export default function AdminServiceProviderMapping() {
           <CardContent className="p-4">
             <p className="text-sm text-warning-foreground/80">
               <strong>How it works:</strong> When the system needs to send an order for this service, 
-              it will check all enabled provider accounts in order of their sort priority. 
-              The first available account (one without an active order on the same link) will be used.
+              it will check all enabled provider accounts in order of their sort priority (0 = highest), 
+              using least-recently-used order inside the same priority level. Soft errors such as 
+              "active order with this link", low balance, or a disabled service move the same order to the 
+              next provider with that provider's own service ID.
             </p>
           </CardContent>
         </Card>
