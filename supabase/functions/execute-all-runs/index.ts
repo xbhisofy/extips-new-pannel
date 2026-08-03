@@ -655,9 +655,9 @@ serve(async (req) => {
     if (requestBody.instant) {
       await backgroundWork
     } else {
-      try {
+      if (typeof EdgeRuntime !== 'undefined' && typeof EdgeRuntime.waitUntil === 'function') {
         EdgeRuntime.waitUntil(backgroundWork)
-      } catch {
+      } else {
         await backgroundWork
       }
     }
