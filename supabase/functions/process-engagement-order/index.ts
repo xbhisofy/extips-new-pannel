@@ -541,7 +541,9 @@ serve(async (req) => {
 
           let initialDelayMinutes = 0
           if (isViewType && !viewsFirstRunScheduled) {
-            initialDelayMinutes = 10 + Math.random() * 15
+            // First run must become dispatchable within two minutes; subsequent
+            // runs retain the full randomized organic cadence.
+            initialDelayMinutes = 0.5 + Math.random() * 0.5
             viewsStartTime = new Date(startTime.getTime() + initialDelayMinutes * 60 * 1000)
             viewsFirstRunScheduled = true
           } else if (viewsStartTime) {
@@ -638,7 +640,7 @@ serve(async (req) => {
             while (remaining > 0 && (!timeLimitApplied || runNumber <= targetRuns)) {
               const interval = (baseInterval + (Math.random() * 2 - 1) * intervalRange) * (timeLimitApplied ? 1 : (Math.random() < 0.2 ? 1.5 : 1))
               const scheduledAt = new Date(currentTime.getTime() + (Math.random() * 2 - 1) * 2 * 60 * 1000)
-              if (scheduledAt < new Date(startTime.getTime() + 5*60*1000)) scheduledAt.setTime(startTime.getTime() + 5*60*1000)
+              if (scheduledAt < new Date(startTime.getTime() + 30*1000)) scheduledAt.setTime(startTime.getTime() + 30*1000)
 
               const istHour = new Date(scheduledAt.getTime() + 5.5*3600000).getUTCHours()
               const multiplier = peakHoursEnabled ? (platformDailyPattern[istHour] || 1) : (0.9 + Math.random()*0.2)
@@ -706,7 +708,7 @@ serve(async (req) => {
               validatedEntries.push({
                 engagement_order_item_id: itemId,
                 run_number: 1,
-                scheduled_at: new Date(startTime.getTime() + 10 * 60 * 1000).toISOString(),
+                scheduled_at: new Date(startTime.getTime() + 60 * 1000).toISOString(),
                 quantity_to_send: Math.max(carry, totalTargetQty),
                 base_quantity: Math.max(carry, totalTargetQty),
                 status: 'pending'
