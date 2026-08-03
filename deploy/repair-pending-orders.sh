@@ -24,6 +24,41 @@ pending_count() {
     | tr -d '[:space:]'
 }
 
+TABLE_EXISTS="$(docker compose exec -T db psql -U postgres -d postgres -tAc \
+  "SELECT to_regclass('public.organic_run_schedule') IS NOT NULL;" 2>/dev/null | tr -d '[:space:]')"
+[ "$TABLE_EXISTS" = "t" ] || fail "organic_run_schedule is missing; schema repair did not apply"
+
+# Rebuild orders accepted while the schedule table was missing. Only orders
+# with no schedule rows are resumed, preventing duplicate provider delivery.
+mapfile -t UNSCHEDULED_ORDER_IDS < <(docker compose exec -T db psql -U postgres -d postgres -tAc \
+  "SELECT eo.id
+     FROM public.engagement_orders eo
+    WHERE eo.status IN ('pending','processing')
+      AND EXISTS (SELECT 1 FROM public.engagement_order_items eoi WHERE eoi.engagement_order_id = eo.id)
+      AND NOT EXISTS (
+        SELECT 1 FROM public.organic_run_schedule ors
+        JOIN public.engagement_order_items eoi ON eoi.id = ors.engagement_order_item_id
+        WHERE eoi.engagement_order_id = eo.id
+      )
+    ORDER BY eo.created_at LIMIT 100;" 2>/dev/null)
+
+echo "   unscheduled orders found: ${#UNSCHEDULED_ORDER_IDS[@]}"
+RESUMED=0
+for ORDER_ID in "${UNSCHEDULED_ORDER_IDS[@]}"; do
+  [ -n "$ORDER_ID" ] || continue
+  RESUME_CODE="$(curl -sS --max-time 300 -o /tmp/order-resume-result.json -w '%{http_code}' \
+    "http://127.0.0.1:${PORT:-8000}/functions/v1/process-engagement-order" \
+    -H "Authorization: Bearer $SERVICE_KEY" -H "apikey: $SERVICE_KEY" \
+    -H 'Content-Type: application/json' \
+    --data "{\"engagement_order_id\":\"$ORDER_ID\"}" || true)"
+  if [ "$RESUME_CODE" = "200" ]; then
+    RESUMED=$((RESUMED + 1))
+  else
+    echo "[warn] could not rebuild order $ORDER_ID (HTTP ${RESUME_CODE:-000}): $(head -c 300 /tmp/order-resume-result.json 2>/dev/null || true)" >&2
+  fi
+done
+echo "   unscheduled orders rebuilt: $RESUMED"
+
 BEFORE="$(pending_count || echo unknown)"
 echo "   overdue runs before: $BEFORE"
 
