@@ -278,25 +278,7 @@ body .text-white\/35 { color: hsl(215 12% 62%) !important; }
 body .text-white\/20 { color: hsl(215 12% 72%) !important; }
 body .text-white { color: hsl(222 47% 11%) !important; }
 
-/* …but keep white text on filled / gradient / colored surfaces */
-.btn-3d .text-white, .btn-3d.text-white,
-[class*="bg-primary"] .text-white, [class*="bg-primary"].text-white,
-[class*="bg-gradient"] .text-white, [class*="bg-gradient"].text-white,
-[class*="bg-blue-5"] .text-white, [class*="bg-blue-5"].text-white,
-[class*="bg-blue-6"] .text-white, [class*="bg-blue-6"].text-white,
-[class*="bg-emerald"] .text-white, [class*="bg-emerald"].text-white,
-[class*="bg-green-5"] .text-white, [class*="bg-green-5"].text-white,
-[class*="bg-red-5"] .text-white, [class*="bg-red-5"].text-white,
-[class*="bg-rose-5"] .text-white, [class*="bg-rose-5"].text-white,
-[class*="bg-amber"] .text-white, [class*="bg-amber"].text-white,
-[class*="bg-orange"] .text-white, [class*="bg-orange"].text-white,
-[class*="bg-violet"] .text-white, [class*="bg-violet"].text-white,
-[class*="bg-purple"] .text-white, [class*="bg-purple"].text-white,
-[class*="bg-indigo"] .text-white, [class*="bg-indigo"].text-white,
-button[class*="bg-"] .text-white,
-.btn-3d, [class*="bg-primary"] > span, .btn-3d > span {
-  color: #fff !important;
-}
+
 
 /* Catch-all: any arbitrary near-black background utility (with or without
    opacity modifier) becomes a light surface. */
