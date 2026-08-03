@@ -82,7 +82,15 @@ for file in "${FILES[@]}"; do
   [ "$(scalar "SELECT EXISTS(SELECT 1 FROM public._applied_migrations WHERE name='${name//\'/\'\'}');")" = "t" ] && continue
   echo "apply: $name"
   # One transaction means a failed migration cannot leave another partial state.
-  if [ "$name" = "20260627023321_b39ea7be-1a3e-410e-b31a-d6338d4744f5.sql" ]; then
+  if [ "$name" = "20260420072911_720ac022-4005-425b-9d45-d315761b5ed5.sql" ]; then
+    # On the self-hosted image pg_cron/pg_net are preinstalled and guarded by
+    # a vendor event trigger. Even CREATE EXTENSION IF NOT EXISTS invokes that
+    # trigger's after-create script, which fails while re-granting cron objects.
+    # Keep this migration's cleanup function and local cron job, but remove only
+    # the two redundant extension statements after step 1 verified both exist.
+    sed -E '/^[[:space:]]*CREATE EXTENSION IF NOT EXISTS (pg_cron|pg_net)([[:space:]]*;|[[:space:]]+WITH[[:space:]]+SCHEMA.*;)[[:space:]]*$/Id' \
+      "$file" | psql_db --single-transaction -f -
+  elif [ "$name" = "20260627023321_b39ea7be-1a3e-410e-b31a-d6338d4744f5.sql" ]; then
     # This tracked migration predates idempotency guards. Normalize only its
     # DDL wrappers at runtime; its functions/grants still execute unchanged.
     sed -e 's/^CREATE TABLE public\.zapupi_deposits/CREATE TABLE IF NOT EXISTS public.zapupi_deposits/' \
