@@ -453,6 +453,51 @@ const getNestedEngagementOrderLink = (value: any) => {
   return value?.link || ''
 }
 
+// ==========================================================================
+// HARD INVARIANT: for one (link, engagement_type) a provider account may hold
+// at most ONE active provider order. "Active" = provider_order_id present and
+// provider_status not terminal (completed / canceled / partial / refunded).
+// This is authoritative and independent of the in-app run status, because a run
+// can be marked completed locally while the provider is still delivering.
+// ==========================================================================
+async function getProvidersBusyOnLink(
+  supabase: SupabaseClient,
+  normalizedLink: string,
+  engagementType: string,
+  excludeRunId?: string,
+): Promise<Set<string>> {
+  const busy = new Set<string>()
+  if (!normalizedLink) return busy
+  const type = (engagementType || '').toLowerCase().trim()
+
+  const { data, error } = await supabase
+    .from('organic_run_schedule')
+    .select('id, provider_account_id, provider_status, provider_remains, engagement_order_item:engagement_order_items!inner(engagement_type, engagement_order:engagement_orders!inner(link))')
+    .not('provider_order_id', 'is', null)
+    .not('provider_account_id', 'is', null)
+    .limit(1000)
+
+  if (error) {
+    console.error(`⚠️ Busy-provider lookup failed: ${error.message}`)
+    return busy
+  }
+
+  for (const row of (data || []) as any[]) {
+    if (excludeRunId && row.id === excludeRunId) continue
+    const rowLink = normalizeLink(getNestedEngagementOrderLink(row.engagement_order_item))
+    const rowType = (Array.isArray(row.engagement_order_item)
+      ? row.engagement_order_item[0]?.engagement_type
+      : row.engagement_order_item?.engagement_type || '').toLowerCase().trim()
+    if (rowLink !== normalizedLink || rowType !== type) continue
+    if (isTerminalProviderStatus(row.provider_status)) continue
+    if (typeof row.provider_remains === 'number' && row.provider_remains <= 0) continue
+    busy.add(row.provider_account_id)
+  }
+  return busy
+}
+
+
+
 async function batchPostponeEngagementRunsForLink(
   supabase: SupabaseClient,
   normalizedLink: string,
@@ -1117,6 +1162,21 @@ async function processAllRuns(supabase: any, executionId: string, startTime: num
         }
       }
 
+      // HARD LOCK: any provider account that still holds a non-terminal provider
+      // order on this exact (link, type) is unavailable — never reused, never
+      // included in any fallback.
+      const providersBusyOnLink = await getProvidersBusyOnLink(
+        supabase, sameLinkNormalized, currentTypeNormalized, run.id
+      )
+      for (const accId of providersBusyOnLink) {
+        addBusyAccount(accId, true)
+      }
+      if (providersBusyOnLink.size > 0) {
+        console.log(`🔒 ${providersBusyOnLink.size} provider(s) locked on this link+type (active provider order)`)
+      }
+
+
+
       // FALLBACK: If this run already failed/cancelled on a provider, exclude it on retry
       // so the system tries a backup provider instead of repeating the same one.
       if (isRetry && run.provider_account_id) {
@@ -1294,7 +1354,7 @@ async function processAllRuns(supabase: any, executionId: string, startTime: num
         }
       }
       
-      const accountsToTry: { account: ProviderAccount; providerServiceId: string; minQuantity: number }[] = [...availableAccounts]
+      const accountsToTry: { account: ProviderAccount; providerServiceId: string; minQuantity: number; isBackup?: boolean }[] = [...availableAccounts]
       accountsToTry.sort((a, b) => {
         const aRecent = recentCompletedAccountIds.has(a.account.id) ? 1 : 0
         const bRecent = recentCompletedAccountIds.has(b.account.id) ? 1 : 0
@@ -1326,7 +1386,7 @@ async function processAllRuns(supabase: any, executionId: string, startTime: num
           const newScheduledAt = new Date(Date.now() + postponeMs).toISOString()
           await supabase.from('organic_run_schedule').update({
             scheduled_at: newScheduledAt,
-            error_message: `[Postponed] All providers busy for this link`,
+            error_message: `Waiting: all providers busy on this link`,
             last_status_check: new Date().toISOString(),
           }).eq('id', run.id)
           skipped++
@@ -1497,30 +1557,63 @@ async function processAllRuns(supabase: any, executionId: string, startTime: num
           continue
         }
         
+        // RE-CHECK INSIDE THE LOCK: never dispatch to a provider that picked up an
+        // active order on this link+type since the candidate list was built.
+        const freshBusy = await getProvidersBusyOnLink(
+          supabase, sameLinkNormalized, currentTypeNormalized, run.id
+        )
+        if (freshBusy.has(selectedAccount.id)) {
+          lastError = `Provider ${selectedAccount.name} already has an active order on this link`
+          console.log(`🔒 Skipping ${selectedAccount.name}: ${lastError}`)
+          continue
+        }
+
         triedProviderIds.push(selectedAccount.id)
 
+        const rotationLockKey = `${sameLinkNormalized}|${currentTypeNormalized}`
+
         if (!runClaimed) {
-          const { error: claimError, locked: lockAcquired } = await claimRunLock({
+          const baseUpdates: Record<string, any> = {
+            status: 'started',
+            started_at: new Date().toISOString(),
+            error_message: `Trying ${selectedAccount.name}...`,
+            retry_count: (run.retry_count || 0) + (isRetry ? 1 : 0),
+            provider_order_id: null,
+            provider_status: null,
+            provider_response: null,
+            provider_account_id: selectedAccount.id,
+            provider_account_name: selectedAccount.name,
+            last_status_check: new Date().toISOString(),
+          }
+
+          let claimResult = await claimRunLock({
             supabase,
             runId: run.id,
             expectedStatus: currentStatus,
-            updates: {
-              status: 'started',
-              started_at: new Date().toISOString(),
-              error_message: `Trying ${selectedAccount.name}...`,
-              retry_count: (run.retry_count || 0) + (isRetry ? 1 : 0),
-              provider_order_id: null,
-              provider_status: null,
-              provider_response: null,
-              provider_account_id: selectedAccount.id,
-              provider_account_name: selectedAccount.name,
-              last_status_check: new Date().toISOString(),
-            },
+            updates: { ...baseUpdates, rotation_lock_key: rotationLockKey },
           })
 
+          // Backends without the rotation_lock_key column keep working.
+          if (claimResult.error && /rotation_lock_key/i.test(claimResult.error.message || '')) {
+            claimResult = await claimRunLock({
+              supabase, runId: run.id, expectedStatus: currentStatus, updates: baseUpdates,
+            })
+          }
+
+          const claimError = claimResult.error
+          const lockAcquired = claimResult.locked
+
           if (claimError) {
+            const msg = claimError.message || 'unknown error'
+            // Unique violation on (link, type, provider_account) → another worker
+            // claimed this provider for this link first. Skip to next candidate.
+            if (claimError.code === '23505' || /duplicate key|unique constraint/i.test(msg)) {
+              lastError = `Provider ${selectedAccount.name} claimed concurrently for this link`
+              console.log(`🔒 ${lastError}, trying next provider`)
+              continue
+            }
             console.error(`❌ Failed to claim run lock for ${run.id}:`, claimError)
-            lastError = `Run claim failed: ${claimError.message || 'unknown error'}`
+            lastError = `Run claim failed: ${msg}`
             break
           }
 
@@ -1533,7 +1626,7 @@ async function processAllRuns(supabase: any, executionId: string, startTime: num
 
           runClaimed = true
         } else {
-          await supabase.from('organic_run_schedule').update({
+          const { error: switchError } = await supabase.from('organic_run_schedule').update({
             error_message: `Trying ${selectedAccount.name}...`,
             provider_account_id: selectedAccount.id,
             provider_account_name: selectedAccount.name,
@@ -1542,7 +1635,20 @@ async function processAllRuns(supabase: any, executionId: string, startTime: num
             provider_response: null,
             last_status_check: new Date().toISOString(),
           }).eq('id', run.id).eq('status', 'started')
+
+          if (switchError) {
+            const msg = switchError.message || ''
+            if ((switchError as any).code === '23505' || /duplicate key|unique constraint/i.test(msg)) {
+              lastError = `Provider ${selectedAccount.name} claimed concurrently for this link`
+              console.log(`🔒 ${lastError}, trying next provider`)
+              continue
+            }
+            console.error(`❌ Failed to switch provider on run ${run.id}:`, switchError)
+            lastError = `Provider switch failed: ${msg || 'unknown error'}`
+            break
+          }
         }
+
 
         try {
           const formData = new URLSearchParams()
