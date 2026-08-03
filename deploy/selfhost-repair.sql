@@ -1,6 +1,8 @@
 -- Idempotent self-host repair; runtime cron URLs/keys are registered by schedule-cron.sh.
-CREATE EXTENSION IF NOT EXISTS pg_cron WITH SCHEMA extensions;
-CREATE EXTENSION IF NOT EXISTS pg_net WITH SCHEMA extensions;
+-- The self-hosted image provisions pg_cron/pg_net itself. Re-running
+-- CREATE EXTENSION can execute its after-create hook and fail with
+-- "dependent privileges exist" even when the extension is installed.
+-- schedule-cron.sh verifies the extensions separately before adding jobs.
 ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS referral_code text;
 ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS referred_by uuid;
 ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS referral_earnings numeric NOT NULL DEFAULT 0;
