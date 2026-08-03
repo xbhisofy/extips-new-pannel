@@ -57,7 +57,10 @@ function isProjectAnonJwt(token: string) {
 const MAX_RETRIES = 3
 const RETRY_DELAY_MS = 2000
 const MAX_RUN_RETRIES = 9999
-const ACTIVE_ORDER_RETRY_MS = 60 * 1000
+// Providers that serialize orders per link usually need more than one minute.
+// Retrying every minute only refreshes the local busy marker and creates a
+// self-sustaining postpone loop, so use a real cooldown before asking again.
+const ACTIVE_ORDER_RETRY_MS = 3 * 60 * 1000
 const TEMPORARY_RETRY_MS = 60 * 1000
 
 const TEMPORARY_ERRORS = [
@@ -708,7 +711,9 @@ async function processAllRuns(supabase: any, executionId: string, startTime: num
     // ==========================================
     const nowWithBuffer = new Date(Date.now() + 2000).toISOString()
     const tenMinAgo = new Date(Date.now() - 10 * 60 * 1000).toISOString()
-    const fifteenMinAgo = new Date(Date.now() - 15 * 60 * 1000).toISOString()
+    // Busy history is only a short in-flight guard. It must be shorter than the
+    // active-order retry delay or a due run excludes its own provider forever.
+    const recentBusyCutoff = new Date(Date.now() - 150 * 1000).toISOString()
 
     const [
       { data: activeRuns },
@@ -752,7 +757,7 @@ async function processAllRuns(supabase: any, executionId: string, startTime: num
         .from('organic_run_schedule')
         .select(`provider_account_id, error_message, engagement_order_item:engagement_order_items(engagement_type, engagement_order:engagement_orders(link))`)
         .eq('status', 'pending')
-        .gte('last_status_check', fifteenMinAgo),
+        .gte('last_status_check', recentBusyCutoff),
     ])
 
     // ==========================================
@@ -869,10 +874,12 @@ async function processAllRuns(supabase: any, executionId: string, startTime: num
 
     const isDeprioritizedBusyRun = (run: any) => {
       const message = (run.error_message || '').toLowerCase()
-      return message.includes('[postponed] all providers busy') ||
+      const lastCheck = run.last_status_check ? new Date(run.last_status_check).getTime() : 0
+      const cooldownIsFresh = Date.now() - lastCheck < ACTIVE_ORDER_RETRY_MS
+      return cooldownIsFresh && (message.includes('[postponed] all providers busy') ||
         message.includes('[batch postponed]') ||
         message.includes('[waiting for merge]') ||
-        message.includes('active order on link')
+        message.includes('active order on link'))
     }
 
     const allEngagementRuns = [...pendingRunsLimitedPerItem, ...retryRunsLimitedPerItem].sort((a: any, b: any) => {
@@ -1302,7 +1309,7 @@ async function processAllRuns(supabase: any, executionId: string, startTime: num
       }
       
       if (accountsToTry.length === 0) {
-        const fallbackAccounts = hardBusyAccountIds.length > 0
+          const fallbackAccounts = hardBusyAccountIds.length > 0 || busyAccountIds.length > 0
           ? []
           : await mappingCache.getForService(supabase, item.service.id, [], executionId)
 
@@ -1786,18 +1793,13 @@ async function processAllRuns(supabase: any, executionId: string, startTime: num
         }).eq('id', run.id)
         skipped++
 
-        // BATCH POSTPONE: If active order error, mark link+type and batch-postpone same-type runs for this link
+        // Stop duplicate attempts for this link+type during this invocation only.
+        // Do not rewrite every matching DB row: those rows may have another free
+        // mapped provider and link-wide batch postponement caused queue starvation.
         if (isActiveOrderError && sameLink) {
           const linkTypeKey = `${sameLink}|${currentTypeNormalized}`
           activeOrderLinkTypes.add(linkTypeKey)
-          const batchCount = await batchPostponeEngagementRunsForLink(
-            supabase,
-            sameLink,
-            currentTypeNormalized,
-            newScheduledAt,
-            `[Batch postponed] Active order on link for ${currentTypeNormalized}`,
-          )
-          console.log(`⏳ Link+type batch-postponed ${postponeMs / 60000}min: ${batchCount} matching ${currentTypeNormalized} runs (active order)`)
+          console.log(`⏳ Link+type paused for this executor pass; current run will retry in ${postponeMs / 60000}min`)
         }
         results.push({ run_id: run.id, type: item.engagement_type, run_number: run.run_number, 
           success: false, error: lastError, will_retry: true, retry_attempt: retryCount, postponed_min: postponeMs / 60000 })
