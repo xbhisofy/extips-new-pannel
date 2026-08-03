@@ -327,7 +327,7 @@ body [class*="text-white"] { color: hsl(224 64% 12%) !important; }
 [class*="bg-indigo-6"][class*="text-white"],
 .btn-3d > [class*="text-white"] { color: #fff !important; }
 
-/* Translucent tinted surfaces (bg-*/5, /10, /20 ...) are LIGHT in this theme,
+/* Translucent tinted surfaces are LIGHT in this theme,
    so any white-ish text on them (or inside them) must be dark navy. */
 body [class*="bg-primary/"],
 body [class*="bg-primary/"] *,
