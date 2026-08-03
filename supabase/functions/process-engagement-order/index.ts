@@ -734,6 +734,11 @@ serve(async (req) => {
               }
             }
             validatedEntries.forEach((e, i) => e.run_number = i + 1)
+
+            // Final organic pass: random unique quantities + random unique gaps
+            validatedEntries = uniquifyScheduledRuns(validatedEntries, totalTargetQty, providerMin, maxBatchCap)
+              .map((run) => ({ ...run, engagement_order_item_id: itemId }))
+
           }
 
           if (validatedEntries.length > 0) {
