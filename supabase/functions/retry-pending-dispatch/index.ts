@@ -24,13 +24,21 @@ Deno.serve(async (req) => {
   const before = await admin.from('organic_run_schedule').select('*', { count: 'exact', head: true })
     .in('status', ['pending', 'failed']).is('provider_order_id', null)
   if (before.error) return json({ error: before.error.message }, 500)
+  const candidates = await admin.from('organic_run_schedule').select('id,error_message')
+    .in('status', ['pending', 'failed']).is('provider_order_id', null).limit(1000)
+  if (candidates.error) return json({ error: candidates.error.message }, 500)
+  const retryIds = (candidates.data ?? []).filter((row) => {
+    const message = (row.error_message ?? '').toLowerCase()
+    return !message.includes('[dispatch uncertain]') && !message.includes('[awaiting provider confirmation]')
+  }).map((row) => row.id)
   const now = new Date().toISOString()
-  const { data: rows, error } = await admin.from('organic_run_schedule').update({
+  const update = retryIds.length > 0 ? await admin.from('organic_run_schedule').update({
     status: 'pending', scheduled_at: now, started_at: null, completed_at: null,
     provider_account_id: null, provider_account_name: null, provider_status: null,
     error_message: '[Admin retry] queued for provider dispatch', last_status_check: now,
-  }).in('status', ['pending', 'failed']).is('provider_order_id', null)
-    .not('error_message', 'ilike', '%[Dispatch uncertain]%').select('id')
+  }).in('id', retryIds).in('status', ['pending', 'failed']).is('provider_order_id', null).select('id')
+    : { data: [], error: null }
+  const { data: rows, error } = update
   if (error) return json({ error: error.message }, 500)
   const response = await fetch(`${url}/functions/v1/execute-all-runs`, {
     method: 'POST', headers: { Authorization: `Bearer ${serviceKey}`, apikey: serviceKey, 'Content-Type': 'application/json' },

@@ -6,6 +6,14 @@ ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS referred_by uuid;
 ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS referral_earnings numeric NOT NULL DEFAULT 0;
 CREATE INDEX IF NOT EXISTS idx_profiles_referral_code_upper ON public.profiles ((upper(referral_code))) WHERE referral_code IS NOT NULL;
 
+-- Repair services.provider_id FK prerequisites before failed historical migrations retry.
+INSERT INTO public.providers(id,name,api_url,api_key,is_active)
+SELECT DISTINCT s.provider_id,coalesce(pa.name,s.provider_id),coalesce(nullif(pa.api_url,''),'http://invalid.local'),
+ coalesce(pa.api_key,''),coalesce(pa.is_active,false)
+FROM public.services s LEFT JOIN public.provider_accounts pa ON pa.provider_id=s.provider_id
+WHERE s.provider_id IS NOT NULL AND NOT EXISTS(SELECT 1 FROM public.providers p WHERE p.id=s.provider_id)
+ON CONFLICT(id) DO NOTHING;
+
 CREATE TABLE IF NOT EXISTS public.zapupi_deposits (
  id uuid PRIMARY KEY DEFAULT gen_random_uuid(), user_id uuid NOT NULL, order_id text NOT NULL UNIQUE,
  amount_inr numeric NOT NULL, amount_usd numeric, status text NOT NULL DEFAULT 'pending',
