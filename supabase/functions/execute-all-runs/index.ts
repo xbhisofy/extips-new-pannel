@@ -167,7 +167,11 @@ class MappingCache {
         .eq('is_active', true)
         .order('sort_order', { ascending: true })
       
-      if (error || !mappings || mappings.length === 0) {
+      if (error) {
+        console.error(`❌ Provider mapping query failed for service ${serviceId} [${executionId}]: ${error.message}`)
+        this.cache.set(serviceId, [])
+      } else if (!mappings || mappings.length === 0) {
+        console.error(`❌ No active service_provider_mapping for service ${serviceId} [${executionId}]`)
         this.cache.set(serviceId, [])
       } else {
         const sorted = [...mappings].sort((a: any, b: any) => {
@@ -1312,8 +1316,10 @@ async function processAllRuns(supabase: any, executionId: string, startTime: num
           results.push({ run_id: run.id, run_number: run.run_number, type: item.engagement_type,
             success: false, skipped: true, reason: `All providers busy - postponed ${postponeMs / 60000}min` })
         } else {
+          const mappingError = `No active provider mapping/account for service ${item.service.id} (${item.service.name || item.engagement_type})`
+          console.error(`❌ ${mappingError} [${executionId}]`)
           await supabase.from('organic_run_schedule').update({
-            status: 'failed', error_message: 'No provider accounts configured',
+            status: 'failed', error_message: mappingError, last_status_check: new Date().toISOString(),
           }).eq('id', run.id)
           failed++
         }
@@ -1552,13 +1558,14 @@ async function processAllRuns(supabase: any, executionId: string, startTime: num
 
           clearTimeout(timeoutId)
           const responseText = await response.text()
-          console.log(`Provider response from ${selectedAccount.name}: ${responseText}`)
+          console.log(`Provider response from ${selectedAccount.name}: HTTP ${response.status} ${responseText}`)
 
           let result
           try { result = JSON.parse(responseText) } catch { result = { error: responseText } }
 
-          if (result.status === 'fail' || result.error) {
-            lastError = result.message || result.error
+          if (!response.ok || result.status === 'fail' || result.error) {
+            const providerMessage = result.message || result.error || responseText || response.statusText
+            lastError = `HTTP ${response.status}: ${typeof providerMessage === 'string' ? providerMessage : JSON.stringify(providerMessage)}`
             if (lastError === null || lastError === undefined) lastError = 'Unknown provider error'
             if (typeof lastError !== 'string') lastError = JSON.stringify(lastError)
             providerResult = result

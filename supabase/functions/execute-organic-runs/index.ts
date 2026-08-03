@@ -174,17 +174,18 @@ serve(async (req) => {
         continue
       }
 
-      const { data: provider } = await supabase
-        .from('providers')
-        .select('*')
-        .eq('id', orderData.service.provider_id)
-        .single()
+      const { data: mapping } = await supabase.from('service_provider_mapping')
+        .select('provider_service_id, provider_account:provider_accounts(*)')
+        .eq('service_id', orderData.service.id).eq('is_active', true)
+        .order('sort_order', { ascending: true }).limit(1).maybeSingle()
+      const provider = mapping?.provider_account as any
 
       if (!provider) {
         console.error('Provider not found for service:', orderData.service.provider_id)
         await supabase.from('organic_run_schedule').update({
           status: 'failed',
-          error_message: 'Provider not found'
+          error_message: `No active provider mapping/account for service ${orderData.service.id}`,
+          last_status_check: new Date().toISOString()
         }).eq('id', run.id)
         failed++
         continue
@@ -234,7 +235,7 @@ serve(async (req) => {
       const formData = new URLSearchParams()
       formData.append('key', provider.api_key)
       formData.append('action', 'add')
-      formData.append('service', orderData.service.provider_service_id)
+      formData.append('service', mapping?.provider_service_id || orderData.service.provider_service_id)
       formData.append('link', orderData.link)
       formData.append('quantity', quantityToSend.toString())
 
@@ -254,7 +255,7 @@ serve(async (req) => {
         clearTimeout(timeoutId)
 
         const responseText = await response.text()
-        console.log(`Provider response: ${responseText}`)
+        console.log(`Provider response: HTTP ${response.status} ${responseText}`)
 
         let result
         try {
@@ -263,8 +264,9 @@ serve(async (req) => {
           result = { error: responseText }
         }
 
-        if (result.error) {
-          const errorMsg = typeof result.error === 'string' ? result.error : JSON.stringify(result.error)
+        if (!response.ok || result.error) {
+          const rawError = result.error || responseText || response.statusText
+          const errorMsg = `HTTP ${response.status}: ${typeof rawError === 'string' ? rawError : JSON.stringify(rawError)}`
           console.error(`Run ${run.id} failed:`, errorMsg)
           
           await supabase.from('organic_run_schedule').update({

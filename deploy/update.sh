@@ -59,6 +59,11 @@ if [ -d "$SUPA_DIR" ] && [ -d supabase/migrations ]; then
     docker compose exec -T db psql -U postgres -d postgres -v ON_ERROR_STOP=1 -f - \
       < "$REPO_DIR/deploy/fix-missing-tables.sql" || die "VPS missing-table repair failed"
   fi
+  if [ -f "$REPO_DIR/deploy/selfhost-repair.sql" ]; then
+    echo "   -> self-host idempotent migration repair"
+    docker compose exec -T db psql -U postgres -d postgres -v ON_ERROR_STOP=1 -f - \
+      < "$REPO_DIR/deploy/selfhost-repair.sql" || die "self-host migration repair failed"
+  fi
   docker compose exec -T db psql -U postgres -d postgres -c \
     "CREATE TABLE IF NOT EXISTS public._applied_migrations(name text PRIMARY KEY, applied_at timestamptz DEFAULT now());" >/dev/null
   for f in $(ls "$REPO_DIR"/supabase/migrations/*.sql | sort); do
