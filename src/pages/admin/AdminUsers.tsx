@@ -937,7 +937,7 @@ export default function AdminUsers() {
 
                         try {
                           const { data: w0, error: e0 } = await supabase.from('wallets')
-                            .select('balance').eq('user_id', tuid).single();
+                            .select('balance').eq('user_id', tuid).maybeSingle();
                           if (e0) throw new Error('read: ' + e0.message);
                           b0 = Number(w0?.balance || 0);
                           push({ label: `1. Initial balance = $${b0.toFixed(4)}`, ok: true });
@@ -959,7 +959,7 @@ export default function AdminUsers() {
                           if (ti1?.id) insertedTxIds.push(ti1.id);
 
                           const { data: w1 } = await supabase.from('wallets').select('balance')
-                            .eq('user_id', tuid).single();
+                            .eq('user_id', tuid).maybeSingle();
                           const okAdd = Math.abs(Number(w1?.balance || 0) - b1) < 0.0001;
                           push({ label: `4. Verify balance = $${b1.toFixed(4)}`, ok: okAdd, detail: `got $${Number(w1?.balance).toFixed(4)}` });
 
@@ -979,7 +979,7 @@ export default function AdminUsers() {
                           if (ti2?.id) insertedTxIds.push(ti2.id);
 
                           const { data: w2 } = await supabase.from('wallets').select('balance')
-                            .eq('user_id', tuid).single();
+                            .eq('user_id', tuid).maybeSingle();
                           const okSub = Math.abs(Number(w2?.balance || 0) - b0) < 0.0001;
                           push({ label: `7. Verify balance restored = $${b0.toFixed(4)}`, ok: okSub, detail: `got $${Number(w2?.balance).toFixed(4)}` });
 
