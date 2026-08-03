@@ -40,7 +40,7 @@ const TYPE_COLORS: Record<VisibleType, string> = {
   comments: '#87a878',
   likes: '#a4c19c',
   saves: '#fbbf24',
-  shares: '#e8a87c',
+  shares: '#60a5fa',
 };
 
 interface DrawableGrowthChartProps {

@@ -37,7 +37,7 @@ export default function TelegramBot() {
   useEffect(() => {
     loadStatus();
     // Bot username is a public env; fall back to the token secret name hint.
-    const envUser = (import.meta.env.VITE_TELEGRAM_BOT_USERNAME as string | undefined) ?? "OrganicSMMPro_Bot";
+    const envUser = (import.meta.env.VITE_TELEGRAM_BOT_USERNAME as string | undefined) ?? "Extips PanelPro_Bot";
     setBotUsername(envUser);
   }, [user?.id]);
 

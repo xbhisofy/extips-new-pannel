@@ -324,7 +324,7 @@ function EndpointCard({
             </div>
 
             {/* Code block */}
-            <div className="relative bg-[#0d0d0d] p-4 group">
+            <div className="relative bg-[#ffffff] p-4 group">
                 <pre className="text-[12px] font-mono text-zinc-100 whitespace-pre overflow-x-auto">
                     {tab === 'request' ? request : response}
                 </pre>

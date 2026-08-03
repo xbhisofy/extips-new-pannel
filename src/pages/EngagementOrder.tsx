@@ -780,7 +780,7 @@ export default function EngagementOrder() {
     <DashboardLayout>
       <div className="max-w-5xl mx-auto px-2 sm:px-6 lg:px-8 space-y-3 sm:space-y-6 pb-8">
         {/* Mission Console — unique compact hero with inline AI controls */}
-        <div className="relative overflow-hidden rounded-2xl border border-white/10 bg-[#0a0a14]/80 backdrop-blur-xl">
+        <div className="relative overflow-hidden rounded-2xl border border-white/10 bg-[#ffffff]/80 backdrop-blur-xl">
           {/* Aurora wash */}
           <div aria-hidden className="pointer-events-none absolute inset-0 opacity-80">
             <div className="absolute -top-24 -left-16 w-[360px] h-[360px] bg-purple-600/25 blur-[120px] rounded-full" />

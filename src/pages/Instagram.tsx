@@ -159,7 +159,7 @@ export default function InstagramPage() {
           );
         })()}
 
-        <div className="rounded-2xl p-5 bg-[#0a0a14]/80 border border-white/10">
+        <div className="rounded-2xl p-5 bg-[#ffffff]/80 border border-white/10">
           <label className="block text-xs font-semibold uppercase tracking-wider text-white/80 mb-2">Add Instagram Username</label>
           <div className="flex gap-2">
             <div className="flex-1 relative">
@@ -231,7 +231,7 @@ export default function InstagramPage() {
             </div>
           )}
           {accounts.map((a: any) => (
-            <div key={a.id} className="rounded-2xl p-4 bg-[#0a0a14]/80 border border-white/10 flex items-center gap-4">
+            <div key={a.id} className="rounded-2xl p-4 bg-[#ffffff]/80 border border-white/10 flex items-center gap-4">
               <div className="relative w-14 h-14 shrink-0">
                 <div className="absolute inset-0 rounded-full bg-gradient-to-br from-fuchsia-500 to-purple-600 flex items-center justify-center text-white font-bold text-lg ring-2 ring-purple-400/30">
                   {a.username[0]?.toUpperCase()}

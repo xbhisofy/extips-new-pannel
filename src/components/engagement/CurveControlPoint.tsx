@@ -25,10 +25,10 @@ const TYPE_COLORS: Record<string, string> = {
   likes: '#a4c19c',
   comments: '#87a878',
   saves: '#fbbf24',
-  shares: '#e8a87c',
+  shares: '#60a5fa',
   followers: '#818cf8',
   subscribers: '#f87171',
-  watch_hours: '#e8a87c',
+  watch_hours: '#60a5fa',
   retweets: '#2dd4bf',
   reposts: '#a4c19c',
 };

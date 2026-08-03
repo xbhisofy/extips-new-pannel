@@ -1,4 +1,4 @@
-# OrganicSMM Pro — robots.txt
+# Extips Panel Pro — robots.txt
 # Site:    https://whopxbot.lovable.app
 # Updated: 2026-05-05
 
