@@ -1242,8 +1242,15 @@ async function processAllRuns(supabase: any, executionId: string, startTime: num
               continue
             }
             
+            // A provider order that already has an ID must not become a permanent
+            // in-app hard lock. Some providers leave an order in Pending/Processing
+            // for a long time (or never send a terminal status), which previously
+            // made the only mapped account unavailable forever. Keep this as a soft
+            // preference: when no alternative account exists the scheduler will ask
+            // the provider again and let its API decide whether another order is
+            // currently allowed. A real "active order" response is postponed below.
             if (!busyAccountIds.includes(stuckRun.provider_account_id)) {
-              addBusyAccount(stuckRun.provider_account_id, true)
+              addBusyAccount(stuckRun.provider_account_id)
             }
           }
         }
