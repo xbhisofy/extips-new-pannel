@@ -244,7 +244,7 @@ Deno.serve(async (req) => {
             user_id: account.user_id,
             username: account.username,
             scrape_type,
-            source: `vercel-api:${source}`,
+            source: `${APIFY_TOKEN ? 'apify' : 'vercel-api'}:${source}`,
             results_count,
             success,
             error_message,
