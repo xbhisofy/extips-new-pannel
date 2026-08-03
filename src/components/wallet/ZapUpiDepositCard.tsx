@@ -75,7 +75,16 @@ export default function ZapUpiDepositCard() {
     setLoading(true);
     try {
       const { data, error } = await supabase.functions.invoke('zapupi-create-order', { body: { amount_inr: inr } });
-      if (error) throw error;
+      if (error) {
+        // Surface the real server message instead of the generic non-2xx text
+        let msg = error.message;
+        try {
+          const ctx: any = (error as any).context;
+          if (ctx?.json) { const b = await ctx.json(); msg = b?.error || msg; }
+          else if (ctx?.text) { const t = await ctx.text(); msg = t || msg; }
+        } catch { /* keep default */ }
+        throw new Error(msg);
+      }
       if (!data?.payment_url) throw new Error(data?.error || 'No payment URL');
       window.location.href = data.payment_url;
     } catch (e: any) {
@@ -83,6 +92,7 @@ export default function ZapUpiDepositCard() {
       toast.error(e?.message || 'Could not start payment');
       setLoading(false);
     }
+
   }
 
   return (
