@@ -96,7 +96,7 @@ export default function Auth() {
   const inputClass = "h-12 rounded-xl bg-white/[0.04] border border-white/10 focus:border-purple-400/60 focus:ring-1 focus:ring-purple-400/40 !text-white font-medium px-4 placeholder:text-white/65 transition-all";
 
   return (
-    <div className="min-h-screen w-full bg-[#f5f9ff] text-white overflow-x-hidden selection:bg-purple-500/30 antialiased relative flex items-center justify-center px-5 py-12">
+    <div className="min-h-screen w-full bg-white text-foreground overflow-x-hidden selection:bg-purple-500/30 antialiased relative flex items-center justify-center px-5 py-12">
       <PageMeta
         title={isLogin ? 'Sign in — Extips Panel Pro' : 'Create your account — Extips Panel Pro'}
         description="Sign in or create your free Extips Panel Pro account to launch organic Instagram, YouTube and TikTok growth campaigns. No credit card required."

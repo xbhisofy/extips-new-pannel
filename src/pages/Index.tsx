@@ -21,7 +21,7 @@ const Index = () => {
 
 
   return (
-    <div className="min-h-screen w-full bg-[#f5f9ff] text-white overflow-x-hidden selection:bg-purple-500/30 antialiased">
+    <div className="min-h-screen w-full bg-white text-foreground overflow-x-hidden selection:bg-purple-500/30 antialiased">
       <PageMeta
         title="Extips Panel Pro — The Growth Engine for Social Magic"
         description="Precision-engineered organic engagement for Instagram, TikTok and YouTube. Multi-provider failover, wallet, live dashboard."
