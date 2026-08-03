@@ -1557,30 +1557,63 @@ async function processAllRuns(supabase: any, executionId: string, startTime: num
           continue
         }
         
+        // RE-CHECK INSIDE THE LOCK: never dispatch to a provider that picked up an
+        // active order on this link+type since the candidate list was built.
+        const freshBusy = await getProvidersBusyOnLink(
+          supabase, sameLinkNormalized, currentTypeNormalized, run.id
+        )
+        if (freshBusy.has(selectedAccount.id)) {
+          lastError = `Provider ${selectedAccount.name} already has an active order on this link`
+          console.log(`🔒 Skipping ${selectedAccount.name}: ${lastError}`)
+          continue
+        }
+
         triedProviderIds.push(selectedAccount.id)
 
+        const rotationLockKey = `${sameLinkNormalized}|${currentTypeNormalized}`
+
         if (!runClaimed) {
-          const { error: claimError, locked: lockAcquired } = await claimRunLock({
+          const baseUpdates: Record<string, any> = {
+            status: 'started',
+            started_at: new Date().toISOString(),
+            error_message: `Trying ${selectedAccount.name}...`,
+            retry_count: (run.retry_count || 0) + (isRetry ? 1 : 0),
+            provider_order_id: null,
+            provider_status: null,
+            provider_response: null,
+            provider_account_id: selectedAccount.id,
+            provider_account_name: selectedAccount.name,
+            last_status_check: new Date().toISOString(),
+          }
+
+          let claimResult = await claimRunLock({
             supabase,
             runId: run.id,
             expectedStatus: currentStatus,
-            updates: {
-              status: 'started',
-              started_at: new Date().toISOString(),
-              error_message: `Trying ${selectedAccount.name}...`,
-              retry_count: (run.retry_count || 0) + (isRetry ? 1 : 0),
-              provider_order_id: null,
-              provider_status: null,
-              provider_response: null,
-              provider_account_id: selectedAccount.id,
-              provider_account_name: selectedAccount.name,
-              last_status_check: new Date().toISOString(),
-            },
+            updates: { ...baseUpdates, rotation_lock_key: rotationLockKey },
           })
 
+          // Backends without the rotation_lock_key column keep working.
+          if (claimResult.error && /rotation_lock_key/i.test(claimResult.error.message || '')) {
+            claimResult = await claimRunLock({
+              supabase, runId: run.id, expectedStatus: currentStatus, updates: baseUpdates,
+            })
+          }
+
+          const claimError = claimResult.error
+          const lockAcquired = claimResult.locked
+
           if (claimError) {
+            const msg = claimError.message || 'unknown error'
+            // Unique violation on (link, type, provider_account) → another worker
+            // claimed this provider for this link first. Skip to next candidate.
+            if (claimError.code === '23505' || /duplicate key|unique constraint/i.test(msg)) {
+              lastError = `Provider ${selectedAccount.name} claimed concurrently for this link`
+              console.log(`🔒 ${lastError}, trying next provider`)
+              continue
+            }
             console.error(`❌ Failed to claim run lock for ${run.id}:`, claimError)
-            lastError = `Run claim failed: ${claimError.message || 'unknown error'}`
+            lastError = `Run claim failed: ${msg}`
             break
           }
 
@@ -1593,6 +1626,7 @@ async function processAllRuns(supabase: any, executionId: string, startTime: num
 
           runClaimed = true
         } else {
+
           await supabase.from('organic_run_schedule').update({
             error_message: `Trying ${selectedAccount.name}...`,
             provider_account_id: selectedAccount.id,
