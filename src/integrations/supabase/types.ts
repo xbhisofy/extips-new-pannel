@@ -2197,6 +2197,7 @@ export type Database = {
         }
         Returns: Json
       }
+      ensure_user_profile: { Args: never; Returns: undefined }
       expire_subscriptions: { Args: never; Returns: number }
       export_auth_hashes: {
         Args: never

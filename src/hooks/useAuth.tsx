@@ -32,11 +32,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const fetchUserData = useCallback(async (userId: string) => {
     try {
-      const [profileResult, walletResult, rolesResult] = await Promise.all([
-        supabase.from('profiles').select('*').eq('user_id', userId).single(),
-        supabase.from('wallets').select('*').eq('user_id', userId).single(),
+      const load = async () => Promise.all([
+        supabase.from('profiles').select('*').eq('user_id', userId).maybeSingle(),
+        supabase.from('wallets').select('*').eq('user_id', userId).maybeSingle(),
         supabase.from('user_roles').select('role').eq('user_id', userId),
       ]);
+
+      let [profileResult, walletResult, rolesResult] = await load();
+
+      // Self-heal: create profile/wallet rows if they are missing (e.g. first login)
+      if (!profileResult.data || !walletResult.data) {
+        await (supabase as unknown as { rpc: (fn: string) => Promise<unknown> }).rpc('ensure_user_profile');
+        [profileResult, walletResult, rolesResult] = await load();
+      }
 
       if (profileResult.data) setProfile(profileResult.data as unknown as Profile);
       if (walletResult.data) setWallet(walletResult.data as Wallet);
@@ -48,6 +56,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       console.error('Error fetching user data:', error);
     }
   }, []);
+
 
   // Set up realtime subscription for wallet updates
   useEffect(() => {
