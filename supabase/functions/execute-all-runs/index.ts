@@ -1162,6 +1162,21 @@ async function processAllRuns(supabase: any, executionId: string, startTime: num
         }
       }
 
+      // HARD LOCK: any provider account that still holds a non-terminal provider
+      // order on this exact (link, type) is unavailable — never reused, never
+      // included in any fallback.
+      const providersBusyOnLink = await getProvidersBusyOnLink(
+        supabase, sameLinkNormalized, currentTypeNormalized, run.id
+      )
+      for (const accId of providersBusyOnLink) {
+        addBusyAccount(accId, true)
+      }
+      if (providersBusyOnLink.size > 0) {
+        console.log(`🔒 ${providersBusyOnLink.size} provider(s) locked on this link+type (active provider order)`)
+      }
+
+
+
       // FALLBACK: If this run already failed/cancelled on a provider, exclude it on retry
       // so the system tries a backup provider instead of repeating the same one.
       if (isRetry && run.provider_account_id) {
