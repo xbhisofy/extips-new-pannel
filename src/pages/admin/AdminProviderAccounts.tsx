@@ -45,7 +45,8 @@ export default function AdminProviderAccounts() {
   const queryClient = useQueryClient();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingAccount, setEditingAccount] = useState<ProviderAccount | null>(null);
-  
+  const [checkingId, setCheckingId] = useState<string | null>(null);
+
   // Form state
   const [formData, setFormData] = useState({
     provider_id: "",
