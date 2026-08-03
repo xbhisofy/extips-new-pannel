@@ -58,14 +58,17 @@ Deno.serve(async (req) => {
     const origin =
       req.headers.get("origin") ||
       req.headers.get("referer")?.replace(/\/$/, "") ||
-      "https://whopautopailot.site";
+      "https://extipspanel.pro";
 
-    const projectRef = Deno.env.get("SUPABASE_URL")!
-      .replace("https://", "")
-      .split(".")[0];
-    const webhookUrl = `https://${projectRef}.supabase.co/functions/v1/zapupi-webhook`;
+    // Public functions base: self-hosted stacks must expose a real public URL.
+    const publicBase = (
+      Deno.env.get("PUBLIC_FUNCTIONS_URL") ||
+      Deno.env.get("SUPABASE_URL") ||
+      ""
+    ).replace(/\/$/, "");
+    const webhookUrl = `${publicBase}/functions/v1/zapupi-webhook`;
 
-    const payload = {
+    const payload: Record<string, string> = {
       zap_key: ZAP_KEY,
       order_id: orderId,
       amount: String(amountInr),
@@ -77,24 +80,50 @@ Deno.serve(async (req) => {
       timeout_url: `${origin}/wallet?deposit=timeout&order_id=${orderId}`,
     };
 
-    const upstream = await fetch(ZAPUPI_URL, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload),
-    });
-
-    const raw = await upstream.text();
-    let data: any = null;
-    try { data = JSON.parse(raw); } catch { data = { raw }; }
-
-    const status = String(data?.status || "").toLowerCase();
-    if (!upstream.ok || !(status === "success" || status === "true" || data?.status === true || data?.success === true)) {
-      console.error("[zapupi-create-order] upstream error", upstream.status, raw);
-      await supabase.from("zapupi_deposits")
-        .update({ status: "failed", raw_response: data })
-        .eq("order_id", orderId);
-      return json({ error: data?.message || "Payment provider error" }, 502);
+    // ZapUPI expects form-encoded params. Try form first, fall back to JSON.
+    async function callUpstream(mode: "form" | "json") {
+      const res = await fetch(ZAPUPI_URL, {
+        method: "POST",
+        headers:
+          mode === "form"
+            ? { "Content-Type": "application/x-www-form-urlencoded" }
+            : { "Content-Type": "application/json" },
+        body:
+          mode === "form"
+            ? new URLSearchParams(payload).toString()
+            : JSON.stringify(payload),
+      });
+      const text = await res.text();
+      let parsed: any = null;
+      try { parsed = JSON.parse(text); } catch { parsed = { raw: text }; }
+      return { res, text, parsed };
     }
+
+    const isOk = (res: Response, d: any) => {
+      const s = String(d?.status || "").toLowerCase();
+      return res.ok && (s === "success" || s === "true" || d?.status === true || d?.success === true);
+    };
+
+    let attempt = await callUpstream("form");
+    if (!isOk(attempt.res, attempt.parsed)) {
+      console.error("[zapupi-create-order] form attempt failed", attempt.res.status, attempt.text.slice(0, 400));
+      const jsonAttempt = await callUpstream("json");
+      if (isOk(jsonAttempt.res, jsonAttempt.parsed)) attempt = jsonAttempt;
+      else {
+        console.error("[zapupi-create-order] json attempt failed", jsonAttempt.res.status, jsonAttempt.text.slice(0, 400));
+        const d = jsonAttempt.parsed;
+        await supabase.from("zapupi_deposits")
+          .update({ status: "failed", raw_response: d })
+          .eq("order_id", orderId);
+        return json({
+          error: d?.message || d?.msg || d?.error || `Payment provider error (${jsonAttempt.res.status})`,
+        }, 502);
+      }
+    }
+
+    const upstream = attempt.res;
+    const data = attempt.parsed;
+
 
     const paymentUrl =
       data?.payment_url ||
