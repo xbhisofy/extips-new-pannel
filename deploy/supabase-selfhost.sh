@@ -203,10 +203,14 @@ while [ "$PASS" -le 5 ]; do
   PASS=$((PASS+1))
 done
 if [ -n "${LAST_FAILS// /}" ]; then
-  warn "still failing (usually data-dependent, safe to skip):$LAST_FAILS"
+  warn "still pending (usually data-dependent or obsolete cron migrations):$LAST_FAILS"
   for name in $LAST_FAILS; do
     echo "----- $name -----"
-    docker compose exec -T db psql -U postgres -d postgres -v ON_ERROR_STOP=1 -f - < "$MIG_DIR/$name" 2>&1 | tail -n 6
+    # This is diagnostic output only. With `set -e -o pipefail`, an expected
+    # migration failure in this preview pipeline must not abort the installer
+    # before it prints credentials and the next migration step.
+    (docker compose exec -T db psql -U postgres -d postgres -v ON_ERROR_STOP=1 -f - \
+      < "$MIG_DIR/$name" 2>&1 | tail -n 6) || true
   done
 fi
 echo "   migrations applied this run: $APPLIED"
