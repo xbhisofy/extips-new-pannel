@@ -186,6 +186,7 @@ export default function Services() {
           </div>
         )}
       </div>
+      <SubscriptionCheckDialog open={showSubDialog} onOpenChange={setShowSubDialog} />
     </DashboardLayout>
   );
 }
