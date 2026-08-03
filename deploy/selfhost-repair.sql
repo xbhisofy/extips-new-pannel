@@ -44,6 +44,25 @@ SELECT DISTINCT s.provider_id,coalesce(pa.name,s.provider_id),coalesce(nullif(pa
 FROM public.services s LEFT JOIN public.provider_accounts pa ON pa.provider_id=s.provider_id
 WHERE s.provider_id IS NOT NULL AND NOT EXISTS(SELECT 1 FROM public.providers p WHERE p.id=s.provider_id)
 ON CONFLICT(id) DO NOTHING;
+-- Historical seed 20260703075454 references this provider before any tracked
+-- migration creates it. Keep it inactive until a real account is configured.
+INSERT INTO public.providers(id,name,api_url,api_key,is_active)
+VALUES ('chpst','CHPST (configuration required)','http://invalid.local','',false)
+ON CONFLICT(id) DO NOTHING;
+
+-- A unique Razorpay idempotency index cannot be created over historical
+-- duplicate references. Preserve every transaction but quarantine duplicate
+-- references with a stable suffix before the canonical migration adds UNIQUE.
+WITH ranked AS (
+  SELECT id, payment_reference,
+         row_number() OVER (PARTITION BY payment_reference ORDER BY created_at, id) AS rn
+    FROM public.transactions
+   WHERE payment_method='razorpay_auto' AND payment_reference IS NOT NULL
+)
+UPDATE public.transactions t
+   SET payment_reference = t.payment_reference || '-duplicate-' || t.id::text
+  FROM ranked r
+ WHERE t.id=r.id AND r.rn>1;
 
 CREATE TABLE IF NOT EXISTS public.zapupi_deposits (
  id uuid PRIMARY KEY DEFAULT gen_random_uuid(), user_id uuid NOT NULL, order_id text NOT NULL UNIQUE,

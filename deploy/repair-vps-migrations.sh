@@ -61,6 +61,7 @@ SQL
 # money mutation and must never be replayed on a fresh VPS.
 declare -A SPECIAL=(
   [20260327000000_fix_cron_jobs.sql]="reconciled|obsolete hosted cron replaced by local runtime registration"
+  [20260405030811_5997936f-10d5-4ba7-b221-5a2e5313f67e.sql]="reconciled|non-idempotent legacy schema snapshot already represented by repaired live schema"
   [20260612095016_667f5de3-67bc-41e2-a1a8-5be47caa06c2.sql]="reconciled|hosted cron section replaced by local runtime registration; schema/data prerequisites repaired"
   [20260609105116_c185e5e7-e9f5-43b7-a7fe-2723d229cc0e.sql]="quarantined|customer-specific Razorpay fee adjustment is not portable and was not executed"
 )
@@ -92,7 +93,6 @@ bash "$REPO_DIR/deploy/schedule-cron.sh"
 log "7/7 Strict verification"
 EXPECTED="$(find "$REPO_DIR/supabase/migrations" -maxdepth 1 -type f -name '*.sql' | wc -l | tr -d ' ')"
 APPLIED="$(scalar 'SELECT count(*) FROM public._applied_migrations;')"
-UNRESOLVED="$(scalar "SELECT count(*) FROM (SELECT regexp_replace(name,'^.*/','') name FROM public._applied_migrations) a RIGHT JOIN (SELECT '') x ON true WHERE false;")"
 [ "$APPLIED" -ge "$EXPECTED" ] || die "migration ledger incomplete: files=$EXPECTED ledger=$APPLIED"
 
 MISSING_TABLES="$(scalar "SELECT count(*) FROM (VALUES ('profiles'),('wallets'),('services'),('provider_accounts'),('service_provider_mapping'),('engagement_orders'),('engagement_order_items'),('organic_run_schedule'),('zapupi_deposits')) v(n) WHERE to_regclass('public.'||n) IS NULL;")"
