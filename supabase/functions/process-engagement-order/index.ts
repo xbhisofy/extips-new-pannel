@@ -765,19 +765,25 @@ serve(async (req) => {
           }
         }
 
-        fetch(`${Deno.env.get('SUPABASE_URL')}/functions/v1/execute-all-runs`, {
+        const schedulerKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+        const schedulerResponse = await fetch(`${Deno.env.get('SUPABASE_URL')}/functions/v1/execute-all-runs`, {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${Deno.env.get('SUPABASE_ANON_KEY')}` },
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${schedulerKey}`,
+            'apikey': schedulerKey,
+          },
           body: JSON.stringify({ instant: true, order_id: order.id })
-        }).catch(() => {})
+        })
+        if (!schedulerResponse.ok) {
+          console.error('Immediate scheduler trigger failed:', schedulerResponse.status, await schedulerResponse.text())
+        }
       } catch (err: any) { console.error('Background error:', err?.message || err) }
     }
 
-    if (typeof (globalThis as any).EdgeRuntime !== 'undefined' && (globalThis as any).EdgeRuntime.waitUntil) {
-      (globalThis as any).EdgeRuntime.waitUntil(backgroundWork())
-    } else {
-      backgroundWork()
-    }
+    // Schedule creation is part of placing an order. Await it so self-hosted edge
+    // runtimes cannot terminate the work after the HTTP response is returned.
+    await backgroundWork()
 
     return new Response(JSON.stringify({ success: true, order_id: order.id, new_balance: newBalance }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } })
 
