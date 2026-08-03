@@ -239,3 +239,15 @@ DO $$ BEGIN
       WITH CHECK (public.has_role(auth.uid(), 'admin'));
   EXCEPTION WHEN OTHERS THEN NULL; END;
 END $$;
+
+-- ============ Dedupe user-scoped tables + unique indexes (upsert needs them) ============
+DO $$ BEGIN
+  DELETE FROM public.wallets a USING public.wallets b WHERE a.user_id = b.user_id AND a.ctid < b.ctid;
+  BEGIN CREATE UNIQUE INDEX IF NOT EXISTS wallets_user_id_key ON public.wallets(user_id); EXCEPTION WHEN OTHERS THEN NULL; END;
+
+  DELETE FROM public.profiles a USING public.profiles b WHERE a.user_id = b.user_id AND a.ctid < b.ctid;
+  BEGIN CREATE UNIQUE INDEX IF NOT EXISTS profiles_user_id_key ON public.profiles(user_id); EXCEPTION WHEN OTHERS THEN NULL; END;
+
+  DELETE FROM public.user_roles a USING public.user_roles b WHERE a.user_id = b.user_id AND a.role = b.role AND a.ctid < b.ctid;
+  BEGIN CREATE UNIQUE INDEX IF NOT EXISTS user_roles_user_role_key ON public.user_roles(user_id, role); EXCEPTION WHEN OTHERS THEN NULL; END;
+END $$;

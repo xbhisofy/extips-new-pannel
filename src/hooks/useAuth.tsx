@@ -236,7 +236,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         .from('profiles')
         .select('*')
         .eq('user_id', user.id)
-        .single();
+        .limit(1)
+        .maybeSingle();
       if (data) setProfile(data as unknown as Profile);
     }
   };
@@ -247,7 +248,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         .from('wallets')
         .select('*')
         .eq('user_id', user.id)
-        .single();
+        .limit(1)
+        .maybeSingle();
       if (data) setWallet(data as Wallet);
     }
   };
