@@ -180,8 +180,8 @@ serve(async (req) => {
         .order('sort_order', { ascending: true }).limit(1).maybeSingle()
       const provider = mapping?.provider_account as any
 
-      if (!provider) {
-        console.error('Provider not found for service:', orderData.service.provider_id)
+      if (!provider || !provider.is_active || !provider.api_key?.trim() || !provider.api_url?.trim()) {
+        console.error('Active provider mapping/account with API credentials not found for service:', orderData.service.id)
         await supabase.from('organic_run_schedule').update({
           status: 'failed',
           error_message: `No active provider mapping/account for service ${orderData.service.id}`,

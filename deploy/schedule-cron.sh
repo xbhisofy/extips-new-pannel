@@ -38,6 +38,13 @@ DECLARE
   ];
   j text[];
 BEGIN
+  -- Remove every historical job that still targets a hosted project. This is
+  -- command-based so renamed legacy jobs cannot survive the repair.
+  BEGIN
+    PERFORM cron.unschedule(jobid) FROM cron.job WHERE command LIKE '%supabase.co%';
+  EXCEPTION WHEN OTHERS THEN
+    RAISE NOTICE 'legacy hosted cron cleanup skipped: %', SQLERRM;
+  END;
   FOREACH j SLICE 1 IN ARRAY jobs LOOP
     BEGIN
       PERFORM cron.unschedule(j[1]);

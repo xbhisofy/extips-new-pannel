@@ -204,6 +204,10 @@ class MappingCache {
         const pushAccount = (account: ProviderAccount | null | undefined, providerServiceId: string | null | undefined, isBackup: boolean) => {
           if (!account || !providerServiceId) return
           if (!account.is_active) return
+          if (!account.api_key?.trim()) {
+            console.error(`❌ Skipping provider ${account.name}: blank api_key`)
+            return
+          }
           if (!isValidHttpUrl(account.api_url)) {
             console.log(`⚠️ Skipping provider ${account.name}: invalid api_url`)
             return
@@ -1265,7 +1269,7 @@ async function processAllRuns(supabase: any, executionId: string, startTime: num
           .order('priority', { ascending: false })
           .limit(1).maybeSingle()
 
-        if (acct && isValidHttpUrl(acct.api_url) &&
+        if (acct && acct.api_key?.trim() && isValidHttpUrl(acct.api_url) &&
             !busyAccountIds.includes(acct.id) &&
             !availableAccounts.some(a => a.account.id === acct.id)) {
           defaultProvider = {
