@@ -168,15 +168,20 @@ log "7/9 Applying migrations (serial order, retry passes)"
 MIG_DIR="$REPO_DIR/supabase/migrations"
 [ -d "$MIG_DIR" ] || die "No migrations at $MIG_DIR"
 
-docker compose exec -T db psql -U postgres -d postgres -v ON_ERROR_STOP=1 >/dev/null <<'SQL'
+docker compose exec -T db psql -U postgres -d postgres >/dev/null <<'SQL' 2>&1 || true
 CREATE TABLE IF NOT EXISTS public._applied_migrations (
   name text PRIMARY KEY,
   applied_at timestamptz NOT NULL DEFAULT now()
 );
-CREATE EXTENSION IF NOT EXISTS pg_cron;
-CREATE EXTENSION IF NOT EXISTS pg_net;
-CREATE EXTENSION IF NOT EXISTS pgcrypto;
 SQL
+# Extensions: pg_cron's after-create script can fail on re-run ("dependent
+# privileges exist"). Each runs separately and failures are tolerated.
+for ext in pg_cron pg_net pgcrypto; do
+  docker compose exec -T db psql -U postgres -d postgres \
+    -c "CREATE EXTENSION IF NOT EXISTS $ext" >/dev/null 2>&1 || true
+done
+docker compose exec -T db psql -U postgres -d postgres -tAc \
+  "SELECT 'ext ok: '||string_agg(extname,',') FROM pg_extension WHERE extname IN ('pg_cron','pg_net','pgcrypto')" || true
 
 TOTAL=$(ls "$MIG_DIR"/*.sql | wc -l)
 echo "   $TOTAL migration files found"
