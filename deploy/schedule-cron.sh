@@ -17,9 +17,13 @@ BASE="http://kong:8000"   # inside the docker network
 psql_run() { docker compose exec -T db psql -U postgres -d postgres "$@"; }
 
 echo "==> Scheduling cron jobs (base=$BASE)"
+# pg_cron/pg_net may already exist; creating them again can fail on the
+# extension after-create script ("dependent privileges exist"). Only create
+# when actually missing, and tolerate failures.
+psql_run -c "DO \$do\$ BEGIN IF NOT EXISTS (SELECT 1 FROM pg_extension WHERE extname='pg_cron') THEN CREATE EXTENSION pg_cron; END IF; EXCEPTION WHEN OTHERS THEN RAISE NOTICE 'pg_cron: %', SQLERRM; END \$do\$;" || true
+psql_run -c "DO \$do\$ BEGIN IF NOT EXISTS (SELECT 1 FROM pg_extension WHERE extname='pg_net') THEN CREATE EXTENSION pg_net; END IF; EXCEPTION WHEN OTHERS THEN RAISE NOTICE 'pg_net: %', SQLERRM; END \$do\$;" || true
+
 psql_run -v ON_ERROR_STOP=1 <<SQL
-CREATE EXTENSION IF NOT EXISTS pg_cron;
-CREATE EXTENSION IF NOT EXISTS pg_net;
 
 DO \$\$
 DECLARE
