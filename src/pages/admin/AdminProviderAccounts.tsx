@@ -85,6 +85,31 @@ export default function AdminProviderAccounts() {
     },
   });
 
+  // Live balance check for one account (never disables the account —
+  // the health check only records status; disabling stays manual).
+  const checkBalance = async (account: ProviderAccount) => {
+    setCheckingId(account.id);
+    try {
+      const { data, error } = await supabase.functions.invoke("check-provider-balance", {
+        body: { account_id: account.id, source: "manual" },
+      });
+      if (error) throw error;
+      const result = (data as any)?.results?.[0];
+      if (result?.error) {
+        toast.error(`${account.name}: ${result.error}`);
+      } else {
+        toast.success(`${account.name}: ${result?.balance ?? "?"} ${result?.currency ?? ""}`);
+      }
+      await queryClient.invalidateQueries({ queryKey: ["provider-accounts"] });
+    } catch (e: any) {
+      toast.error(e.message || "Balance check failed");
+    } finally {
+      setCheckingId(null);
+    }
+  };
+
+
+
   // Create/Update mutation
   const saveMutation = useMutation({
     mutationFn: async (data: typeof formData & { id?: string }) => {
