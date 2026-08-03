@@ -408,11 +408,11 @@ export default function AdminServiceProviderMapping() {
                           <TableCell>
                             <Input
                               type="number"
-                              min={1}
+                              min={0}
                               max={100}
                               value={mapping.sortOrder}
                               onChange={(e) => 
-                                handleMappingChange(account.id, "sortOrder", parseInt(e.target.value) || 1)
+                                handleMappingChange(account.id, "sortOrder", Number.isFinite(parseInt(e.target.value)) ? parseInt(e.target.value) : 0)
                               }
                               className="w-20"
                               disabled={!mapping.checked}
