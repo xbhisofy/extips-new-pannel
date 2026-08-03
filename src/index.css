@@ -355,3 +355,11 @@ body [class*="border-violet-"], body [class*="border-indigo-"] { border-color: h
 
 /* heavy dark shadows -> soft */
 body [class*="shadow-[0_-10px_40px"], body [class*="shadow-[0_0_18px"] { box-shadow: 0 4px 20px rgba(15,23,42,.08) !important; }
+
+/* pale neutral text (authored for dark bg) -> readable muted */
+body [class*="text-slate-1"], body [class*="text-slate-2"], body [class*="text-slate-3"],
+body [class*="text-zinc-1"], body [class*="text-zinc-2"], body [class*="text-zinc-3"],
+body [class*="text-gray-1"], body [class*="text-gray-2"], body [class*="text-gray-3"],
+body [class*="text-neutral-1"], body [class*="text-neutral-2"], body [class*="text-neutral-3"] {
+  color: hsl(215 20% 40%) !important;
+}
