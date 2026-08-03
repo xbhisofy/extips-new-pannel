@@ -343,8 +343,6 @@ body [class*="text-white"] { color: hsl(222 47% 11%) !important; }
 [class*="bg-purple-6"][class*="text-white"],
 [class*="bg-indigo-5"][class*="text-white"],
 [class*="bg-indigo-6"][class*="text-white"],
-[class*="bg-gradient"] > [class*="text-white"],
-[class*="bg-primary"] > [class*="text-white"],
 .btn-3d > [class*="text-white"] { color: #fff !important; }
 
 /* white CTA buttons (authored for dark bg) -> primary blue button */
