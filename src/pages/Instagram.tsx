@@ -266,17 +266,18 @@ export default function InstagramPage() {
                 <div className="absolute inset-0 rounded-full bg-gradient-to-br from-fuchsia-500 to-purple-600 flex items-center justify-center text-white font-bold text-lg ring-2 ring-purple-400/30">
                   {a.username[0]?.toUpperCase()}
                 </div>
-                {a.avatar_url && (
-                  <img
-                    src={igImageUrl(a.avatar_url)}
-                    alt={a.username}
-                    referrerPolicy="no-referrer"
-                    loading="lazy"
-                    className="absolute inset-0 w-14 h-14 rounded-full object-cover ring-2 ring-purple-400/30 transition-opacity duration-300 opacity-0"
-                    onLoad={(e) => { (e.target as HTMLImageElement).style.opacity = '1'; }}
-                    onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
-                  />
-                )}
+                {/* Always render: the proxy falls back to a live avatar lookup
+                    by username when the stored CDN link is missing/expired. */}
+                <img
+                  src={igImageUrl(a.avatar_url, { username: a.username })}
+                  alt={a.username}
+                  referrerPolicy="no-referrer"
+                  loading="lazy"
+                  className="absolute inset-0 w-14 h-14 rounded-full object-cover ring-2 ring-purple-400/30 transition-opacity duration-300 opacity-0"
+                  onLoad={(e) => { (e.target as HTMLImageElement).style.opacity = '1'; }}
+                  onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
+                />
+
               </div>
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-1.5">
