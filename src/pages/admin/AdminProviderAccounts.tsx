@@ -460,6 +460,7 @@ export default function AdminProviderAccounts() {
                         <TableHead>Name</TableHead>
                         <TableHead>API Key</TableHead>
                         <TableHead>Priority</TableHead>
+                        <TableHead>Balance</TableHead>
                         <TableHead>Last Used</TableHead>
                         <TableHead>Status</TableHead>
                         <TableHead className="text-right">Actions</TableHead>
@@ -476,6 +477,29 @@ export default function AdminProviderAccounts() {
                           </TableCell>
                           <TableCell>
                             <Badge variant="outline">#{account.priority}</Badge>
+                          </TableCell>
+                          <TableCell>
+                            <div className="flex flex-col gap-0.5">
+                              <span className="text-sm font-medium flex items-center gap-1">
+                                <Wallet className="h-3 w-3 text-muted-foreground" />
+                                {account.balance != null
+                                  ? `${Number(account.balance).toFixed(2)} ${account.balance_currency || ""}`
+                                  : "—"}
+                              </span>
+                              <span className="text-xs text-muted-foreground">
+                                {account.balance_checked_at
+                                  ? `checked ${formatDistanceToNow(new Date(account.balance_checked_at), { addSuffix: true })}`
+                                  : "never checked"}
+                              </span>
+                              {account.last_balance_error && (
+                                <span className="text-xs text-destructive flex items-center gap-1">
+                                  <AlertTriangle className="h-3 w-3 shrink-0" />
+                                  <span className="truncate max-w-[180px]" title={account.last_balance_error}>
+                                    {account.last_balance_error}
+                                  </span>
+                                </span>
+                              )}
+                            </div>
                           </TableCell>
                           <TableCell>
                             {account.last_used_at ? (
@@ -498,13 +522,23 @@ export default function AdminProviderAccounts() {
                           <TableCell className="text-right">
                             <div className="flex items-center justify-end gap-2">
                               <Button
+                                variant="outline"
+                                size="sm"
+                                className="gap-1"
+                                disabled={checkingId === account.id}
+                                onClick={() => checkBalance(account)}
+                              >
+                                <RefreshCw className={`h-3.5 w-3.5 ${checkingId === account.id ? "animate-spin" : ""}`} />
+                                Check balance
+                              </Button>
+                              <Button
                                 variant="ghost"
                                 size="icon"
                                 onClick={() => openEditDialog(account)}
                               >
                                 <Edit className="h-4 w-4" />
                               </Button>
-                              <Button
+
                                 variant="ghost"
                                 size="icon"
                                 className="text-destructive hover:text-destructive"
