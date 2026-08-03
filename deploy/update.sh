@@ -40,6 +40,11 @@ rm -rf dist && mv dist-new dist
 log "4/6 Migrations"
 if [ -d "$SUPA_DIR" ] && [ -d supabase/migrations ]; then
   cd "$SUPA_DIR"
+  if [ -f "$REPO_DIR/deploy/fix-missing-tables.sql" ]; then
+    echo "   -> VPS missing-table repair"
+    docker compose exec -T db psql -U postgres -d postgres -v ON_ERROR_STOP=1 -f - \
+      < "$REPO_DIR/deploy/fix-missing-tables.sql" || die "VPS missing-table repair failed"
+  fi
   docker compose exec -T db psql -U postgres -d postgres -c \
     "CREATE TABLE IF NOT EXISTS public._applied_migrations(name text PRIMARY KEY, applied_at timestamptz DEFAULT now());" >/dev/null
   for f in $(ls "$REPO_DIR"/supabase/migrations/*.sql | sort); do
