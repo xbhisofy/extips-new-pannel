@@ -44,16 +44,17 @@ interface ScheduledRunInput {
   peak_multiplier?: number
 }
 
+// Fully organic randomizer: no repeated quantity, no repeated gap between runs
 function uniquifyScheduledRuns(
   runs: ScheduledRunInput[],
   totalTargetQty: number,
   providerMin: number,
   maxBatchCap: number
 ) {
-  const normalizedRuns = runs
+  const base = runs
     .map((run, index) => ({
       run_number: index + 1,
-      scheduled_at: new Date(run.scheduled_at).toISOString(),
+      at: new Date(run.scheduled_at).getTime(),
       quantity_to_send: Math.max(0, Math.round(Number(run.quantity_to_send) || 0)),
       base_quantity: Math.max(0, Math.round(Number(run.base_quantity ?? run.quantity_to_send) || 0)),
       variance_applied: Number(run.variance_applied ?? 0),
@@ -61,83 +62,127 @@ function uniquifyScheduledRuns(
       status: 'pending'
     }))
     .filter((run) => run.quantity_to_send > 0)
+    .sort((a, b) => a.at - b.at)
 
-  const used = new Set<number>()
+  if (base.length === 0) return []
 
-  normalizedRuns.forEach((run, index) => {
-    const previous = index > 0 ? normalizedRuns[index - 1].quantity_to_send : null
-    let candidate = run.quantity_to_send
-    let fallback = candidate
+  // Never let the cap be smaller than what the preview already asked for
+  const previewMax = base.reduce((m, r) => Math.max(m, r.quantity_to_send), 0)
+  const cap = Math.max(maxBatchCap, Math.ceil(previewMax * 1.35))
+  const floor = Math.max(1, Math.min(providerMin, previewMax))
 
-    for (let step = 0; step <= Math.max(1, maxBatchCap - providerMin); step++) {
-      const options = step === 0 ? [candidate] : [candidate + step, candidate - step]
-      let applied = false
+  const usedQty = new Set<number>()
+  const isTooRound = (n: number) => n % 50 === 0 || n % 25 === 0 || n % 10 === 0
 
-      for (const option of options) {
-        if (option < providerMin || option > maxBatchCap) continue
-        if (used.has(option)) continue
-        if (previous !== null && Math.abs(option - previous) < 2) continue
-        if (option % 5 === 0 && option !== providerMin) continue
-
-        run.quantity_to_send = option
-        run.base_quantity = option
-        applied = true
-        break
-      }
-
-      if (applied) break
-
-      for (const option of options) {
-        if (option < providerMin || option > maxBatchCap) continue
-        if (used.has(option)) continue
-        fallback = option
+  const pickQty = (want: number, prev: number | null) => {
+    const target = Math.max(floor, Math.min(cap, want))
+    for (let step = 0; step <= cap; step++) {
+      const options = step === 0
+        ? [target]
+        : (Math.random() < 0.5 ? [target + step, target - step] : [target - step, target + step])
+      for (const opt of options) {
+        if (opt < floor || opt > cap) continue
+        if (usedQty.has(opt)) continue
+        if (prev !== null && Math.abs(opt - prev) < 3) continue
+        if (isTooRound(opt) && base.length > 1) continue
+        return opt
       }
     }
+    // last resort: first free value
+    for (let opt = floor; opt <= cap; opt++) if (!usedQty.has(opt)) return opt
+    return target
+  }
 
-    run.quantity_to_send = fallback
-    run.base_quantity = fallback
-    used.add(run.quantity_to_send)
+  // 1) Random organic quantity per run (±25% wobble around preview value)
+  base.forEach((run, i) => {
+    const wobble = 0.75 + Math.random() * 0.5
+    const want = Math.round(run.quantity_to_send * wobble)
+    const prev = i > 0 ? base[i - 1].quantity_to_send : null
+    const qty = pickQty(want, prev)
+    run.quantity_to_send = qty
+    run.base_quantity = qty
+    usedQty.add(qty)
   })
 
-  let drift = totalTargetQty - normalizedRuns.reduce((sum, run) => sum + run.quantity_to_send, 0)
+  // 2) Reconcile total so the customer still gets the exact ordered quantity
+  let drift = totalTargetQty - base.reduce((s, r) => s + r.quantity_to_send, 0)
   let guard = 0
-
-  while (drift !== 0 && guard < 10000) {
+  while (drift !== 0 && guard < 20000) {
+    guard++
     let changed = false
-    const indexes = normalizedRuns
-      .map((run, index) => ({ index, quantity: run.quantity_to_send }))
-      .sort((a, b) => drift > 0 ? a.quantity - b.quantity : b.quantity - a.quantity)
-      .map((item) => item.index)
+    const order = base
+      .map((r, index) => ({ index, q: r.quantity_to_send, rand: Math.random() }))
+      .sort((a, b) => drift > 0 ? a.q - b.q || a.rand - b.rand : b.q - a.q || a.rand - b.rand)
+      .map((x) => x.index)
 
-    for (const index of indexes) {
+    for (const index of order) {
       const step = drift > 0 ? 1 : -1
-      const nextQty = normalizedRuns[index].quantity_to_send + step
-      const previous = index > 0 ? normalizedRuns[index - 1].quantity_to_send : null
+      const next = base[index].quantity_to_send + step
+      const prev = index > 0 ? base[index - 1].quantity_to_send : null
+      const after = index < base.length - 1 ? base[index + 1].quantity_to_send : null
+      if (next < floor || next > cap) continue
+      if (usedQty.has(next)) continue
+      if (prev !== null && Math.abs(next - prev) < 3) continue
+      if (after !== null && Math.abs(next - after) < 3) continue
 
-      if (nextQty < providerMin || nextQty > maxBatchCap) continue
-      if (normalizedRuns.some((run, runIndex) => runIndex !== index && run.quantity_to_send === nextQty)) continue
-      if (previous !== null && Math.abs(nextQty - previous) < 2) continue
-
-      normalizedRuns[index].quantity_to_send = nextQty
-      normalizedRuns[index].base_quantity = nextQty
+      usedQty.delete(base[index].quantity_to_send)
+      base[index].quantity_to_send = next
+      base[index].base_quantity = next
+      usedQty.add(next)
       drift += drift > 0 ? -1 : 1
       changed = true
-
       if (drift === 0) break
     }
-
     if (!changed) break
-    guard++
   }
 
-  if (drift !== 0 && normalizedRuns.length > 0) {
-    const lastRun = normalizedRuns[normalizedRuns.length - 1]
-    lastRun.quantity_to_send = Math.max(providerMin, Math.min(maxBatchCap, lastRun.quantity_to_send + drift))
-    lastRun.base_quantity = lastRun.quantity_to_send
+  if (drift !== 0) {
+    const last = base[base.length - 1]
+    last.quantity_to_send = Math.max(1, last.quantity_to_send + drift)
+    last.base_quantity = last.quantity_to_send
   }
 
-  return normalizedRuns
+  // 3) Random organic timing: every gap different, never a fixed rhythm
+  const firstAt = base[0].at
+  const spanMs = Math.max(base.length * 5 * 60000, base[base.length - 1].at - firstAt)
+  const avgGap = spanMs / Math.max(1, base.length - 1)
+  const usedGaps = new Set<number>()
+  let cursor = firstAt
+
+  base.forEach((run, i) => {
+    if (i === 0) {
+      run.at = firstAt
+      return
+    }
+    let gap = 0
+    for (let attempt = 0; attempt < 60; attempt++) {
+      const wobble = 0.45 + Math.random() * 1.25
+      const burst = Math.random() < 0.18 ? 0.35 : 1
+      const candidate = Math.round(avgGap * wobble * burst / 60000) // minutes
+      const minutes = Math.max(4, candidate) + (Math.random() < 0.5 ? 0 : 1)
+      const secs = Math.floor(Math.random() * 60)
+      const g = minutes * 60000 + secs * 1000
+      if (usedGaps.has(minutes)) continue
+      usedGaps.add(minutes)
+      gap = g
+      break
+    }
+    if (!gap) gap = Math.round(avgGap) + Math.floor(Math.random() * 180000)
+    cursor += gap
+    run.at = cursor
+  })
+
+  return base.map((run, i) => ({
+    run_number: i + 1,
+    scheduled_at: new Date(run.at).toISOString(),
+    quantity_to_send: run.quantity_to_send,
+    base_quantity: run.base_quantity,
+    variance_applied: run.variance_applied,
+    peak_multiplier: run.peak_multiplier,
+    status: 'pending'
+  }))
 }
+
 
 // COMPLETE SERVICE-SPECIFIC CONFIGS
 const MAX_BATCH_CAPS: Record<string, number> = {
@@ -689,6 +734,11 @@ serve(async (req) => {
               }
             }
             validatedEntries.forEach((e, i) => e.run_number = i + 1)
+
+            // Final organic pass: random unique quantities + random unique gaps
+            validatedEntries = uniquifyScheduledRuns(validatedEntries, totalTargetQty, providerMin, maxBatchCap)
+              .map((run) => ({ ...run, engagement_order_item_id: itemId }))
+
           }
 
           if (validatedEntries.length > 0) {
