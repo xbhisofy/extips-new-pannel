@@ -52,7 +52,7 @@ import { BottingScoreCard } from "@/components/engagement/BottingScoreCard";
 import type { Counts } from "@/lib/engagement-ratio";
 import { AutoRefillToggle } from "@/components/engagement/AutoRefillToggle";
 import { OrderProgressChart } from "@/components/engagement/OrderProgressChart";
-import { isTargetMetAutoCompleted } from "@/lib/run-status";
+import { isTargetMetAutoCompleted, computeDelivery } from "@/lib/run-status";
 
 const ENGAGEMENT_ICONS = {
   views: { icon: Eye, label: "Views", emoji: "👁️" },
@@ -582,11 +582,18 @@ export default function EngagementOrderDetail() {
       const allItemRuns = item.runs || [];
       const totalDelivered = allItemRuns.reduce((sum: number, r: any) => sum + calculateActualDelivered(r), 0);
       
+      // Trusted delivery counters (asked vs provider-observed vs public delta)
+      const summary = computeDelivery(allItemRuns, item.quantity);
+
       return {
         type: item.engagement_type,
         target: item.quantity,
-        delivered: totalDelivered,
+        delivered: Math.max(totalDelivered, summary.delivered),
         scheduled: totalScheduled,
+        startCount: summary.startCount,
+        currentCount: summary.currentCount,
+        remaining: Math.max(0, item.quantity - Math.max(totalDelivered, summary.delivered)),
+        targetMet: Math.max(totalDelivered, summary.delivered) >= item.quantity,
       };
     });
     
@@ -798,6 +805,33 @@ export default function EngagementOrderDetail() {
           onRetryFailed={() => retryFailedMutation.mutate()}
           isRetrying={retryFailedMutation.isPending}
         />
+
+        {/* Target / Start / Current counters per engagement type */}
+        <Card className="p-4">
+          <div className="text-sm font-semibold mb-3">Delivery counters</div>
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+            {stats.perType.map((t: any) => (
+              <div key={t.type} className="rounded-lg border border-border bg-secondary/30 p-3 space-y-2">
+                <div className="flex items-center justify-between">
+                  <span className="font-medium capitalize">{t.type}</span>
+                  {t.targetMet ? (
+                    <Badge className="bg-emerald-500/20 text-emerald-500 border-emerald-500/30">100% Completed</Badge>
+                  ) : (
+                    <Badge variant="secondary">{Math.round((t.delivered / Math.max(1, t.target)) * 100)}%</Badge>
+                  )}
+                </div>
+                <Progress value={Math.min(100, (t.delivered / Math.max(1, t.target)) * 100)} className="h-2" />
+                <div className="grid grid-cols-2 gap-x-3 gap-y-1 text-xs text-muted-foreground">
+                  <span>Target</span><span className="text-right font-medium text-foreground">{t.target.toLocaleString()}</span>
+                  <span>Start</span><span className="text-right font-medium text-foreground">{t.startCount != null ? t.startCount.toLocaleString() : '—'}</span>
+                  <span>Current</span><span className="text-right font-medium text-foreground">{t.currentCount != null ? t.currentCount.toLocaleString() : '—'}</span>
+                  <span>Delivered</span><span className="text-right font-medium text-foreground">{t.delivered.toLocaleString()}</span>
+                  <span>Remaining</span><span className="text-right font-medium text-foreground">{t.targetMet ? 0 : t.remaining.toLocaleString()}</span>
+                </div>
+              </div>
+            ))}
+          </div>
+        </Card>
 
         {/* Real-Time Progress Chart */}
         <OrderProgressChart runs={stats.allRuns} perType={stats.perType} />
