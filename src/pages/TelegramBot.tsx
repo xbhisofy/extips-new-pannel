@@ -1,149 +1,117 @@
-import { useEffect, useState } from "react";
-import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { toast } from "sonner";
-import { Copy, RefreshCw, Send, ShieldCheck, ArrowLeft } from "lucide-react";
+import { Card, CardContent } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import {
+  ArrowLeft,
+  BellRing,
+  Bot,
+  Clock3,
+  MessageCircleMore,
+  Rocket,
+  Send,
+  Settings2,
+  ShieldCheck,
+  Sparkles,
+  WalletCards,
+} from "lucide-react";
 import { Link } from "react-router-dom";
 
-import { useAuth } from "@/hooks/useAuth";
+const UPCOMING_FEATURES = [
+  {
+    icon: Rocket,
+    title: "Place Orders",
+    description: "Instagram links par views, likes aur comments ke orders Telegram se place karein.",
+  },
+  {
+    icon: WalletCards,
+    title: "Wallet Balance",
+    description: "Apna live wallet balance aur recent transactions turant check karein.",
+  },
+  {
+    icon: BellRing,
+    title: "Live Order Updates",
+    description: "Processing, completed aur failed orders ki instant notifications paayein.",
+  },
+  {
+    icon: MessageCircleMore,
+    title: "Manage Instagram Posts",
+    description: "Recent posts dekhein aur Telegram ke andar se quick boost apply karein.",
+  },
+  {
+    icon: Settings2,
+    title: "Auto Order Presets",
+    description: "Default quantity aur auto/manual mode ko simple commands se control karein.",
+  },
+  {
+    icon: ShieldCheck,
+    title: "Secure Account Linking",
+    description: "One-time verification ke saath apna EXTIPS account safely connect karein.",
+  },
+];
 
 export default function TelegramBot() {
-  const { user } = useAuth();
-  const [code, setCode] = useState<string | null>(null);
-  const [expires, setExpires] = useState<string | null>(null);
-  const [linked, setLinked] = useState<{ username: string | null; chat_id: number | null } | null>(null);
-  const [botUsername, setBotUsername] = useState<string>("YourBot");
-  const [loading, setLoading] = useState(false);
-  const [isAdmin, setIsAdmin] = useState(false);
-
-  const loadStatus = async () => {
-    if (!user) return;
-    const { data } = await supabase
-      .from("telegram_engagement_links")
-      .select("link_code, code_expires_at, telegram_username, telegram_chat_id, status")
-      .eq("user_id", user.id)
-      .maybeSingle();
-    if (data) {
-      setCode(data.link_code);
-      setExpires(data.code_expires_at);
-      if (data.status === "linked") setLinked({ username: data.telegram_username, chat_id: data.telegram_chat_id });
-      else setLinked(null);
-    }
-    const { data: role } = await supabase.from("user_roles").select("role").eq("user_id", user.id).eq("role", "admin").maybeSingle();
-    setIsAdmin(!!role);
-  };
-
-  useEffect(() => {
-    loadStatus();
-    // Bot username is a public env; fall back to the token secret name hint.
-    const envUser = (import.meta.env.VITE_TELEGRAM_BOT_USERNAME as string | undefined) ?? "Extips PanelPro_Bot";
-    setBotUsername(envUser);
-  }, [user?.id]);
-
-  const generate = async () => {
-    setLoading(true);
-    const { data, error } = await supabase.rpc("generate_telegram_link_code");
-    setLoading(false);
-    if (error) return toast.error(error.message);
-    setCode((data as any)?.code);
-    setExpires((data as any)?.expires_at);
-    toast.success("Code generated. Valid for 30 minutes.");
-  };
-
-  const copy = (t: string) => {
-    navigator.clipboard.writeText(t);
-    toast.success("Copied");
-  };
-
-  const setupWebhook = async () => {
-    const { data, error } = await supabase.functions.invoke("telegram-set-webhook");
-    if (error) return toast.error(error.message);
-    console.log("webhook", data);
-    toast.success("Webhook registered");
-  };
-
-  const startCommand = code ? `/link ${code}` : "/link YOURCODE";
-
   return (
-    <div className="mx-auto max-w-2xl p-4 space-y-4 pb-24">
-      <div className="flex items-center justify-between gap-2">
-        <div>
-          <h1 className="text-2xl font-bold">Telegram Bot</h1>
-          <p className="text-muted-foreground text-sm">Manage orders & posts from Telegram.</p>
+    <main className="mx-auto max-w-5xl px-4 py-5 sm:px-6 sm:py-8 pb-24">
+      <header className="flex items-center justify-between gap-3 mb-6">
+        <div className="flex items-center gap-2 text-sm font-semibold text-muted-foreground">
+          <Send className="h-4 w-4 text-primary" /> Telegram Bot
         </div>
         <Button asChild variant="outline" size="sm">
           <Link to="/dashboard"><ArrowLeft className="w-4 h-4 mr-1" /> Home</Link>
         </Button>
-      </div>
+      </header>
 
+      <section className="relative overflow-hidden rounded-2xl border border-primary/20 bg-card px-5 py-10 text-center shadow-soft sm:px-10 sm:py-14">
+        <div className="absolute inset-x-0 top-0 h-1 bg-primary" />
+        <div className="mx-auto mb-5 flex h-20 w-20 items-center justify-center rounded-full border border-primary/20 bg-primary/10 text-primary shadow-glow">
+          <Bot className="h-10 w-10" />
+        </div>
+        <Badge variant="outline" className="mb-4 border-primary/30 bg-primary/5 text-primary">
+          <Clock3 className="mr-1.5 h-3.5 w-3.5" /> In Development
+        </Badge>
+        <h1 className="text-3xl font-extrabold sm:text-5xl">Telegram Bot Coming Soon</h1>
+        <p className="mx-auto mt-4 max-w-2xl text-sm leading-6 text-muted-foreground sm:text-base">
+          EXTIPS Panel ko Telegram se manage karna aur bhi fast hone wala hai. Hamari team ek secure aur powerful bot experience tayyar kar rahi hai.
+        </p>
+        <div className="mx-auto mt-6 flex w-fit items-center gap-2 rounded-full border border-border bg-secondary px-4 py-2 text-xs font-semibold text-secondary-foreground sm:text-sm">
+          <Sparkles className="h-4 w-4 text-primary" /> Launch update aapko dashboard par mil jayega
+        </div>
+      </section>
 
-      <Card>
-        <CardHeader><CardTitle className="flex items-center gap-2"><Send className="w-4 h-4" /> Pair your chat</CardTitle></CardHeader>
-        <CardContent className="space-y-3">
-          {linked ? (
-            <div className="rounded-lg border border-green-500/40 bg-green-500/10 p-3 text-sm">
-              ✅ Linked as <b>@{linked.username || "unknown"}</b> (chat {linked.chat_id})
-            </div>
-          ) : (
-            <div className="text-sm text-muted-foreground">Not linked yet.</div>
-          )}
+      <section className="mt-9" aria-labelledby="upcoming-features">
+        <div className="mb-5 text-center">
+          <h2 id="upcoming-features" className="text-2xl font-extrabold">What&apos;s Coming</h2>
+          <p className="mt-1 text-sm text-muted-foreground">Telegram par milne wale powerful features</p>
+        </div>
+        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+          {UPCOMING_FEATURES.map(({ icon: Icon, title, description }) => (
+            <Card key={title} className="border-border bg-card transition-colors hover:border-primary/30">
+              <CardContent className="p-5">
+                <div className="mb-4 flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10 text-primary">
+                  <Icon className="h-5 w-5" />
+                </div>
+                <h3 className="text-base font-bold">{title}</h3>
+                <p className="mt-2 text-sm leading-5 text-muted-foreground">{description}</p>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      </section>
 
-          <div className="flex gap-2">
-            <Button onClick={generate} disabled={loading} size="sm">
-              <RefreshCw className="w-4 h-4 mr-1" /> {code ? "Regenerate code" : "Generate code"}
-            </Button>
-            {code && (
-              <Button variant="outline" size="sm" onClick={() => copy(code)}>
-                <Copy className="w-4 h-4 mr-1" /> {code}
-              </Button>
-            )}
+      <section className="mt-7 rounded-xl border border-border bg-secondary/60 px-5 py-4 sm:flex sm:items-center sm:justify-between sm:gap-5">
+        <div className="flex items-start gap-3">
+          <div className="mt-0.5 text-primary">
+            <ShieldCheck className="h-5 w-5" />
           </div>
-          {expires && <div className="text-xs text-muted-foreground">Expires: {new Date(expires).toLocaleString()}</div>}
-
-          <ol className="text-sm space-y-2 list-decimal pl-5">
-            <li>
-              Open bot:{" "}
-              <a className="text-primary underline" href={`https://t.me/${botUsername}`} target="_blank" rel="noreferrer">
-                @{botUsername}
-              </a>
-            </li>
-            <li>Send <code className="px-1 rounded bg-muted">/start</code></li>
-            <li>Send <code className="px-1 rounded bg-muted">{startCommand}</code>
-              {code && (
-                <Button variant="ghost" size="sm" className="ml-2 h-6" onClick={() => copy(startCommand)}>
-                  <Copy className="w-3 h-3" />
-                </Button>
-              )}
-            </li>
-          </ol>
-        </CardContent>
-      </Card>
-
-      <Card>
-        <CardHeader><CardTitle>Available commands</CardTitle></CardHeader>
-        <CardContent className="text-sm space-y-1 font-mono">
-          <div>/wallet — balance</div>
-          <div>/posts — recent Instagram posts (inline Boost buttons)</div>
-          <div>/orders — recent engagement orders</div>
-          <div>/order &lt;instagram-link&gt; [views] [likes] [comments] — place order</div>
-          <div>/setdefault VIEWS LIKES COMMENTS [DRIP_MIN] — set preset</div>
-          <div>/mode auto|manual — auto-order on new posts</div>
-          <div>/cancel ORDER_ID — cancel pending order</div>
-          <div>/help — show commands</div>
-        </CardContent>
-
-      </Card>
-
-      {isAdmin && (
-        <Card>
-          <CardHeader><CardTitle className="flex items-center gap-2"><ShieldCheck className="w-4 h-4" /> Admin</CardTitle></CardHeader>
-          <CardContent>
-            <Button onClick={setupWebhook} size="sm" variant="outline">Register Telegram webhook</Button>
-            <p className="text-xs text-muted-foreground mt-2">One-time setup so Telegram forwards messages to our backend.</p>
-          </CardContent>
-        </Card>
-      )}
-    </div>
+          <div>
+            <h2 className="text-sm font-bold">Safe & Reliable Experience</h2>
+            <p className="mt-1 text-xs leading-5 text-muted-foreground">
+              Bot ko public launch se pehle security aur order reliability ke liye thoroughly test kiya ja raha hai.
+            </p>
+          </div>
+        </div>
+        <Badge variant="secondary" className="mt-3 whitespace-nowrap sm:mt-0">Stay Tuned</Badge>
+      </section>
+    </main>
   );
 }
