@@ -8,6 +8,19 @@ ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS referred_by uuid;
 ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS referral_earnings numeric NOT NULL DEFAULT 0;
 CREATE INDEX IF NOT EXISTS idx_profiles_referral_code_upper ON public.profiles ((upper(referral_code))) WHERE referral_code IS NOT NULL;
 
+-- High-traffic read/queue indexes. These only improve lookup paths; order,
+-- rotation, wallet and completion behaviour remain unchanged.
+CREATE INDEX IF NOT EXISTS idx_orders_user_created_desc
+  ON public.orders(user_id, created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_engagement_orders_user_created_desc
+  ON public.engagement_orders(user_id, created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_organic_runs_pending_last_check
+  ON public.organic_run_schedule(last_status_check, scheduled_at)
+  WHERE status = 'pending';
+CREATE INDEX IF NOT EXISTS idx_organic_runs_failed_completed
+  ON public.organic_run_schedule(completed_at)
+  WHERE status = 'failed';
+
 -- Some hosted histories granted this RPC before its CREATE reached the VPS.
 -- Recreate the canonical, authenticated-user-only implementation first.
 CREATE OR REPLACE FUNCTION public.set_referrer_by_code(p_code text) RETURNS json
