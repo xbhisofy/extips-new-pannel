@@ -19,39 +19,39 @@ input[type="number"] {
 
 @layer base {
   :root {
-    /* ════ EXTIPS BLUE — Deep Royal (light bg, dark-blue ink) ════ */
-    --background: 210 40% 99%;
-    --foreground: 224 64% 12%;
+    /* ════ EXTIPS BLUE — Bright Sky (crisp white bg, light-blue tint) ════ */
+    --background: 206 100% 99.5%;
+    --foreground: 222 60% 13%;
 
     --card: 0 0% 100%;
-    --card-foreground: 224 64% 12%;
+    --card-foreground: 222 60% 13%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 224 64% 12%;
+    --popover-foreground: 222 60% 13%;
 
-    --primary: 226 78% 38%;
+    --primary: 218 90% 48%;
     --primary-foreground: 0 0% 100%;
 
-    --secondary: 216 45% 94%;
-    --secondary-foreground: 226 60% 18%;
+    --secondary: 205 90% 97%;
+    --secondary-foreground: 220 60% 22%;
 
-    --muted: 215 35% 93%;
-    --muted-foreground: 220 30% 34%;
+    --muted: 205 80% 97%;
+    --muted-foreground: 217 22% 44%;
 
-    --accent: 224 76% 44%;
+    --accent: 200 92% 52%;
     --accent-foreground: 0 0% 100%;
 
-    --success: 160 72% 32%;
+    --success: 160 72% 34%;
     --success-foreground: 0 0% 100%;
 
-    --warning: 32 92% 40%;
+    --warning: 32 92% 42%;
     --warning-foreground: 0 0% 100%;
 
-    --destructive: 0 72% 45%;
+    --destructive: 0 72% 47%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 216 30% 84%;
-    --input: 216 30% 86%;
+    --border: 208 55% 91%;
+    --input: 208 55% 90%;
     --ring: 226 78% 38%;
 
     --radius: 1rem;
