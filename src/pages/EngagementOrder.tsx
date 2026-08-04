@@ -48,7 +48,7 @@ import {
 import { Loader2, Rocket, Link as LinkIcon, Wallet, RefreshCw, Brain, Percent, Eye, EyeOff, Lock } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import { useDebounce } from "@/hooks/useDebounce";
-import { FullOrganicConfig } from "@/lib/organic-algorithm";
+import { FullOrganicConfig, effectiveMinimum } from "@/lib/organic-algorithm";
 
 type EngagementConfigs = Record<string, EngagementConfig>;
 
@@ -312,7 +312,7 @@ export default function EngagementOrder() {
         prices[item.engagement_type] = {
           pricePerK: adminPricePerK ?? item.service.price,
           serviceId: item.service.id,
-          minQuantity: lowestMatchedMin ?? item.service.min_quantity,
+          minQuantity: effectiveMinimum(item.engagement_type, lowestMatchedMin ?? item.service.min_quantity),
         };
         return;
       }
@@ -329,7 +329,7 @@ export default function EngagementOrder() {
           prices[item.engagement_type] = {
             pricePerK: adminPricePerK ?? match.price,
             serviceId: match.id,
-            minQuantity: Number.isFinite(lowestMin) ? lowestMin : match.min_quantity,
+            minQuantity: effectiveMinimum(item.engagement_type, Number.isFinite(lowestMin) ? lowestMin : match.min_quantity),
           };
           return;
         }
@@ -340,7 +340,7 @@ export default function EngagementOrder() {
         prices[item.engagement_type] = {
           pricePerK: adminPricePerK ?? item.service.price,
           serviceId: item.service.id,
-          minQuantity: lowestMatchedMin ?? item.service.min_quantity,
+          minQuantity: effectiveMinimum(item.engagement_type, lowestMatchedMin ?? item.service.min_quantity),
         };
       }
     });
@@ -388,7 +388,7 @@ export default function EngagementOrder() {
             ? (quantity / 1000) * serviceData.pricePerK
             : prev[type]?.price ?? 0,
           serviceId: serviceData?.serviceId ?? prev[type]?.serviceId ?? null,
-          minQuantity: serviceData?.minQuantity ?? prev[type]?.minQuantity,
+          minQuantity: serviceData?.minQuantity ?? prev[type]?.minQuantity ?? effectiveMinimum(type),
           // Per-type organic settings
           timeLimitHours: prev[type]?.timeLimitHours ?? DEFAULT_ORGANIC_SETTINGS.timeLimitHours,
           variancePercent: prev[type]?.variancePercent ?? DEFAULT_ORGANIC_SETTINGS.variancePercent,
