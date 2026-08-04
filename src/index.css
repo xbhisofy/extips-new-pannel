@@ -19,39 +19,39 @@ input[type="number"] {
 
 @layer base {
   :root {
-    /* ════ EXTIPS BLUE — Deep Royal (light bg, dark-blue ink) ════ */
-    --background: 210 40% 99%;
-    --foreground: 224 64% 12%;
+    /* ════ EXTIPS BLUE — Bright Sky (crisp white bg, light-blue tint) ════ */
+    --background: 206 100% 99.5%;
+    --foreground: 222 60% 13%;
 
     --card: 0 0% 100%;
-    --card-foreground: 224 64% 12%;
+    --card-foreground: 222 60% 13%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 224 64% 12%;
+    --popover-foreground: 222 60% 13%;
 
-    --primary: 226 78% 38%;
+    --primary: 218 90% 48%;
     --primary-foreground: 0 0% 100%;
 
-    --secondary: 216 45% 94%;
-    --secondary-foreground: 226 60% 18%;
+    --secondary: 205 90% 97%;
+    --secondary-foreground: 220 60% 22%;
 
-    --muted: 215 35% 93%;
-    --muted-foreground: 220 30% 34%;
+    --muted: 205 80% 97%;
+    --muted-foreground: 217 22% 44%;
 
-    --accent: 224 76% 44%;
+    --accent: 200 92% 52%;
     --accent-foreground: 0 0% 100%;
 
-    --success: 160 72% 32%;
+    --success: 160 72% 34%;
     --success-foreground: 0 0% 100%;
 
-    --warning: 32 92% 40%;
+    --warning: 32 92% 42%;
     --warning-foreground: 0 0% 100%;
 
-    --destructive: 0 72% 45%;
+    --destructive: 0 72% 47%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 216 30% 84%;
-    --input: 216 30% 86%;
+    --border: 208 55% 91%;
+    --input: 208 55% 90%;
     --ring: 226 78% 38%;
 
     --radius: 1rem;
@@ -104,7 +104,7 @@ html {
 
   .glass-card {
     @apply relative overflow-hidden rounded-2xl border;
-    background: rgba(255,255,255,.85);
+    background: rgba(255,255,255,.96);
     border-color: hsl(var(--border));
     box-shadow: 0 8px 28px rgba(15,23,42,.07), inset 0 1px 0 rgba(255,255,255,.6);
     backdrop-filter: blur(12px);
@@ -251,7 +251,7 @@ body .hover\:bg-white\/5:hover,
 body .bg-white\/10,
 body .hover\:bg-white\/10:hover,
 body .bg-white\/20 {
-  background-color: hsl(216 45% 94%) !important;
+  background-color: hsl(205 90% 97.5%) !important;
 }
 
 /* hairline borders */
@@ -369,7 +369,7 @@ body a[class*="bg-white"][class*="text-primary-foreground"] {
 }
 
 /* arbitrary translucent white surfaces bg-white/[0.0x] */
-body [class*="bg-white/["] { background-color: hsl(216 45% 94%) !important; }
+body [class*="bg-white/["] { background-color: hsl(205 90% 97.5%) !important; }
 
 /* pale accent text -> readable blue/dark tones */
 body [class*="text-purple-2"], body [class*="text-purple-3"],
@@ -441,7 +441,7 @@ body .glass-card, body .glass-premium, body .three-d-card {
 
 /* translucent glass surfaces: a touch more blue so they read as panels */
 body .bg-white\/5, body .bg-white\/10, body .bg-white\/20,
-body [class*="bg-white/["] { background-color: hsl(214 48% 95%) !important; }
+body [class*="bg-white/["] { background-color: hsl(205 90% 97.5%) !important; }
 
 /* pale accent text -> stronger blue */
 body [class*="text-purple-2"], body [class*="text-purple-3"],
