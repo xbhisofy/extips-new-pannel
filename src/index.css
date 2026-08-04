@@ -104,7 +104,7 @@ html {
 
   .glass-card {
     @apply relative overflow-hidden rounded-2xl border;
-    background: rgba(255,255,255,.85);
+    background: rgba(255,255,255,.96);
     border-color: hsl(var(--border));
     box-shadow: 0 8px 28px rgba(15,23,42,.07), inset 0 1px 0 rgba(255,255,255,.6);
     backdrop-filter: blur(12px);
@@ -251,7 +251,7 @@ body .hover\:bg-white\/5:hover,
 body .bg-white\/10,
 body .hover\:bg-white\/10:hover,
 body .bg-white\/20 {
-  background-color: hsl(216 45% 94%) !important;
+  background-color: hsl(205 90% 97.5%) !important;
 }
 
 /* hairline borders */
@@ -369,7 +369,7 @@ body a[class*="bg-white"][class*="text-primary-foreground"] {
 }
 
 /* arbitrary translucent white surfaces bg-white/[0.0x] */
-body [class*="bg-white/["] { background-color: hsl(216 45% 94%) !important; }
+body [class*="bg-white/["] { background-color: hsl(205 90% 97.5%) !important; }
 
 /* pale accent text -> readable blue/dark tones */
 body [class*="text-purple-2"], body [class*="text-purple-3"],
@@ -441,7 +441,7 @@ body .glass-card, body .glass-premium, body .three-d-card {
 
 /* translucent glass surfaces: a touch more blue so they read as panels */
 body .bg-white\/5, body .bg-white\/10, body .bg-white\/20,
-body [class*="bg-white/["] { background-color: hsl(214 48% 95%) !important; }
+body [class*="bg-white/["] { background-color: hsl(205 90% 97.5%) !important; }
 
 /* pale accent text -> stronger blue */
 body [class*="text-purple-2"], body [class*="text-purple-3"],
