@@ -1,5 +1,6 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 import { notifyUserTelegram, statusEmoji } from '../_shared/notify.ts'
+import { enforceTargetCompletion, isFakeProviderCompletion } from '../_shared/target-completion.ts'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -285,7 +286,10 @@ Deno.serve(async (req) => {
         // Always update provider tracking data
         const trackingUpdate: any = {
           provider_status: result.status,
-          provider_start_count: startCount,
+          // Baseline guard: start_count is immutable once a valid value exists
+          provider_start_count: (typeof run.provider_start_count === 'number' && run.provider_start_count > 0)
+            ? run.provider_start_count
+            : startCount,
           provider_remains: remains,
           provider_charge: charge,
           provider_response: result,
@@ -579,7 +583,9 @@ Deno.serve(async (req) => {
           // Always update tracking data
           const trackingUpdate: any = {
             provider_status: result.status,
-            provider_start_count: startCount,
+            provider_start_count: (typeof run.provider_start_count === 'number' && run.provider_start_count > 0)
+              ? run.provider_start_count
+              : startCount,
             provider_remains: remains,
             provider_charge: charge,
             provider_response: result,
