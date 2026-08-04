@@ -43,9 +43,13 @@ export function isInternalCancelledRun(run: RunLike | null | undefined): boolean
   return INTERNAL_CANCEL_PREFIXES.some((p) => msg.startsWith(p));
 }
 
-/** Runs that should not appear anywhere in the user-facing timeline/history. */
+/**
+ * Runs that should not appear anywhere in the user-facing timeline/history.
+ * Target-met runs stay visible but render as "Completed"; purely internal
+ * bookkeeping rows (merged runs, duplicate target rows) are hidden.
+ */
 export function shouldHideRunFromUser(run: RunLike | null | undefined): boolean {
-  return isInternalCancelledRun(run);
+  return isInternalCancelledRun(run) && !isTargetMetAutoCompleted(run);
 }
 
 /** Reason safe to show the user (null for internal cancellations). */
