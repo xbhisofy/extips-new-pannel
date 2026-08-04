@@ -38,9 +38,12 @@ export default function OxapaySubscriptionPoller() {
           });
           if (data?.credited || data?.status === 'success') {
             toast.success('🎉 Subscription activated!', { id: toastId });
+            await queryClient.invalidateQueries({ queryKey: ["subscription"] });
+            await queryClient.invalidateQueries({ queryKey: ["user-subscription"] });
+            await queryClient.invalidateQueries({ queryKey: ["wallet"] });
+            await queryClient.invalidateQueries({ queryKey: ["transactions"] });
             await queryClient.invalidateQueries({ queryKey: ['subscription'] });
             await queryClient.invalidateQueries({ queryKey: ['user-subscription'] });
-            await queryClient.invalidateQueries();
             clearParams();
             return;
           }

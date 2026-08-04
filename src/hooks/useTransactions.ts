@@ -26,7 +26,7 @@ export function useTransactions(filter: TransactionFilter = 'all') {
       return data;
     },
     enabled: !!user?.id,
-    staleTime: 15000,
-    refetchOnMount: 'always',
+    staleTime: 60000,
+    refetchOnMount: false,
   });
 }

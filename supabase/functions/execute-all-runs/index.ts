@@ -766,6 +766,7 @@ async function processAllRuns(supabase: any, executionId: string, startTime: num
       { data: pendingEngagementRuns, error: engagementRunsError },
       { data: failedEngagementRuns },
       { data: recentlyBusyRuns },
+      { data: recentlyCompletedRuns },
     ] = await Promise.all([
       // 1. Active runs for conflict detection
       supabase
@@ -802,7 +803,17 @@ async function processAllRuns(supabase: any, executionId: string, startTime: num
         .from('organic_run_schedule')
         .select(`provider_account_id, error_message, engagement_order_item:engagement_order_items(engagement_type, engagement_order:engagement_orders(link))`)
         .eq('status', 'pending')
-        .gte('last_status_check', recentBusyCutoff),
+        .gte('last_status_check', recentBusyCutoff)
+        .limit(1000),
+      // One shared rotation-history read per invocation. Previously this ran
+      // once for every due run and multiplied database load during bursts.
+      supabase
+        .from('organic_run_schedule')
+        .select('provider_account_id, engagement_order_item:engagement_order_items(engagement_type, engagement_order:engagement_orders(link))')
+        .eq('status', 'completed')
+        .not('provider_account_id', 'is', null)
+        .gte('completed_at', new Date(Date.now() - 5 * 60 * 1000).toISOString())
+        .limit(2000),
     ])
 
     // ==========================================
@@ -1237,17 +1248,9 @@ async function processAllRuns(supabase: any, executionId: string, startTime: num
       // ROUND-ROBIN: Prefer a different provider after a recent completion,
       // but do NOT hard-block the just-used provider.
       // Otherwise next run can get stuck even after the previous one is completed.
-      const fiveMinAgo = new Date(Date.now() - 5 * 60 * 1000).toISOString()
-      const { data: recentCompletedRuns } = await supabase
-        .from('organic_run_schedule')
-        .select('provider_account_id, engagement_order_item:engagement_order_items(engagement_type, engagement_order:engagement_orders(link))')
-        .eq('status', 'completed')
-        .not('provider_account_id', 'is', null)
-        .gte('completed_at', fiveMinAgo)
-      
       const recentCompletedAccountIds = new Set<string>()
-      if (recentCompletedRuns) {
-        for (const rcr of recentCompletedRuns) {
+      if (recentlyCompletedRuns) {
+        for (const rcr of recentlyCompletedRuns) {
           const rcrLink = normalizeLink(getNestedEngagementOrderLink(rcr.engagement_order_item))
           const rcrType = (rcr.engagement_order_item?.engagement_type || '').toLowerCase()
           if (rcrLink === sameLink && rcrType === currentTypeNormalized && rcr.provider_account_id) {

@@ -1,28 +1,10 @@
-import { useQuery } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 
+/**
+ * Optimized: Returns the wallet from AuthContext which already handles
+ * realtime updates and initial fetch, avoiding redundant Supabase queries.
+ */
 export function useWallet() {
-  const { user } = useAuth();
-
-  const { data: wallet, isLoading, error } = useQuery({
-    queryKey: ['wallet', user?.id],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('wallets')
-        .select('*')
-        .eq('user_id', user!.id)
-        .order('created_at', { ascending: true })
-        .limit(1)
-        .maybeSingle();
-      if (error) throw error;
-      return data;
-    },
-    enabled: !!user?.id,
-    staleTime: 10000,
-    refetchOnMount: 'always',
-    refetchOnWindowFocus: true,
-  });
-
-  return { wallet, isLoading, error };
+  const { wallet, isLoading } = useAuth();
+  return { wallet, isLoading, error: null };
 }

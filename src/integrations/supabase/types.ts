@@ -2190,16 +2190,18 @@ export type Database = {
         }
         Returns: Json
       }
-      debit_wallet_for_order: {
-        Args: {
-          p_amount: number
-          p_description?: string
-          p_idempotency_key?: string
-          p_order_id?: string
-          p_user_id: string
-        }
-        Returns: Json
-      }
+      debit_wallet_for_order:
+        | { Args: { p_amount: number; p_user_id: string }; Returns: number }
+        | {
+            Args: {
+              p_amount: number
+              p_description?: string
+              p_idempotency_key?: string
+              p_order_id?: string
+              p_user_id: string
+            }
+            Returns: Json
+          }
       ensure_user_profile: { Args: never; Returns: undefined }
       expire_subscriptions: { Args: never; Returns: number }
       export_auth_hashes: {

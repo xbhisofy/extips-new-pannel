@@ -56,13 +56,15 @@ export default function MyPosts() {
 
       if (selectedAccountId) mediaQuery = mediaQuery.eq('account_id', selectedAccountId);
 
-      const { data: media, error: mediaError } = await mediaQuery;
+      const { data: media, error: mediaError } = await mediaQuery.limit(100);
       if (mediaError) throw mediaError;
 
       const { data: orders, error: ordersError } = await supabase
         .from('engagement_orders')
         .select('link,status,total_price')
-        .eq('user_id', user!.id);
+        .eq('user_id', user!.id)
+        .order('created_at', { ascending: false })
+        .limit(500);
       if (ordersError) throw ordersError;
 
       return (media ?? []).map((m: any) => {
@@ -92,7 +94,7 @@ export default function MyPosts() {
     // Background scrape lands rows asynchronously — poll until posts appear
     refetchInterval: (query) => {
       const data = query.state.data as Row[] | undefined;
-      return !data || data.length === 0 ? 3000 : false;
+      return selectedAccountId && (!data || data.length === 0) ? 5000 : false;
     },
     refetchIntervalInBackground: false,
   });

@@ -86,7 +86,13 @@ export default function EngagementOrders() {
     enabled: !!user,
     staleTime: 15000, // Cache for 15s
     refetchOnWindowFocus: false,
-    refetchInterval: 15000, // Refresh every 15s (was 5s)
+    refetchInterval: (query) => {
+      const data = query.state.data;
+      return data?.some(order => order.status === 'pending' || order.status === 'processing')
+        ? 15000
+        : false;
+    },
+    refetchIntervalInBackground: false,
   });
 
   // Filter orders based on search query

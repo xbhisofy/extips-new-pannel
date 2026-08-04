@@ -107,22 +107,16 @@ Deno.serve(async (req) => {
 
     const service_name = orderData.service_name;
 
-    // 1. Get wallet and check balance
+    // 1. Confirm the wallet exists. The authoritative balance check and debit
+    // happen atomically below so simultaneous requests cannot overspend it.
     const { data: wallet, error: walletError } = await supabaseAdmin
       .from("wallets")
-      .select("*")
+      .select("user_id")
       .eq("user_id", user.id)
       .single();
 
     if (walletError || !wallet) {
       return new Response(JSON.stringify({ error: "Wallet not found" }), {
-        status: 400,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
-
-    if (wallet.balance < totalPrice) {
-      return new Response(JSON.stringify({ error: "Insufficient balance" }), {
         status: 400,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
@@ -171,20 +165,23 @@ Deno.serve(async (req) => {
       });
     }
 
-    // 3. Deduct from wallet
-    const newBalance = wallet.balance - totalPrice;
-    const newSpent = (wallet.total_spent || 0) + totalPrice;
-    
-    const { error: updateErr } = await supabaseAdmin
-      .from("wallets")
-      .update({
-        balance: newBalance,
-        total_spent: newSpent,
-        updated_at: new Date().toISOString(),
-      })
-      .eq("user_id", user.id);
+    // 3. Atomic debit: the database locks/updates the wallet in one statement.
+    const { data: newBalance, error: debitError } = await supabaseAdmin.rpc(
+      "debit_wallet_for_order",
+      { p_user_id: user.id, p_amount: totalPrice },
+    );
 
-    if (updateErr) throw updateErr;
+    if (debitError || newBalance == null) {
+      // The order has not been paid, so remove it before returning an error.
+      await supabaseAdmin.from("orders").delete().eq("id", order.id);
+      const insufficient = debitError?.message?.includes("Insufficient balance");
+      return new Response(JSON.stringify({
+        error: insufficient ? "Insufficient balance" : "Failed to charge wallet",
+      }), {
+        status: insufficient ? 400 : 500,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
 
     // 4. Record transaction
     const { error: txErr } = await supabaseAdmin.from("transactions").insert({
