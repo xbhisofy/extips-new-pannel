@@ -48,7 +48,7 @@ import {
 import { Loader2, Rocket, Link as LinkIcon, Wallet, RefreshCw, Brain, Percent, Eye, EyeOff, Lock } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import { useDebounce } from "@/hooks/useDebounce";
-import { FullOrganicConfig } from "@/lib/organic-algorithm";
+import { FullOrganicConfig, effectiveMinimum } from "@/lib/organic-algorithm";
 
 type EngagementConfigs = Record<string, EngagementConfig>;
 
