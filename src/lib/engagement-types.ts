@@ -128,11 +128,11 @@ export const DEFAULT_ORGANIC_SETTINGS = {
 
 // Platform icons and colors - Light / pastel gradients
 export const PLATFORM_CONFIG = {
-  instagram: { icon: 'Instagram', color: 'from-emerald-300 via-teal-300 to-purple-400', label: 'Instagram', bgColor: 'bg-emerald-500/10', borderColor: 'border-emerald-500/20' },
-  tiktok: { icon: 'Music', color: 'from-cyan-300 via-sky-300 to-emerald-300', label: 'TikTok', bgColor: 'bg-cyan-500/10', borderColor: 'border-cyan-500/20' },
-  youtube: { icon: 'Youtube', color: 'from-rose-300 to-red-400', label: 'YouTube', bgColor: 'bg-rose-500/10', borderColor: 'border-rose-500/20' },
-  twitter: { icon: 'Twitter', color: 'from-sky-300 to-blue-400', label: 'Twitter/X', bgColor: 'bg-sky-500/10', borderColor: 'border-sky-500/20' },
-  facebook: { icon: 'Facebook', color: 'from-blue-300 to-indigo-400', label: 'Facebook', bgColor: 'bg-blue-500/10', borderColor: 'border-blue-500/20' },
+  instagram: { icon: 'Instagram', color: 'from-emerald-300 via-teal-300 to-purple-400', textColor: 'text-emerald-600', label: 'Instagram', bgColor: 'bg-emerald-500/10', borderColor: 'border-emerald-500/20' },
+  tiktok: { icon: 'Music', color: 'from-cyan-300 via-sky-300 to-emerald-300', textColor: 'text-cyan-600', label: 'TikTok', bgColor: 'bg-cyan-500/10', borderColor: 'border-cyan-500/20' },
+  youtube: { icon: 'Youtube', color: 'from-rose-300 to-red-400', textColor: 'text-rose-600', label: 'YouTube', bgColor: 'bg-rose-500/10', borderColor: 'border-rose-500/20' },
+  twitter: { icon: 'Twitter', color: 'from-sky-300 to-blue-400', textColor: 'text-sky-600', label: 'Twitter/X', bgColor: 'bg-sky-500/10', borderColor: 'border-sky-500/20' },
+  facebook: { icon: 'Facebook', color: 'from-blue-300 to-indigo-400', textColor: 'text-blue-600', label: 'Facebook', bgColor: 'bg-blue-500/10', borderColor: 'border-blue-500/20' },
 } as const;
 
 // Engagement type icons and colors - Muted deep colors
