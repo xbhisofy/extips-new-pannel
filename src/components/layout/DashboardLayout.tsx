@@ -26,18 +26,18 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
       {/* Ambient aurora + grid */}
       <div aria-hidden className="pointer-events-none fixed inset-0 -z-10">
         <div
-          className="absolute inset-0 opacity-[0.05]"
+          className="absolute inset-0 opacity-[0.03]"
           style={{
             backgroundImage:
-              'linear-gradient(#93a4c4 1px, transparent 1px), linear-gradient(90deg, #93a4c4 1px, transparent 1px)',
+              'linear-gradient(#7ea8dd 1px, transparent 1px), linear-gradient(90deg, #7ea8dd 1px, transparent 1px)',
             backgroundSize: '44px 44px',
             maskImage: 'radial-gradient(ellipse at center, black 40%, transparent 80%)',
             WebkitMaskImage: 'radial-gradient(ellipse at center, black 40%, transparent 80%)',
           }}
         />
-        <div className="absolute top-[-20%] left-[10%] w-[700px] h-[420px] bg-primary/10 blur-[140px] rounded-full" />
-        <div className="absolute top-[30%] right-[-15%] w-[480px] h-[480px] bg-accent/10 blur-[120px] rounded-full" />
-        <div className="absolute bottom-[-20%] left-[-10%] w-[520px] h-[520px] bg-primary/10 blur-[140px] rounded-full" />
+        <div className="absolute top-[-20%] left-[10%] w-[700px] h-[420px] bg-primary/5 blur-[150px] rounded-full" />
+        <div className="absolute top-[30%] right-[-15%] w-[480px] h-[480px] bg-accent/5 blur-[130px] rounded-full" />
+        <div className="absolute bottom-[-20%] left-[-10%] w-[520px] h-[520px] bg-primary/5 blur-[150px] rounded-full" />
       </div>
 
       <div className="flex w-full">
