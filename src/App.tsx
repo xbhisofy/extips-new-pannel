@@ -17,6 +17,7 @@ import EngagementOrder from "./pages/EngagementOrder";
 import EngagementOrders from "./pages/EngagementOrders";
 import Orders from "./pages/Orders";
 import Wallet from "./pages/Wallet";
+import TestPlatform from "./pages/TestPlatform";
 
 // Lazy — landing, auth, secondary, legal, all admin pages
 const Index = lazy(() => import("./pages/Index"));
