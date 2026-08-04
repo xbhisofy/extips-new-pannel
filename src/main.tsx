@@ -11,6 +11,22 @@ import "@fontsource/instrument-serif/400.css";
 import "@fontsource/instrument-serif/400-italic.css";
 import "./index.css";
 
+// A tab left open during a deployment can still reference a lazy-loaded chunk
+// from the previous build. Vite emits this event when that hashed file no
+// longer exists. Recover once with a fresh document instead of leaving every
+// route behind the error boundary. The short guard prevents reload loops when
+// the server is genuinely unavailable.
+const CHUNK_RELOAD_KEY = "extips:chunk-reload-at";
+window.addEventListener("vite:preloadError", (event) => {
+    event.preventDefault();
+
+    const lastReload = Number(sessionStorage.getItem(CHUNK_RELOAD_KEY) || "0");
+    if (Date.now() - lastReload < 60_000) return;
+
+    sessionStorage.setItem(CHUNK_RELOAD_KEY, String(Date.now()));
+    window.location.reload();
+});
+
 // Aggressively unregister any previously installed service worker + nuke its caches.
 // Old SW versions were serving stale assets and breaking deploys.
 if (typeof navigator !== "undefined" && "serviceWorker" in navigator) {
