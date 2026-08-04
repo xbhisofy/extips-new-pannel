@@ -1,5 +1,6 @@
 // Razorpay webhook - auto credit wallet on payment.captured
 import { createClient } from "npm:@supabase/supabase-js@2";
+import { escapeTelegramHtml, notifyAdminTelegram } from "../_shared/admin-telegram.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -95,24 +96,8 @@ async function verifySignature(body: string, signature: string, secret: string):
 }
 
 async function notifyTelegram(supabase: ReturnType<typeof createClient>, text: string) {
-  const projectUrl = Deno.env.get("SUPABASE_URL");
-  const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
-  if (!projectUrl || !serviceRoleKey) {
-    console.log("Supabase env missing, skipping Telegram notify");
-    return;
-  }
-
-  try {
-    const { error } = await supabase.functions.invoke("send-telegram-notification", {
-      body: {
-        message: text,
-        parse_mode: "HTML",
-      },
-    });
-    if (error) console.error("Telegram invoke error:", error.message);
-  } catch (e) {
-    console.error("Telegram fetch failed:", e);
-  }
+  void supabase;
+  await notifyAdminTelegram(text);
 }
 
 Deno.serve(async (req) => {
@@ -402,8 +387,8 @@ Deno.serve(async (req) => {
     await notifyTelegram(
       supabase,
       `✅ <b>OrganicSMM Pro — Wallet Credited</b>\n` +
-      `User: <b>${prof?.full_name || "—"}</b>\n` +
-      `Email: <code>${prof?.email || userEmailFromNotes || "—"}</code>\n` +
+      `User: <b>${escapeTelegramHtml(prof?.full_name)}</b>\n` +
+      `Email: <code>${escapeTelegramHtml(prof?.email || userEmailFromNotes)}</code>\n` +
       `Amount: <b>₹${creditedInr.toFixed(2)}</b>\n` +
       `Matched By: <b>${resolutionSource === "trusted_wallet_intent" ? "trusted wallet intent" : "profile email match"}</b>\n` +
       `New Balance: ₹${(newBalance * 83.5).toFixed(2)}\n` +
