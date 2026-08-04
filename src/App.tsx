@@ -11,12 +11,13 @@ import { ScrollToTop } from "@/components/ScrollToTop";
 import { toast } from "sonner";
 import { AppErrorBoundary } from "@/components/app/AppErrorBoundary";
 
-// Eager — frequently-used dashboard pages stay fast on navigation
-import Dashboard from "./pages/Dashboard";
-import EngagementOrder from "./pages/EngagementOrder";
-import EngagementOrders from "./pages/EngagementOrders";
-import Orders from "./pages/Orders";
-import Wallet from "./pages/Wallet";
+// Route-level chunks keep the initial download small under heavy traffic.
+// Frequently-used routes are still warmed during browser idle time below.
+const Dashboard = lazy(() => import("./pages/Dashboard"));
+const EngagementOrder = lazy(() => import("./pages/EngagementOrder"));
+const EngagementOrders = lazy(() => import("./pages/EngagementOrders"));
+const Orders = lazy(() => import("./pages/Orders"));
+const Wallet = lazy(() => import("./pages/Wallet"));
 
 // Lazy — landing, auth, secondary, legal, all admin pages
 const Index = lazy(() => import("./pages/Index"));
@@ -101,6 +102,11 @@ const App = () => {
       else setTimeout(cb, 1500);
     };
     idle(() => {
+      import("./pages/Dashboard").catch(() => {});
+      import("./pages/EngagementOrder").catch(() => {});
+      import("./pages/EngagementOrders").catch(() => {});
+      import("./pages/Orders").catch(() => {});
+      import("./pages/Wallet").catch(() => {});
       import("./pages/Services").catch(() => {});
       import("./pages/Settings").catch(() => {});
       import("./pages/EngagementOrderDetail").catch(() => {});
