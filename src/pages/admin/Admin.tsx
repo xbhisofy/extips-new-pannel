@@ -160,12 +160,12 @@ export default function Admin() {
                   <CreditCard className="h-7 w-7 text-white" />
                 </div>
                 <div>
-                  <p className="text-sm text-muted-foreground">Total User Deposits (All Time)</p>
+                   <p className="text-sm font-medium text-muted-foreground">Total Funds Added by Users (All Time)</p>
                   <p className="text-3xl sm:text-4xl font-extrabold text-success">
                     ₹{(totalDepositsUsd * 83.5).toFixed(2)}
                   </p>
                   <p className="text-[11px] text-muted-foreground mt-1">
-                    {depositsCount} successful deposits · auto-refresh every 15s
+                     All user wallets combined · {depositsCount} successful fund additions · auto-refresh every 15s
                   </p>
                 </div>
               </div>

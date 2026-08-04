@@ -198,6 +198,7 @@ export default function AdminUsers() {
       setSelectedUser(null);
       setBalanceAmount('');
       queryClient.invalidateQueries({ queryKey: ['admin-all-users-with-subs'] });
+      queryClient.invalidateQueries({ queryKey: ['admin-dashboard-stats'] });
     },
     onError: (error: Error) => {
       toast.error(error.message);
