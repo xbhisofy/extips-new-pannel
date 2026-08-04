@@ -31,7 +31,7 @@ export function PlatformSelector({ selected, onSelect, availablePlatforms }: Pla
   }
 
   return (
-    <div className="flex flex-wrap gap-2">
+    <div className="flex flex-wrap gap-3">
       {platformsToShow.map(([key, config]) => {
         const Icon = iconMap[config.icon as keyof typeof iconMap];
         const isSelected = selected === key;
@@ -41,13 +41,13 @@ export function PlatformSelector({ selected, onSelect, availablePlatforms }: Pla
             key={key}
             onClick={() => onSelect(key)}
             className={cn(
-              "flex items-center gap-2 px-5 py-3 rounded-2xl font-black text-xs uppercase tracking-widest",
+              "flex items-center gap-2.5 px-6 py-3.5 rounded-full font-black text-xs uppercase tracking-widest transition-all duration-200",
               isSelected
-                ? `bg-gradient-to-r ${config.color} text-white border-2 border-white/20 shadow-[0_10px_30px_rgba(0,0,0,0.5)] scale-[1.05]`
-                : "bg-white/[0.03] text-white/65 border border-white/5 hover:bg-white/5 hover:text-white/80"
+                ? `bg-gradient-to-r ${config.color} text-slate-900 shadow-[0_8px_24px_rgba(0,0,0,0.18)] scale-[1.02] ring-2 ring-white/60`
+                : "bg-slate-100 text-slate-600 border border-slate-200 hover:bg-slate-200/70 hover:text-slate-800 hover:border-slate-300"
             )}
           >
-            <Icon className={cn("h-4 w-4", isSelected ? "text-white" : "text-white/80")} />
+            <Icon className={cn("h-4 w-4", isSelected ? "text-slate-900" : "text-slate-500")} />
             <span>{config.label}</span>
           </button>
         );

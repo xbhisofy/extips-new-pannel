@@ -126,13 +126,13 @@ export const DEFAULT_ORGANIC_SETTINGS = {
   peakHoursEnabled: false,  // Peak hours OFF by default
 };
 
-// Platform icons and colors - Deep Premium Palettes
+// Platform icons and colors - Light / pastel gradients
 export const PLATFORM_CONFIG = {
-  instagram: { icon: 'Instagram', color: 'from-green-600/60 to-purple-800/60', label: 'Instagram', bgColor: 'bg-green-600/10', borderColor: 'border-green-600/20' },
-  tiktok: { icon: 'Music', color: 'from-cyan-700/60 to-green-700/60', label: 'TikTok', bgColor: 'bg-cyan-700/10', borderColor: 'border-cyan-700/20' },
-  youtube: { icon: 'Youtube', color: 'from-red-800/60 to-red-950/80', label: 'YouTube', bgColor: 'bg-red-800/10', borderColor: 'border-red-800/20' },
-  twitter: { icon: 'Twitter', color: 'from-sky-800/60 to-blue-950/80', label: 'Twitter/X', bgColor: 'bg-sky-800/10', borderColor: 'border-sky-800/20' },
-  facebook: { icon: 'Facebook', color: 'from-blue-800/60 to-indigo-950/80', label: 'Facebook', bgColor: 'bg-blue-800/10', borderColor: 'border-blue-800/20' },
+  instagram: { icon: 'Instagram', color: 'from-emerald-300 via-teal-300 to-purple-400', textColor: 'text-emerald-600', label: 'Instagram', bgColor: 'bg-emerald-500/10', borderColor: 'border-emerald-500/20' },
+  tiktok: { icon: 'Music', color: 'from-cyan-300 via-sky-300 to-emerald-300', textColor: 'text-cyan-600', label: 'TikTok', bgColor: 'bg-cyan-500/10', borderColor: 'border-cyan-500/20' },
+  youtube: { icon: 'Youtube', color: 'from-rose-300 to-red-400', textColor: 'text-rose-600', label: 'YouTube', bgColor: 'bg-rose-500/10', borderColor: 'border-rose-500/20' },
+  twitter: { icon: 'Twitter', color: 'from-sky-300 to-blue-400', textColor: 'text-sky-600', label: 'Twitter/X', bgColor: 'bg-sky-500/10', borderColor: 'border-sky-500/20' },
+  facebook: { icon: 'Facebook', color: 'from-blue-300 to-indigo-400', textColor: 'text-blue-600', label: 'Facebook', bgColor: 'bg-blue-500/10', borderColor: 'border-blue-500/20' },
 } as const;
 
 // Engagement type icons and colors - Muted deep colors
