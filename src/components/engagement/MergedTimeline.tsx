@@ -9,7 +9,7 @@ import {
 import { supabase } from "@/integrations/supabase/client";
 import { useState } from "react";
 import { toast } from "sonner";
-import { isTargetMetAutoCompleted } from "@/lib/run-status";
+import { isTargetMetAutoCompleted, shouldHideRunFromUser, getUserFacingRunReason } from "@/lib/run-status";
 
 const ENGAGEMENT_CONFIG: Record<string, { icon: typeof Eye; label: string; emoji: string; color: string; bg: string; border: string }> = {
   views: { icon: Eye, label: "views", emoji: "👁️", color: "text-cyan-400", bg: "bg-cyan-500/20", border: "border-cyan-500/40" },
@@ -104,9 +104,10 @@ export function MergedTimeline({ runs, onEditRun, nextRun, onRefresh, typeTarget
   };
 
   // Sort by scheduled_at ascending (oldest first)
-  const sortedRuns = [...runs].sort(
-    (a, b) => new Date(a.scheduled_at).getTime() - new Date(b.scheduled_at).getTime()
-  );
+  const sortedRuns = [...runs]
+    // Hide internally cancelled bookkeeping runs (never shown as "Cancelled")
+    .filter((r) => !shouldHideRunFromUser(r))
+    .sort((a, b) => new Date(a.scheduled_at).getTime() - new Date(b.scheduled_at).getTime());
 
   // Get targets per type from typeTargets prop
   const targetsMap: Record<string, number> = {};
@@ -471,7 +472,7 @@ export function MergedTimeline({ runs, onEditRun, nextRun, onRefresh, typeTarget
                           {isFailed && !run.error_message?.includes('Auto-completed') && (
                             <span className="flex items-center gap-2">
                               <XCircle className="h-4 w-4" />
-                              <span className="line-clamp-1">{run.error_message || 'Order failed'}</span>
+                              <span className="line-clamp-1">{getUserFacingRunReason(run) || 'Order failed'}</span>
                             </span>
                           )}
                           {!run.provider_status && !run.error_message && run.provider_order_id && (
