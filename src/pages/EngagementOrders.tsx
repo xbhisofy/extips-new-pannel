@@ -10,6 +10,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
+import { computeDelivery, shouldHideRunFromUser, isTargetMetAutoCompleted } from "@/lib/run-status";
 import { Input } from "@/components/ui/input";
 import { format, formatDistanceToNow } from "date-fns";
 import { 
@@ -73,7 +74,7 @@ export default function EngagementOrders() {
           id, order_number, status, total_price, link, base_quantity, created_at, updated_at, is_organic_mode,
           items:engagement_order_items(
             id, engagement_type, quantity, status,
-            runs:organic_run_schedule(id, status, quantity_to_send, scheduled_at, run_number, provider_status, provider_remains)
+            runs:organic_run_schedule(id, status, quantity_to_send, scheduled_at, run_number, provider_status, provider_remains, provider_start_count, provider_charge, error_message)
           )
         `)
         .eq('user_id', user.id)
@@ -188,8 +189,10 @@ export default function EngagementOrders() {
 function OrderCard({ order, onClick }: { order: any; onClick: () => void }) {
   const { formatPrice } = useCurrency();
   // Calculate progress
-  const allRuns = order.items?.flatMap((item: any) => item.runs || []) || [];
-  const completedRuns = allRuns.filter((r: any) => r.status === 'completed').length;
+  const rawRuns = order.items?.flatMap((item: any) => item.runs || []) || [];
+  // Internal bookkeeping cancellations are never shown to users
+  const allRuns = rawRuns.filter((r: any) => !shouldHideRunFromUser(r));
+  const completedRuns = allRuns.filter((r: any) => r.status === 'completed' || isTargetMetAutoCompleted(r)).length;
   const totalRuns = allRuns.length;
   const progressPercent = totalRuns > 0 ? (completedRuns / totalRuns) * 100 : 0;
 
@@ -204,12 +207,27 @@ function OrderCard({ order, onClick }: { order: any; onClick: () => void }) {
     if (run.status === 'completed') return run.quantity_to_send;
     return 0;
   };
-  const totalDelivered = allRuns.reduce((sum: number, r: any) => sum + calculateActualDelivered(r), 0);
+  const legacyDelivered = allRuns.reduce((sum: number, r: any) => sum + calculateActualDelivered(r), 0);
 
   const totalQuantity = order.items?.reduce((sum: number, item: any) => sum + item.quantity, 0) || 0;
 
+  // Trusted delivered per item target (never trusts public counts alone)
+  const trustedDelivered = (order.items || []).reduce(
+    (sum: number, item: any) => sum + computeDelivery(item.runs || [], item.quantity || 0).delivered,
+    0
+  );
+  const targetMet = (order.items || []).length > 0 && (order.items || []).every(
+    (item: any) => computeDelivery(item.runs || [], item.quantity || 0).targetMet
+  );
+  const totalDelivered = targetMet
+    ? Math.max(totalQuantity, legacyDelivered, trustedDelivered)
+    : Math.max(legacyDelivered, trustedDelivered);
+  const deliveryPercent = totalQuantity > 0
+    ? Math.min(100, (totalDelivered / totalQuantity) * 100)
+    : 0;
+
   // Find next run
-  const pendingRuns = allRuns
+  const pendingRuns = (targetMet ? [] : allRuns)
     .filter((r: any) => r.status === 'pending')
     .sort((a: any, b: any) => new Date(a.scheduled_at).getTime() - new Date(b.scheduled_at).getTime());
   const nextRun = pendingRuns[0];
@@ -221,7 +239,7 @@ function OrderCard({ order, onClick }: { order: any; onClick: () => void }) {
   // regardless of stale DB status (real-time accuracy).
   let effectiveStatus = order.status as string;
   if (effectiveStatus !== 'cancelled' && effectiveStatus !== 'failed' && effectiveStatus !== 'paused') {
-    if (totalQuantity > 0 && totalDelivered >= totalQuantity) {
+    if (targetMet || (totalQuantity > 0 && totalDelivered >= totalQuantity)) {
       effectiveStatus = 'completed';
     } else if (activeRuns > 0 || pendingRuns.length > 0 || totalDelivered > 0) {
       effectiveStatus = 'processing';
@@ -302,9 +320,11 @@ function OrderCard({ order, onClick }: { order: any; onClick: () => void }) {
         <div className="space-y-2">
           <div className="flex justify-between text-sm text-muted-foreground">
             <span>{completedRuns} / {totalRuns} runs</span>
-            <span>{totalDelivered.toLocaleString()} / {totalQuantity.toLocaleString()}</span>
+            <span>
+              {totalDelivered.toLocaleString()} / {totalQuantity.toLocaleString()} ({Math.round(deliveryPercent)}%)
+            </span>
           </div>
-          <Progress value={progressPercent} className="h-2" />
+          <Progress value={deliveryPercent} className="h-2" />
         </div>
 
         {/* Next Run Timer */}

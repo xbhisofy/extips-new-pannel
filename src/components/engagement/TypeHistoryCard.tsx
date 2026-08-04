@@ -21,7 +21,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { isTargetMetAutoCompleted } from "@/lib/run-status";
+import { isTargetMetAutoCompleted, shouldHideRunFromUser, getUserFacingRunReason } from "@/lib/run-status";
 
 const ENGAGEMENT_CONFIG = {
   views: { icon: Eye, label: "Views" },
@@ -86,7 +86,9 @@ export function TypeHistoryCard({
   const config = ENGAGEMENT_CONFIG[engagementType as keyof typeof ENGAGEMENT_CONFIG] || ENGAGEMENT_CONFIG.views;
   const Icon = config.icon;
 
-  const sortedRuns = [...runs].sort((a, b) => a.run_number - b.run_number);
+  const sortedRuns = [...runs]
+    .filter((r) => !shouldHideRunFromUser(r))
+    .sort((a, b) => a.run_number - b.run_number);
 
   // Provider-first helper: delivered + effective status should follow provider_status/remains
   const normalizeProviderStatus = (s?: string | null) => (s ?? '').toString().toLowerCase().trim();

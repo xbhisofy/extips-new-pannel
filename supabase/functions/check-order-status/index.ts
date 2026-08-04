@@ -1,5 +1,6 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 import { notifyUserTelegram, statusEmoji } from '../_shared/notify.ts'
+import { enforceTargetCompletion, isFakeProviderCompletion } from '../_shared/target-completion.ts'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -285,7 +286,10 @@ Deno.serve(async (req) => {
         // Always update provider tracking data
         const trackingUpdate: any = {
           provider_status: result.status,
-          provider_start_count: startCount,
+          // Baseline guard: start_count is immutable once a valid value exists
+          provider_start_count: (typeof run.provider_start_count === 'number' && run.provider_start_count > 0)
+            ? run.provider_start_count
+            : startCount,
           provider_remains: remains,
           provider_charge: charge,
           provider_response: result,
@@ -293,6 +297,25 @@ Deno.serve(async (req) => {
         }
 
         const deliveredAll = remains === 0 && !['cancelled', 'canceled', 'refunded', 'refund', 'failed', 'error', 'canscelled'].includes(providerStatus)
+
+        const fakeCompletion = isFakeProviderCompletion({
+          quantity_to_send: run.quantity_to_send,
+          provider_remains: remains,
+          provider_start_count: startCount,
+          provider_charge: charge,
+        })
+
+        if (fakeCompletion && (providerStatus === 'completed' || providerStatus === 'complete' || providerStatus === 'success')) {
+          // Provider claims completion but delivered nothing and took no charge -> not a real delivery
+          await supabase.from('organic_run_schedule').update({
+            ...trackingUpdate,
+            status: 'failed',
+            completed_at: new Date().toISOString(),
+            error_message: `Provider reported completed but delivered 0 (remains=${remains}/${run.quantity_to_send}, charge=${charge ?? 0})`
+          }).eq('id', run.id)
+          failed++
+          continue
+        }
 
         if (providerStatus === 'completed' || providerStatus === 'complete' || providerStatus === 'success' || deliveredAll) {
           const orderStatus = run.engagement_order_item?.engagement_order?.status
@@ -579,7 +602,9 @@ Deno.serve(async (req) => {
           // Always update tracking data
           const trackingUpdate: any = {
             provider_status: result.status,
-            provider_start_count: startCount,
+            provider_start_count: (typeof run.provider_start_count === 'number' && run.provider_start_count > 0)
+              ? run.provider_start_count
+              : startCount,
             provider_remains: remains,
             provider_charge: charge,
             provider_response: result,
@@ -704,6 +729,14 @@ Deno.serve(async (req) => {
 async function updateEngagementOrderStatus(supabase: any, engagementOrderId: string, itemId: string) {
   if (!engagementOrderId) return
 
+  // Target-based auto-completion: close items/orders whose target is already met
+  // and cancel leftover runs with an internal (hidden) reason.
+  try {
+    await enforceTargetCompletion(supabase, engagementOrderId)
+  } catch (e) {
+    console.error('enforceTargetCompletion failed', e)
+  }
+
   const { data: parentOrder } = await supabase
     .from('engagement_orders')
     .select('status')
@@ -737,7 +770,9 @@ async function updateEngagementOrderStatus(supabase: any, engagementOrderId: str
         const totalRuns = itemRuns.length
 
         let itemStatus = 'processing'
-        if (activeCount > 0) {
+        if (currentItem?.status === 'completed') {
+          itemStatus = 'completed'
+        } else if (activeCount > 0) {
           itemStatus = currentItem?.status === 'paused' ? 'paused' : 'processing'
         } else if (completedCount === totalRuns) {
           itemStatus = 'completed'
