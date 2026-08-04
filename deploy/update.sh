@@ -47,6 +47,15 @@ if ! pnpm run build --outDir dist-new; then
   die "build failed — repo rolled back to $PREV_SHA, live dist untouched"
 fi
 [ -d dist-new ] && [ -n "$(ls -A dist-new)" ] || { rm -rf dist-new; git reset --hard "$PREV_SHA"; die "empty build output"; }
+# Keep previous hashed chunks so tabs that were already open during deployment
+# can still navigate. Without this, a lazy route requests its old Admin-*.js
+# name after the atomic swap and crashes with "Failed to fetch dynamically
+# imported module". Files older than 30 days are pruned to bound disk usage.
+if [ -d dist/assets ]; then
+  mkdir -p dist-new/assets
+  cp -an dist/assets/. dist-new/assets/
+  find dist-new/assets -type f -mtime +30 -delete
+fi
 rm -rf dist-prev
 [ -d dist ] && cp -a dist dist-prev
 rm -rf dist && mv dist-new dist

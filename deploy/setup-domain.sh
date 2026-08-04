@@ -31,7 +31,7 @@ if ! command -v caddy >/dev/null 2>&1; then
 fi
 
 log "2/5 Writing /etc/caddy/Caddyfile (printf, no heredoc)"
-printf '%s {\n\tencode zstd gzip\n\treverse_proxy 127.0.0.1:%s\n}\n\napi.%s {\n\treverse_proxy 127.0.0.1:%s\n}\n' \
+printf '%s {\n\tencode zstd gzip\n\t@assets path /assets/*\n\theader @assets Cache-Control "public, max-age=31536000, immutable"\n\t@documents path / /index.html /*.html\n\theader @documents Cache-Control "no-cache, no-store, must-revalidate"\n\treverse_proxy 127.0.0.1:%s\n}\n\napi.%s {\n\treverse_proxy 127.0.0.1:%s\n}\n' \
   "$DOMAIN" "$APP_PORT" "$DOMAIN" "$API_PORT" > /etc/caddy/Caddyfile
 cat /etc/caddy/Caddyfile
 
@@ -53,7 +53,15 @@ set_env SITE_URL            "https://$DOMAIN"
 ANON="$(grep -E '^ANON_KEY=' "$ENVF" | cut -d= -f2- | tr -d '"')"
 printf 'VITE_SUPABASE_URL=https://api.%s\nVITE_SUPABASE_PUBLISHABLE_KEY=%s\nVITE_SUPABASE_PROJECT_ID=selfhosted\n' \
   "$DOMAIN" "$ANON" > "$REPO_DIR/.env"
-(cd "$REPO_DIR" && pnpm run build >/dev/null && systemctl restart smmpanel)
+(cd "$REPO_DIR" && \
+  rm -rf dist-new && \
+  pnpm run build --outDir dist-new >/dev/null && \
+  if [ -d dist/assets ]; then mkdir -p dist-new/assets && cp -an dist/assets/. dist-new/assets/ && find dist-new/assets -type f -mtime +30 -delete; fi && \
+  rm -rf dist-prev && \
+  if [ -d dist ]; then mv dist dist-prev; fi && \
+  mv dist-new dist && \
+  systemctl restart smmpanel && \
+  rm -rf dist-prev)
 
 sleep 3
 echo "   https://$DOMAIN      -> HTTP $(curl -s -o /dev/null -w '%{http_code}' "https://$DOMAIN/" || true)"

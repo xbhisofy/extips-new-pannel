@@ -49,6 +49,13 @@ pnpm install --no-frozen-lockfile
 rm -rf dist-new
 pnpm run build --outDir dist-new
 [ -d dist-new ] || die "build produced no dist-new"
+# Preserve previous hashed assets for open browser tabs across deployments.
+# The current build wins; only missing old chunks are copied in.
+if [ -d dist/assets ]; then
+  mkdir -p dist-new/assets
+  cp -an dist/assets/. dist-new/assets/
+  find dist-new/assets -type f -mtime +30 -delete
+fi
 rm -rf dist-old
 [ -d dist ] && mv dist dist-old
 mv dist-new dist
