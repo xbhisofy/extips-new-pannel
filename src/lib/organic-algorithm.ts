@@ -31,15 +31,32 @@ export interface FullOrganicConfig {
   varietyIndex: number;        // How varied the delivery is (higher = more organic)
 }
 
-// Provider minimum order quantity FALLBACKS (actual values come from service table via minQuantity prop)
-// These are last-resort defaults only — real min comes from DB service.min_quantity
+// Provider minimum order quantity BASELINES (default floor enforced everywhere)
+// Views = 100, every other engagement type = 10 (as supported by our providers)
 export const PROVIDER_MINIMUMS: Record<string, number> = {
   views: 100,
   likes: 10,
   comments: 10,
   saves: 10,
   shares: 10,
+  reposts: 10,
+  retweets: 10,
+  followers: 10,
+  subscribers: 10,
+  watch_hours: 10,
 };
+
+/** Baseline provider minimum for an engagement type (views 100, rest 10). */
+export function baselineMinimum(type: string): number {
+  return PROVIDER_MINIMUMS[type] ?? 10;
+}
+
+/** Effective minimum = baseline floor, ignoring inflated/unknown DB values below it. */
+export function effectiveMinimum(type: string, dbMin?: number | null): number {
+  const base = baselineMinimum(type);
+  const db = Number(dbMin) || 0;
+  return db > base ? base : base;
+}
 
 // Provider maximum order quantity
 export const PROVIDER_MAXIMUMS: Record<string, number> = {
