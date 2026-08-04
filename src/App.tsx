@@ -147,6 +147,7 @@ const App = () => {
                     <Route path="/api-access" element={<ApiAccess />} />
 
                     {/* Engagement */}
+                    <Route path="/test-platform" element={<TestPlatform />} />
                     <Route path="/engagement-order" element={<EngagementOrder />} />
                     <Route path="/engagement-orders" element={<EngagementOrders />} />
                     <Route path="/engagement-orders/:orderNumber" element={<EngagementOrderDetail />} />
