@@ -74,7 +74,7 @@ export default function EngagementOrders() {
           id, order_number, status, total_price, link, base_quantity, created_at, updated_at, is_organic_mode,
           items:engagement_order_items(
             id, engagement_type, quantity, status,
-            runs:organic_run_schedule(id, status, quantity_to_send, scheduled_at, run_number, provider_status, provider_remains)
+            runs:organic_run_schedule(id, status, quantity_to_send, scheduled_at, run_number, provider_status, provider_remains, provider_start_count, provider_charge, error_message)
           )
         `)
         .eq('user_id', user.id)
