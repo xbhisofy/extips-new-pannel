@@ -1,6 +1,7 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { registerWebhookEvent, finalizeWebhookEvent } from "../_shared/webhook-idempotency.ts";
 import { recordSecurityEvent } from "../_shared/security-audit.ts";
+import { escapeTelegramHtml, notifyAdminTelegram } from "../_shared/admin-telegram.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -221,6 +222,19 @@ Deno.serve(async (req) => {
 
       console.log("[zapupi-webhook] subscription activated for", udf1);
       await finalizeWebhookEvent(supabase, webhookEventId, { outcome: "subscription_activated", http_status: 200 });
+      const { data: subscriptionProfile } = await supabase
+        .from("profiles")
+        .select("email, full_name")
+        .eq("user_id", udf1)
+        .maybeSingle();
+      await notifyAdminTelegram(
+        `✅ <b>ZapUPI — Subscription Activated</b>\n` +
+        `User: <b>${escapeTelegramHtml(subscriptionProfile?.full_name)}</b>\n` +
+        `Email: <code>${escapeTelegramHtml(subscriptionProfile?.email)}</code>\n` +
+        `Plan: <b>Monthly</b>\n` +
+        `Amount: <b>₹${paidInr.toFixed(2)}</b>\n` +
+        `Order ID: <code>${escapeTelegramHtml(orderId)}</code>`,
+      );
       return ok({ received: true, subscription: true, expires_at: expires.toISOString() });
     }
 
@@ -287,6 +301,19 @@ Deno.serve(async (req) => {
       });
     } else {
       await finalizeWebhookEvent(supabase, webhookEventId, { outcome: "wallet_credited", http_status: 200 });
+      const { data: walletProfile } = await supabase
+        .from("profiles")
+        .select("email, full_name")
+        .eq("user_id", deposit.user_id)
+        .maybeSingle();
+      await notifyAdminTelegram(
+        `✅ <b>ZapUPI — Wallet Credited</b>\n` +
+        `User: <b>${escapeTelegramHtml(walletProfile?.full_name)}</b>\n` +
+        `Email: <code>${escapeTelegramHtml(walletProfile?.email)}</code>\n` +
+        `Amount: <b>₹${inr.toFixed(2)}</b> ($${usd.toFixed(2)})\n` +
+        `Order ID: <code>${escapeTelegramHtml(orderId)}</code>\n` +
+        `UTR: <code>${escapeTelegramHtml(verified.utr || verified.txnId)}</code>`,
+      );
     }
 
     return ok({ received: true, credited: !rpcErr });

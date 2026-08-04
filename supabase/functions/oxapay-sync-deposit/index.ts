@@ -1,4 +1,5 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { escapeTelegramHtml, notifyAdminTelegram } from "../_shared/admin-telegram.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -85,6 +86,13 @@ Deno.serve(async (req) => {
             return json({ error: rpcErr.message }, 500);
           }
           await logActivity({ event: "wallet_credited", order_id: orderId, user_id: user.id, purpose: "wallet", amount_usd: Number(dep.amount_usd), provider_status: status, message: "poller credited wallet" });
+          await notifyAdminTelegram(
+            `✅ <b>OxaPay — Wallet Credited</b>\n` +
+            `Email: <code>${escapeTelegramHtml(user.email || dep.email)}</code>\n` +
+            `Amount: <b>$${Number(dep.amount_usd).toFixed(2)}</b>\n` +
+            `Order ID: <code>${escapeTelegramHtml(orderId)}</code>\n` +
+            `Track ID: <code>${escapeTelegramHtml(dep.track_id)}</code>`,
+          );
         } else if (dep.purpose === "subscription") {
           const { error: rpcErr } = await supabase.rpc("activate_subscription_oxapay", {
             p_user_id: dep.user_id,
@@ -98,6 +106,13 @@ Deno.serve(async (req) => {
             return json({ error: rpcErr.message }, 500);
           }
           await logActivity({ event: "subscription_activated", order_id: orderId, user_id: user.id, plan_type: dep.plan_type, purpose: "subscription", amount_usd: Number(dep.amount_usd), provider_status: status, message: "poller activated subscription" });
+          await notifyAdminTelegram(
+            `✅ <b>OxaPay — Subscription Activated</b>\n` +
+            `Email: <code>${escapeTelegramHtml(user.email || dep.email)}</code>\n` +
+            `Plan: <b>${escapeTelegramHtml(dep.plan_type)}</b>\n` +
+            `Amount: <b>$${Number(dep.amount_usd).toFixed(2)}</b>\n` +
+            `Order ID: <code>${escapeTelegramHtml(orderId)}</code>`,
+          );
         }
         return json({ credited: true, status: "success" });
       }

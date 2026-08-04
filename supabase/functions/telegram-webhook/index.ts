@@ -666,6 +666,19 @@ Deno.serve(async (req) => {
   if (req.method !== "POST") return new Response("ok");
   try {
     const update = await req.json();
+    const configuredAdminChatId = Deno.env.get("TELEGRAM_CHAT_ID")?.trim();
+    const incomingChatId = update.callback_query?.message?.chat?.id
+      ?? update.message?.chat?.id
+      ?? update.edited_message?.chat?.id;
+
+    // The user-facing bot is paused. Only the configured admin chat can use
+    // bot commands or inline callbacks while admin notifications stay active.
+    if (!configuredAdminChatId || String(incomingChatId ?? "") !== configuredAdminChatId) {
+      console.warn("Ignored Telegram update from non-admin chat");
+      return new Response(JSON.stringify({ ok: true, ignored: "admin_only" }), {
+        headers: { "Content-Type": "application/json" },
+      });
+    }
     if (update.callback_query) {
       await handleCallback(update.callback_query);
     } else {

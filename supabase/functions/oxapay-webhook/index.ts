@@ -1,6 +1,7 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { registerWebhookEvent, finalizeWebhookEvent } from "../_shared/webhook-idempotency.ts";
 import { recordSecurityEvent } from "../_shared/security-audit.ts";
+import { escapeTelegramHtml, notifyAdminTelegram } from "../_shared/admin-telegram.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -294,6 +295,15 @@ Deno.serve(async (req) => {
       }
       await logActivity({ event: "wallet_credited", order_id: orderId, user_id: dep.user_id, purpose: "wallet", amount_usd: creditUsd, provider_status: status, message: "wallet credited", payload: res });
       await finalizeWebhookEvent(supabase, webhookEventId, { outcome: "wallet_credited", http_status: 200 });
+      const { data: profile } = await supabase.from("profiles").select("email, full_name").eq("user_id", dep.user_id).maybeSingle();
+      await notifyAdminTelegram(
+        `✅ <b>OxaPay — Wallet Credited</b>\n` +
+        `User: <b>${escapeTelegramHtml(profile?.full_name)}</b>\n` +
+        `Email: <code>${escapeTelegramHtml(profile?.email || dep.email)}</code>\n` +
+        `Amount: <b>$${creditUsd.toFixed(2)}</b>\n` +
+        `Order ID: <code>${escapeTelegramHtml(orderId)}</code>\n` +
+        `Track ID: <code>${escapeTelegramHtml(verifyTrackId)}</code>`,
+      );
       return json({ ok: true, result: res });
     }
 
@@ -311,6 +321,15 @@ Deno.serve(async (req) => {
       }
       await logActivity({ event: "subscription_activated", order_id: orderId, user_id: dep.user_id, plan_type: dep.plan_type, purpose: "subscription", amount_usd: creditUsd, provider_status: status, message: "subscription activated", payload: res });
       await finalizeWebhookEvent(supabase, webhookEventId, { outcome: "subscription_activated", http_status: 200 });
+      const { data: profile } = await supabase.from("profiles").select("email, full_name").eq("user_id", dep.user_id).maybeSingle();
+      await notifyAdminTelegram(
+        `✅ <b>OxaPay — Subscription Activated</b>\n` +
+        `User: <b>${escapeTelegramHtml(profile?.full_name)}</b>\n` +
+        `Email: <code>${escapeTelegramHtml(profile?.email || dep.email)}</code>\n` +
+        `Plan: <b>${escapeTelegramHtml(dep.plan_type)}</b>\n` +
+        `Amount: <b>$${creditUsd.toFixed(2)}</b>\n` +
+        `Order ID: <code>${escapeTelegramHtml(orderId)}</code>`,
+      );
       return json({ ok: true, result: res });
     }
 

@@ -1,4 +1,5 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { escapeTelegramHtml, notifyAdminTelegram } from "../_shared/admin-telegram.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -95,6 +96,19 @@ Deno.serve(async (req) => {
         console.error("[zapupi-sync] credit rpc error", rpcErr);
         return json({ status: "pending", error: rpcErr.message });
       }
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("email, full_name")
+        .eq("user_id", deposit.user_id)
+        .maybeSingle();
+      await notifyAdminTelegram(
+        `✅ <b>ZapUPI — Wallet Credited</b>\n` +
+        `User: <b>${escapeTelegramHtml(profile?.full_name)}</b>\n` +
+        `Email: <code>${escapeTelegramHtml(profile?.email)}</code>\n` +
+        `Amount: <b>₹${inr.toFixed(2)}</b> ($${usd.toFixed(2)})\n` +
+        `Order ID: <code>${escapeTelegramHtml(orderId)}</code>\n` +
+        `UTR: <code>${escapeTelegramHtml(utr || txnId)}</code>`,
+      );
       return json({ status: "success", credited: true, result: rpcResult });
     }
 
