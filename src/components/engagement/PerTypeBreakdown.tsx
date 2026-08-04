@@ -195,8 +195,8 @@ export function PerTypeBreakdown({ types, allRuns = [], onTypeClick, itemStatuse
 
                 <div className="flex items-center justify-between mb-1">
                   <div className="flex items-center gap-1.5">
-                    <Icon className={`h-4 w-4 ${config.color}`} />
-                    <span className={`text-xs uppercase font-bold tracking-wider ${config.color}`}>{config.label}</span>
+                    <Icon className={`h-4 w-4 ${config.textColor}`} />
+                    <span className={`text-xs uppercase font-bold tracking-wider ${config.textColor}`}>{config.label}</span>
                   </div>
                   {isPaused && (
                     <span className="flex items-center gap-1 text-[10px] font-semibold text-amber-400 bg-amber-500/10 px-1.5 py-0.5 rounded-md border border-amber-500/20">
@@ -210,7 +210,7 @@ export function PerTypeBreakdown({ types, allRuns = [], onTypeClick, itemStatuse
                   )}
                 </div>
                 <div className="flex items-baseline gap-1">
-                  <span className={`text-xl font-bold tabular-nums ${config.color}`}>{delivered.toLocaleString()}</span>
+                  <span className={`text-xl font-bold tabular-nums ${config.textColor}`}>{delivered.toLocaleString()}</span>
                   <span className="text-xs text-muted-foreground">/ {dynamicTarget.toLocaleString()}</span>
                 </div>
                 <Progress value={Math.min(progress, 100)} className="h-1.5 mt-2" />
