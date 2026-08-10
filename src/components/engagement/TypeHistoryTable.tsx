@@ -13,8 +13,8 @@ const ENGAGEMENT_CONFIG: Record<string, { icon: typeof Eye; color: string; bg: s
   likes: { icon: Heart, color: "text-red-500", bg: "bg-red-100", border: "border-red-500", label: "Likes", emoji: "❤️" },
   comments: { icon: MessageCircle, color: "text-green-500", bg: "bg-green-100", border: "border-green-500", label: "Comments", emoji: "💬" },
   saves: { icon: Bookmark, color: "text-amber-500", bg: "bg-amber-100", border: "border-amber-500", label: "Saves", emoji: "📥" },
-  shares: { icon: Share2, color: "text-purple-500", bg: "bg-purple-100", border: "border-purple-500", label: "Shares", emoji: "🔄" },
-  reposts: { icon: Share2, color: "text-indigo-500", bg: "bg-indigo-100", border: "border-indigo-500", label: "Reposts", emoji: "🔁" },
+  shares: { icon: Share2, color: "text-primary", bg: "bg-primary", border: "border-primary", label: "Shares", emoji: "🔄" },
+  reposts: { icon: Share2, color: "text-primary", bg: "bg-primary", border: "border-primary", label: "Reposts", emoji: "🔁" },
 };
 
 const STATUS_CONFIG = {

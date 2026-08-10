@@ -63,7 +63,7 @@ export default function Dashboard() {
   const MUTED = '#64748b';
   const FAINT = '#94a3b8';
   const DIVIDER = '1px solid rgba(255,255,255,.05)';
-  const HOVER = 'hover:bg-white/[.03]';
+  const HOVER = 'hover:bg-card';
 
   return (
     <DashboardLayout>

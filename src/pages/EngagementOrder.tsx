@@ -771,11 +771,11 @@ export default function EngagementOrder() {
     <DashboardLayout>
       <div className="max-w-5xl mx-auto px-2 sm:px-6 lg:px-8 space-y-3 sm:space-y-6 pb-8">
         {/* Mission Console — unique compact hero with inline AI controls */}
-        <div className="relative overflow-hidden rounded-2xl border border-white/10 bg-[#ffffff]/80 backdrop-blur-xl">
+        <div className="relative overflow-hidden rounded-2xl border border-border bg-[#ffffff]/80 backdrop-blur-xl">
           {/* Aurora wash */}
           <div aria-hidden className="pointer-events-none absolute inset-0 opacity-80">
-            <div className="absolute -top-24 -left-16 w-[360px] h-[360px] bg-purple-600/25 blur-[120px] rounded-full" />
-            <div className="absolute -bottom-24 -right-10 w-[320px] h-[320px] bg-fuchsia-500/20 blur-[120px] rounded-full" />
+            <div className="absolute -top-24 -left-16 w-[360px] h-[360px] bg-primary/25 blur-[120px] rounded-full" />
+            <div className="absolute -bottom-24 -right-10 w-[320px] h-[320px] bg-primary/20 blur-[120px] rounded-full" />
             <div className="absolute top-1/3 left-1/2 w-[260px] h-[260px] bg-emerald-500/10 blur-[120px] rounded-full" />
           </div>
           {/* Grid texture */}
@@ -790,22 +790,22 @@ export default function EngagementOrder() {
             {/* Top row: status + title + live dot */}
             <div className="flex items-start justify-between gap-3 mb-4 sm:mb-5">
               <div className="min-w-0">
-                <div className="inline-flex items-center gap-2 px-2.5 py-1 rounded-full bg-white/[0.04] border border-white/10 mb-2.5">
+                <div className="inline-flex items-center gap-2 px-2.5 py-1 rounded-full bg-card border border-border mb-2.5">
                   <span className="relative flex w-1.5 h-1.5">
                     <span className="absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75 animate-ping" />
                     <span className="relative inline-flex w-1.5 h-1.5 rounded-full bg-emerald-400" />
                   </span>
-                  <span className="text-[10px] font-semibold tracking-[0.18em] uppercase !text-white/70">Engagement Console</span>
+                  <span className="text-[10px] font-semibold tracking-[0.18em] uppercase !text-foreground/70">Engagement Console</span>
                 </div>
-                <h1 className="text-xl sm:text-3xl font-bold tracking-tight !text-white leading-tight">
-                  Organic <span className="italic font-serif text-transparent bg-clip-text bg-gradient-to-r from-purple-300 via-fuchsia-300 to-emerald-300">Full Engagement</span>
+                <h1 className="text-xl sm:text-3xl font-bold tracking-tight !text-foreground leading-tight">
+                  Organic <span className="italic font-serif text-transparent bg-clip-text bg-gradient-to-r from-primary via-primary to-emerald-300">Full Engagement</span>
                 </h1>
-                <p className="text-[12px] sm:text-[13px] text-white/55 mt-1 max-w-md">
+                <p className="text-[12px] sm:text-[13px] text-muted-foreground mt-1 max-w-md">
                   One link — every engagement type, dispatched with humanlike organic pacing.
                 </p>
               </div>
-              <div className="hidden sm:flex shrink-0 w-12 h-12 rounded-xl items-center justify-center bg-gradient-to-br from-purple-500/30 to-fuchsia-500/20 border border-white/10 shadow-[0_0_30px_rgba(168,85,247,0.25)]">
-                <Rocket className="h-5 w-5 text-purple-200" />
+              <div className="hidden sm:flex shrink-0 w-12 h-12 rounded-xl items-center justify-center bg-gradient-to-br from-primary/30 to-primary/20 border border-border shadow-[0_0_30px_rgba(168,85,247,0.25)]">
+                <Rocket className="h-5 w-5 text-primary" />
               </div>
             </div>
 
@@ -819,7 +819,7 @@ export default function EngagementOrder() {
                   "group relative text-left rounded-xl border p-3 sm:p-3.5 transition-all overflow-hidden",
                   isOrganicMode
                     ? "border-emerald-400/40 bg-emerald-500/[0.08] shadow-[0_0_25px_rgba(16,185,129,0.18)]"
-                    : "border-white/10 bg-white/[0.02] hover:border-white/20 hover:bg-white/[0.04]"
+                    : "border-border bg-card hover:border-border hover:bg-card"
                 )}
               >
                 {isOrganicMode && (
@@ -828,27 +828,27 @@ export default function EngagementOrder() {
                 <div className="relative flex items-center gap-3">
                   <div className={cn(
                     "shrink-0 w-9 h-9 rounded-lg flex items-center justify-center border transition-all",
-                    isOrganicMode ? "bg-emerald-500/20 border-emerald-400/40 text-emerald-200" : "bg-white/5 border-white/10 text-white/80"
+                    isOrganicMode ? "bg-emerald-500/20 border-emerald-400/40 text-emerald-200" : "bg-card border-border text-muted-foreground"
                   )}>
                     <Brain className="h-4 w-4" />
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 mb-0.5">
-                      <span className="text-[12px] sm:text-[13px] font-bold !text-white tracking-tight">AI Organic Algorithm</span>
+                      <span className="text-[12px] sm:text-[13px] font-bold !text-foreground tracking-tight">AI Organic Algorithm</span>
                       <span className={cn(
                         "text-[9px] font-bold uppercase tracking-[0.14em] px-1.5 py-0.5 rounded-md border",
-                        isOrganicMode ? "bg-emerald-500/15 text-emerald-200 border-emerald-400/30" : "bg-white/5 text-white/75 border-white/10"
+                        isOrganicMode ? "bg-emerald-500/15 text-emerald-200 border-emerald-400/30" : "bg-card text-muted-foreground border-border"
                       )}>
                         {isOrganicMode ? "Active" : "Idle"}
                       </span>
                     </div>
-                    <p className="text-[10.5px] sm:text-[11px] text-white/80 leading-snug">
+                    <p className="text-[10.5px] sm:text-[11px] text-muted-foreground leading-snug">
                       Unique S-curve · Random variance · Anti-bot
                     </p>
                   </div>
                   <div className={cn(
                     "shrink-0 w-9 h-5 rounded-full p-0.5 transition-all relative",
-                    isOrganicMode ? "bg-emerald-500/80" : "bg-white/10"
+                    isOrganicMode ? "bg-emerald-500/80" : "bg-card"
                   )}>
                     <div className={cn(
                       "w-4 h-4 rounded-full bg-white shadow transition-all",
@@ -865,37 +865,37 @@ export default function EngagementOrder() {
                 className={cn(
                   "group relative text-left rounded-xl border p-3 sm:p-3.5 transition-all overflow-hidden",
                   isAutoRatios
-                    ? "border-purple-400/40 bg-purple-500/[0.08] shadow-[0_0_25px_rgba(168,85,247,0.18)]"
-                    : "border-white/10 bg-white/[0.02] hover:border-white/20 hover:bg-white/[0.04]"
+                    ? "border-primary/40 bg-primary/[0.08] shadow-[0_0_25px_rgba(168,85,247,0.18)]"
+                    : "border-border bg-card hover:border-border hover:bg-card"
                 )}
               >
                 {isAutoRatios && (
-                  <div aria-hidden className="absolute -top-8 -right-8 w-32 h-32 bg-purple-400/25 blur-3xl rounded-full" />
+                  <div aria-hidden className="absolute -top-8 -right-8 w-32 h-32 bg-primary/25 blur-3xl rounded-full" />
                 )}
                 <div className="relative flex items-center gap-3">
                   <div className={cn(
                     "shrink-0 w-9 h-9 rounded-lg flex items-center justify-center border transition-all",
-                    isAutoRatios ? "bg-purple-500/20 border-purple-400/40 text-purple-200" : "bg-white/5 border-white/10 text-white/80"
+                    isAutoRatios ? "bg-primary/20 border-primary/40 text-primary" : "bg-card border-border text-muted-foreground"
                   )}>
                     <Percent className="h-4 w-4" />
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 mb-0.5">
-                      <span className="text-[12px] sm:text-[13px] font-bold !text-white tracking-tight">AI Smart Ratios</span>
+                      <span className="text-[12px] sm:text-[13px] font-bold !text-foreground tracking-tight">AI Smart Ratios</span>
                       <span className={cn(
                         "text-[9px] font-bold uppercase tracking-[0.14em] px-1.5 py-0.5 rounded-md border",
-                        isAutoRatios ? "bg-purple-500/15 text-purple-200 border-purple-400/30" : "bg-white/5 text-white/75 border-white/10"
+                        isAutoRatios ? "bg-primary/15 text-primary border-primary/30" : "bg-card text-muted-foreground border-border"
                       )}>
                         {isAutoRatios ? "Auto" : "Manual"}
                       </span>
                     </div>
-                    <p className="text-[10.5px] sm:text-[11px] text-white/80 leading-snug italic">
+                    <p className="text-[10.5px] sm:text-[11px] text-muted-foreground leading-snug italic">
                       {isAutoRatios ? "Optimized for platform algorithms" : "You set the engagement mix"}
                     </p>
                   </div>
                   <div className={cn(
                     "shrink-0 w-9 h-5 rounded-full p-0.5 transition-all",
-                    isAutoRatios ? "bg-purple-500/80" : "bg-white/10"
+                    isAutoRatios ? "bg-primary/80" : "bg-card"
                   )}>
                     <div className={cn(
                       "w-4 h-4 rounded-full bg-white shadow transition-all",

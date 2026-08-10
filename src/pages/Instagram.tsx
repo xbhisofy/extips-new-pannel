@@ -114,14 +114,14 @@ export default function InstagramPage() {
   return (
     <DashboardLayout>
       <div className="max-w-4xl mx-auto space-y-6">
-        <div className="rounded-3xl p-6 bg-gradient-to-br from-purple-600/15 via-fuchsia-500/10 to-transparent border border-purple-400/20">
+        <div className="rounded-3xl p-6 bg-gradient-to-br from-primary/15 via-primary/10 to-transparent border border-primary/20">
           <div className="flex items-center gap-3 mb-2">
-            <div className="w-11 h-11 rounded-2xl flex items-center justify-center bg-gradient-to-br from-fuchsia-500 to-purple-600 shadow-lg">
+            <div className="w-11 h-11 rounded-2xl flex items-center justify-center bg-gradient-to-br from-primary to-primary shadow-lg">
               <Instagram className="w-6 h-6 text-white" />
             </div>
             <div>
-              <h1 className="text-2xl font-bold !text-white">Instagram Accounts</h1>
-              <p className="text-sm text-white/85">Link your IG account to import posts and boost engagement.</p>
+              <h1 className="text-2xl font-bold !text-foreground">Instagram Accounts</h1>
+              <p className="text-sm text-muted-foreground">Link your IG account to import posts and boost engagement.</p>
             </div>
           </div>
         </div>
@@ -129,29 +129,29 @@ export default function InstagramPage() {
 
 
 
-        <div className="rounded-2xl p-5 bg-[#ffffff]/80 border border-white/10">
-          <label className="block text-xs font-semibold uppercase tracking-wider text-white/80 mb-2">Add Instagram Username</label>
+        <div className="rounded-2xl p-5 bg-[#ffffff]/80 border border-border">
+          <label className="block text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2">Add Instagram Username</label>
           <div className="flex gap-2">
             <div className="flex-1 relative">
-              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-white/75">@</span>
+              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">@</span>
               <input
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
                 onKeyDown={(e) => { if (e.key === 'Enter' && username) { linkMut.mutate(username); } }}
                 placeholder="your_username"
-                className="w-full h-11 pl-8 pr-3 rounded-xl bg-black/40 border border-white/10 text-white placeholder:text-white/65 focus:outline-none focus:border-purple-400/40"
+                className="w-full h-11 pl-8 pr-3 rounded-xl bg-black/40 border border-border text-white placeholder:text-muted-foreground focus:outline-none focus:border-primary/40"
               />
             </div>
             <button
               disabled={!username || linkMut.isPending}
               onClick={() => linkMut.mutate(username)}
-              className="h-11 px-5 rounded-xl font-semibold bg-gradient-to-b from-purple-500 to-fuchsia-600 text-white shadow-lg shadow-purple-500/30 hover:shadow-purple-500/50 transition-all disabled:opacity-50 flex items-center gap-2"
+              className="h-11 px-5 rounded-xl font-semibold bg-gradient-to-b from-primary to-primary text-white shadow-lg shadow-purple-500/30 hover:shadow-purple-500/50 transition-all disabled:opacity-50 flex items-center gap-2"
             >
               {linkMut.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />}
               Link
             </button>
           </div>
-          <p className="mt-2 text-[11px] text-white/75 flex items-center gap-1.5">
+          <p className="mt-2 text-[11px] text-muted-foreground flex items-center gap-1.5">
             <ShieldAlert className="w-3 h-3" /> Read-only. We only fetch public profile info & posts.
           </p>
 
@@ -192,16 +192,16 @@ export default function InstagramPage() {
 
 
         <div className="space-y-3">
-          {isLoading && <div className="text-center text-white/80 py-8">Loading...</div>}
+          {isLoading && <div className="text-center text-muted-foreground py-8">Loading...</div>}
           {!isLoading && accounts.length === 0 && (
-            <div className="text-center py-10 rounded-2xl border border-dashed border-white/10 text-white/75">
+            <div className="text-center py-10 rounded-2xl border border-dashed border-border text-muted-foreground">
               No Instagram accounts linked yet.
             </div>
           )}
           {accounts.map((a: any) => (
-            <div key={a.id} className="rounded-2xl p-4 bg-[#ffffff]/80 border border-white/10 flex items-center gap-4">
+            <div key={a.id} className="rounded-2xl p-4 bg-[#ffffff]/80 border border-border flex items-center gap-4">
               <div className="relative w-14 h-14 shrink-0">
-                <div className="absolute inset-0 rounded-full bg-gradient-to-br from-fuchsia-500 to-purple-600 flex items-center justify-center text-white font-bold text-lg ring-2 ring-purple-400/30">
+                <div className="absolute inset-0 rounded-full bg-gradient-to-br from-primary to-primary flex items-center justify-center text-white font-bold text-lg ring-2 ring-primary/30">
                   {a.username[0]?.toUpperCase()}
                 </div>
                 {/* Always render: the proxy falls back to a live avatar lookup
@@ -211,7 +211,7 @@ export default function InstagramPage() {
                   alt={a.username}
                   referrerPolicy="no-referrer"
                   loading="lazy"
-                  className="absolute inset-0 w-14 h-14 rounded-full object-cover ring-2 ring-purple-400/30 transition-opacity duration-300 opacity-0"
+                  className="absolute inset-0 w-14 h-14 rounded-full object-cover ring-2 ring-primary/30 transition-opacity duration-300 opacity-0"
                   onLoad={(e) => { (e.target as HTMLImageElement).style.opacity = '1'; }}
                   onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
                 />
@@ -219,11 +219,11 @@ export default function InstagramPage() {
               </div>
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-1.5">
-                  <span className="font-semibold !text-white truncate">@{a.username}</span>
+                  <span className="font-semibold !text-foreground truncate">@{a.username}</span>
                   {a.is_verified && <CheckCircle2 className="w-4 h-4 text-sky-400 shrink-0" />}
                 </div>
-                {a.full_name && <p className="text-[13px] text-white/85 truncate">{a.full_name}</p>}
-                <p className="text-[11px] text-white/75 mt-0.5">
+                {a.full_name && <p className="text-[13px] text-muted-foreground truncate">{a.full_name}</p>}
+                <p className="text-[11px] text-muted-foreground mt-0.5">
                   {a.status === 'pending_refresh'
                     ? 'Fetching profile & posts…'
                     : `${a.followers?.toLocaleString('en-IN') ?? 0} followers · ${a.posts_count ?? 0} posts`}
@@ -233,14 +233,14 @@ export default function InstagramPage() {
                 <button
                   onClick={() => refreshMut.mutate(a.id)}
                   disabled={refreshMut.isPending}
-                  className="w-9 h-9 rounded-lg bg-white/5 hover:bg-white/10 border border-white/10 text-white/80 flex items-center justify-center disabled:opacity-50"
+                  className="w-9 h-9 rounded-lg bg-card hover:bg-card border border-border text-muted-foreground flex items-center justify-center disabled:opacity-50"
                   title="Refresh from Instagram"
                 >
                   {refreshMut.isPending || a.status === 'pending_refresh'
                     ? <Loader2 className="w-4 h-4 animate-spin" />
                     : <RefreshCw className="w-4 h-4" />}
                 </button>
-                <Link to={`/my-posts?account=${encodeURIComponent(a.id)}`} className="px-3 h-9 rounded-lg text-[12px] font-semibold bg-white/5 hover:bg-white/10 border border-white/10 text-white/80 flex items-center">
+                <Link to={`/my-posts?account=${encodeURIComponent(a.id)}`} className="px-3 h-9 rounded-lg text-[12px] font-semibold bg-card hover:bg-card border border-border text-muted-foreground flex items-center">
                   View Posts
                 </Link>
 

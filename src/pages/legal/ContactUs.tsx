@@ -67,8 +67,8 @@ export default function ContactUs() {
 
             <div className="rounded-xl border border-border p-5 bg-card">
               <div className="flex items-center gap-3 mb-2">
-                <div className="h-10 w-10 rounded-lg bg-purple-500/10 flex items-center justify-center">
-                  <Clock className="h-5 w-5 text-purple-500" />
+                <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center">
+                  <Clock className="h-5 w-5 text-primary" />
                 </div>
                 <h3 className="font-semibold">Working Hours</h3>
               </div>
