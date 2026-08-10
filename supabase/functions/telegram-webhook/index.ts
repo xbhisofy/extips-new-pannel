@@ -77,6 +77,8 @@ async function handleCommand(chatId: number, username: string | null, text: stri
       `<b>Account</b>\n` +
       `<code>/link CODE</code> — pair account\n` +
       `<code>/wallet</code> — balance\n` +
+      `<code>/b</code> — provider live balance (admin)\n` +
+
       `<code>/posts</code> — recent IG posts\n` +
       `<code>/orders</code> — recent orders\n` +
       `<code>/cancel ID</code> — cancel pending order\n\n` +
@@ -111,6 +113,76 @@ async function handleCommand(chatId: number, username: string | null, text: stri
     if (error) return reply(chatId, `❌ ${error.message}`);
     if (!data?.success) return reply(chatId, `❌ Link failed: ${data?.reason ?? "unknown"}`);
     return reply(chatId, "✅ Linked! Try /wallet or /posts.");
+  }
+
+  // Admin: live provider balance (only the configured admin chat reaches here)
+  if (cmd === "/b" || cmd === "/balance") {
+    const { data: accounts, error } = await supabase
+      .from("provider_accounts")
+      .select("id,name,api_key,api_url,priority,is_active,balance_currency")
+      .eq("is_active", true)
+      .order("priority", { ascending: true });
+    if (error) return reply(chatId, `❌ ${error.message}`);
+    if (!accounts?.length) return reply(chatId, "⚠️ Koi active provider account nahi mila.");
+
+    await reply(chatId, "⏳ Live balance check kar raha hu...");
+
+    const usdToInr = await (async () => {
+      try {
+        const r = await fetch("https://api.exchangerate-api.com/v4/latest/USD");
+        const j = await r.json();
+        const rate = Number(j?.rates?.INR);
+        if (rate > 0) return rate;
+      } catch { /* fallback below */ }
+      return 84;
+    })();
+
+    const lines: string[] = [];
+    let totalInr = 0;
+    for (const acc of accounts as any[]) {
+      const tag = acc.priority === (accounts as any[])[0].priority ? " ⭐ MAIN" : "";
+      try {
+        const form = new URLSearchParams({ key: acc.api_key, action: "balance" });
+        const controller = new AbortController();
+        const t = setTimeout(() => controller.abort(), 12000);
+        const resp = await fetch(acc.api_url, {
+          method: "POST",
+          headers: { "Content-Type": "application/x-www-form-urlencoded" },
+          body: form.toString(),
+          signal: controller.signal,
+        });
+        clearTimeout(t);
+        const text = await resp.text();
+        let data: any;
+        try { data = JSON.parse(text); } catch { data = { error: text.slice(0, 120) }; }
+        if (data?.error) {
+          lines.push(`❌ <b>${acc.name}</b>${tag}\n   ${String(data.error).slice(0, 120)}`);
+          continue;
+        }
+        const bal = Number(data.balance ?? 0);
+        const currency = String(data.currency ?? acc.balance_currency ?? "USD").toUpperCase();
+        const inr = currency === "USD" ? bal * usdToInr : bal;
+        totalInr += inr;
+        const low = inr < 50 ? " ⚠️ LOW" : "";
+        lines.push(
+          `${inr < 50 ? "⚠️" : "✅"} <b>${acc.name}</b>${tag}\n` +
+          `   ₹${inr.toFixed(2)}${currency === "USD" ? ` (${bal.toFixed(4)} USD)` : ""}${low}`,
+        );
+        await supabase.from("provider_accounts").update({
+          balance: bal,
+          balance_currency: currency,
+          balance_checked_at: new Date().toISOString(),
+          last_balance_error: null,
+        }).eq("id", acc.id);
+      } catch (e: any) {
+        lines.push(`❌ <b>${acc.name}</b>${tag}\n   ${(e?.message || "network error").slice(0, 120)}`);
+      }
+    }
+
+    return reply(chatId,
+      `💳 <b>Provider Live Balance</b>\n\n${lines.join("\n\n")}\n\n` +
+      `<b>Total:</b> ₹${totalInr.toFixed(2)}\n` +
+      `<i>Rate: 1 USD = ₹${usdToInr.toFixed(2)} · ${new Date().toLocaleString("en-IN", { timeZone: "Asia/Kolkata" })}</i>`);
   }
 
   const userId = await getLinkedUser(chatId);
