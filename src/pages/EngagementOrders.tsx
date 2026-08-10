@@ -79,7 +79,8 @@ export default function EngagementOrders() {
         `)
         .eq('user_id', user.id)
         .order('created_at', { ascending: false })
-        .limit(100);
+        // Imported users can have well over 100 historical orders.
+        .limit(1000);
       if (error) throw error;
       return data;
     },
