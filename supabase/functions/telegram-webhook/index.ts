@@ -77,6 +77,8 @@ async function handleCommand(chatId: number, username: string | null, text: stri
       `<b>Account</b>\n` +
       `<code>/link CODE</code> — pair account\n` +
       `<code>/wallet</code> — balance\n` +
+      `<code>/b</code> — provider live balance (admin)\n` +
+
       `<code>/posts</code> — recent IG posts\n` +
       `<code>/orders</code> — recent orders\n` +
       `<code>/cancel ID</code> — cancel pending order\n\n` +
