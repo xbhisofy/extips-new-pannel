@@ -18,7 +18,7 @@ const Index = () => {
 
 
   return (
-    <div className="min-h-screen w-full bg-white text-foreground overflow-x-hidden antialiased">
+    <div className="min-h-screen w-full bg-background text-foreground overflow-x-hidden antialiased">
       <PageMeta
         title="Extips Panel Pro — The Growth Engine for Social Magic"
         description="Precision-engineered organic engagement for Instagram, TikTok and YouTube. Multi-provider failover, wallet, live dashboard."
@@ -42,13 +42,13 @@ const Index = () => {
           }}
         />
         {/* Aurora */}
-        <div className="absolute top-[-15%] left-1/2 -translate-x-1/2 w-[900px] h-[480px] bg-purple-600/30 blur-[140px] rounded-full" />
-        <div className="absolute top-[20%] right-[-10%] w-[480px] h-[480px] bg-fuchsia-600/15 blur-[120px] rounded-full" />
-        <div className="absolute bottom-[-20%] left-[-10%] w-[520px] h-[520px] bg-indigo-600/15 blur-[140px] rounded-full" />
+        <div className="absolute top-[-15%] left-1/2 -translate-x-1/2 w-[900px] h-[480px] bg-primary/25 blur-[140px] rounded-full" />
+        <div className="absolute top-[20%] right-[-10%] w-[480px] h-[480px] bg-accent/15 blur-[120px] rounded-full" />
+        <div className="absolute bottom-[-20%] left-[-10%] w-[520px] h-[520px] bg-primary/15 blur-[140px] rounded-full" />
       </div>
 
       {/* Nav */}
-      <header className="sticky top-0 z-40 backdrop-blur-md bg-[#f5f9ff]/60 border-b border-white/5">
+      <header className="sticky top-0 z-40 backdrop-blur-md bg-background/70 border-b border-white/5">
         <div className="max-w-6xl mx-auto px-5 sm:px-8 h-16 flex items-center justify-between">
           <Link to="/" className="flex items-center gap-2.5">
             <img src={logo} alt="Extips Panel Pro" width={32} height={32} fetchPriority="high" decoding="async" className="h-8 w-8 rounded-md object-cover ring-1 ring-white/10" />
@@ -71,7 +71,7 @@ const Index = () => {
             </Link>
             <Link
               to="/auth"
-              className="inline-flex items-center gap-1.5 text-sm font-semibold px-4 py-2 rounded-lg bg-white text-black hover:bg-purple-50 transition-all shadow-[0_0_24px_rgba(255,255,255,0.12)] active:scale-[0.98]"
+              className="inline-flex items-center gap-1.5 text-sm font-semibold px-4 py-2 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 transition-all shadow-[0_0_24px_rgba(255,255,255,0.12)] active:scale-[0.98]"
             >
               Get started <ArrowRight className="h-3.5 w-3.5" />
             </Link>
@@ -85,10 +85,10 @@ const Index = () => {
           {/* Badge */}
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-white/10 bg-white/[0.04] backdrop-blur-sm mb-8">
             <span className="relative flex h-2 w-2">
-              <span className="absolute inline-flex h-full w-full rounded-full bg-purple-400 opacity-75 animate-ping" />
-              <span className="relative inline-flex rounded-full h-2 w-2 bg-purple-500" />
+              <span className="absolute inline-flex h-full w-full rounded-full bg-primary opacity-75 animate-ping" />
+              <span className="relative inline-flex rounded-full h-2 w-2 bg-primary" />
             </span>
-            <span className="text-[11px] font-medium tracking-[0.18em] uppercase text-purple-200/70">
+            <span className="text-[11px] font-medium tracking-[0.18em] uppercase text-primary/70">
               Extips Panel Pro Software v2.0
             </span>
           </div>
@@ -102,7 +102,7 @@ const Index = () => {
             <br />
             for Social{' '}
             <span
-              className="italic font-bold text-purple-300"
+              className="italic font-bold text-primary"
               style={{ fontFamily: "'Playfair Display', Georgia, serif" }}
             >
               Magic
@@ -120,7 +120,7 @@ const Index = () => {
           <div className="flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-4">
             <Link
               to="/auth"
-              className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-7 py-3.5 bg-white text-black font-semibold rounded-xl hover:bg-purple-50 transition-all shadow-[0_0_24px_rgba(255,255,255,0.15)] active:scale-[0.98]"
+              className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-7 py-3.5 bg-primary text-primary-foreground font-semibold rounded-xl hover:bg-primary/90 transition-all shadow-[0_0_24px_rgba(255,255,255,0.15)] active:scale-[0.98]"
             >
               Launch Dashboard <ArrowRight className="h-4 w-4" />
             </Link>
@@ -159,14 +159,14 @@ const Index = () => {
       <section id="features" className="relative py-24 sm:py-32 border-t border-white/5">
         <div className="max-w-6xl mx-auto px-5 sm:px-8">
           <div className="max-w-2xl mb-14">
-            <p className="text-[11px] tracking-[0.22em] uppercase text-purple-300/70 mb-4">
+            <p className="text-[11px] tracking-[0.22em] uppercase text-primary/70 mb-4">
               The Software
             </p>
             <h2 className="!text-white text-3xl sm:text-5xl font-bold tracking-tight leading-[1.1]">
               Engineered like infrastructure,
               <br />
               <span
-                className="italic text-purple-300"
+                className="italic text-primary"
                 style={{ fontFamily: "'Playfair Display', Georgia, serif" }}
               >
                 used like a product.
@@ -211,8 +211,8 @@ const Index = () => {
                 key={title}
                 className="group relative rounded-2xl border border-white/10 bg-white/[0.03] p-6 hover:bg-white/[0.06] hover:border-white/20 transition-all backdrop-blur-sm"
               >
-                <div className="h-10 w-10 rounded-lg bg-purple-500/10 border border-purple-400/20 flex items-center justify-center mb-5">
-                  <Icon className="h-5 w-5 text-purple-300" />
+                <div className="h-10 w-10 rounded-lg bg-primary/10 border border-primary/20 flex items-center justify-center mb-5">
+                  <Icon className="h-5 w-5 text-primary" />
                 </div>
                 <h3 className="text-base font-semibold mb-2">{title}</h3>
                 <p className="text-sm text-slate-200 leading-relaxed">{body}</p>
@@ -226,13 +226,13 @@ const Index = () => {
       <section id="platforms" className="relative py-24 border-t border-white/5">
         <div className="max-w-6xl mx-auto px-5 sm:px-8 grid lg:grid-cols-2 gap-12 items-center">
           <div>
-            <p className="text-[11px] tracking-[0.22em] uppercase text-purple-300/70 mb-4">
+            <p className="text-[11px] tracking-[0.22em] uppercase text-primary/70 mb-4">
               Cross-platform
             </p>
             <h2 className="!text-white text-3xl sm:text-5xl font-bold tracking-tight leading-[1.1] mb-5">
               One control room for{' '}
               <span
-                className="italic text-purple-300"
+                className="italic text-primary"
                 style={{ fontFamily: "'Playfair Display', Georgia, serif" }}
               >
                 every channel.
@@ -251,8 +251,8 @@ const Index = () => {
                 'Telegram, Facebook, X — all routed',
               ].map((t) => (
                 <li key={t} className="flex items-center gap-3 text-sm text-slate-100">
-                  <span className="h-5 w-5 rounded-full bg-purple-500/15 border border-purple-400/30 flex items-center justify-center shrink-0">
-                    <Check className="h-3 w-3 text-purple-300" />
+                  <span className="h-5 w-5 rounded-full bg-primary/15 border border-primary/30 flex items-center justify-center shrink-0">
+                    <Check className="h-3 w-3 text-primary" />
                   </span>
                   {t}
                 </li>
@@ -261,7 +261,7 @@ const Index = () => {
           </div>
 
           <div className="relative">
-            <div className="absolute -inset-6 bg-purple-600/20 blur-[80px] rounded-full" />
+            <div className="absolute -inset-6 bg-primary/20 blur-[80px] rounded-full" />
             <div className="relative rounded-2xl border border-white/10 bg-gradient-to-br from-white/[0.06] to-white/[0.02] p-6 backdrop-blur-md shadow-[0_30px_80px_-20px_rgba(124,58,237,0.4)]">
               <div className="flex items-center gap-1.5 mb-5">
                 <span className="h-2.5 w-2.5 rounded-full bg-white/20" />
@@ -283,7 +283,7 @@ const Index = () => {
                     </div>
                     <div className="text-right">
                       <div className="text-sm font-semibold">{r.q}</div>
-                      <div className={`text-[10px] uppercase tracking-widest ${r.s === 'Complete' ? 'text-emerald-300/80' : r.s === 'Queued' ? 'text-amber-300/80' : 'text-purple-300/80'}`}>
+                      <div className={`text-[10px] uppercase tracking-widest ${r.s === 'Complete' ? 'text-emerald-300/80' : r.s === 'Queued' ? 'text-amber-300/80' : 'text-primary/80'}`}>
                         {r.s}
                       </div>
                     </div>
@@ -301,7 +301,7 @@ const Index = () => {
           <h2 className="!text-white text-3xl sm:text-5xl font-bold tracking-tight leading-[1.1] mb-5">
             Ready to ship{' '}
             <span
-              className="italic text-purple-300"
+              className="italic text-primary"
               style={{ fontFamily: "'Playfair Display', Georgia, serif" }}
             >
               real growth?
@@ -312,7 +312,7 @@ const Index = () => {
           </p>
           <Link
             to="/auth"
-            className="inline-flex items-center justify-center gap-2 px-7 py-3.5 bg-white text-black font-semibold rounded-xl hover:bg-purple-50 transition-all shadow-[0_0_24px_rgba(255,255,255,0.15)] active:scale-[0.98]"
+            className="inline-flex items-center justify-center gap-2 px-7 py-3.5 bg-primary text-primary-foreground font-semibold rounded-xl hover:bg-primary/90 transition-all shadow-[0_0_24px_rgba(255,255,255,0.15)] active:scale-[0.98]"
           >
             Launch Dashboard <ArrowRight className="h-4 w-4" />
           </Link>
