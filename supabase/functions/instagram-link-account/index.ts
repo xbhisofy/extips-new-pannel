@@ -36,20 +36,8 @@ Deno.serve(async (req) => {
     }
     const userId = userRes.user.id;
 
-    // Subscription gate (admin bypass)
-    const adminAuth = createClient(SUPABASE_URL, SERVICE_KEY);
-    const { data: roleRow } = await adminAuth
-      .from('user_roles').select('role').eq('user_id', userId).eq('role', 'admin').maybeSingle();
-    if (!roleRow) {
-      const { data: sub } = await adminAuth
-        .from('subscriptions').select('status,plan_type').eq('user_id', userId).maybeSingle();
-      const active = sub && sub.status === 'active' && sub.plan_type !== 'trial';
-      if (!active) {
-        return new Response(JSON.stringify({ error: 'Active subscription required to link Instagram accounts.' }), {
-          status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        });
-      }
-    }
+    // Subscription system removed — any authenticated user can link accounts.
+
 
     const body = await req.json().catch(() => ({}));
     let username = String(body.username ?? '').trim().replace(/^@/, '').replace(/\/$/, '');
