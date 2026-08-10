@@ -118,12 +118,20 @@ INSERT INTO merge_stage.user_map (source_user_id, target_user_id)
 SELECT u.id, u.id FROM auth.users u
 ON CONFLICT (source_user_id) DO UPDATE SET target_user_id=EXCLUDED.target_user_id;
 
-INSERT INTO merge_stage.user_map (source_user_id, target_user_id)
-SELECT (s.j->>'user_id')::uuid, a.id
-FROM merge_stage.users s
-JOIN auth.users a ON lower(a.email)=lower(s.j->>'email')
-WHERE s.j->>'user_id' IS NOT NULL AND s.j->>'email' IS NOT NULL
-ON CONFLICT (source_user_id) DO UPDATE SET target_user_id=EXCLUDED.target_user_id;
+DO $$
+BEGIN
+  IF to_regclass('merge_stage.users') IS NOT NULL THEN
+    EXECUTE $q$
+      INSERT INTO merge_stage.user_map (source_user_id, target_user_id)
+      SELECT (s.j->>'user_id')::uuid, a.id
+      FROM merge_stage.users s
+      JOIN auth.users a ON lower(a.email)=lower(s.j->>'email')
+      WHERE s.j->>'user_id' IS NOT NULL AND s.j->>'email' IS NOT NULL
+      ON CONFLICT (source_user_id) DO UPDATE
+      SET target_user_id=EXCLUDED.target_user_id
+    $q$;
+  END IF;
+END $$;
 
 INSERT INTO merge_stage.accepted (user_id)
 SELECT source_user_id FROM merge_stage.user_map
