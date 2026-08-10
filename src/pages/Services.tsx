@@ -23,7 +23,6 @@ export default function Services() {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('All');
   const { formatPrice } = useCurrency();
-  const [showSubDialog, setShowSubDialog] = useState(false);
 
   const { services } = useServices();
 
