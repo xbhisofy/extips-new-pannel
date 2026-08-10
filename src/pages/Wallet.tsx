@@ -7,7 +7,6 @@ import { useCurrency } from '@/hooks/useCurrency';
 
 import OxapayDepositCard from '@/components/wallet/OxapayDepositCard';
 import ZapUpiDepositCard from '@/components/wallet/ZapUpiDepositCard';
-import { SubscriptionCheckDialog } from '@/components/subscription/SubscriptionCheckDialog';
 import {
   Wallet as WalletIcon,
   ArrowUpRight,
@@ -30,22 +29,7 @@ export default function Wallet() {
   const initialMethod: 'upi' | 'crypto' =
     (searchParams.get('order_id') || '').startsWith('oxw_') ? 'crypto' : 'upi';
   const [method, setMethod] = useState<'upi' | 'crypto'>(initialMethod);
-  const [subDialogOpen, setSubDialogOpen] = useState(false);
-  const [subInitialPlan, setSubInitialPlan] = useState<'monthly' | 'yearly' | 'lifetime'>('yearly');
   const { data: transactions } = useTransactions(filter);
-
-  // Consume ?subscribe=<plan> from landing-page pricing buttons.
-  useEffect(() => {
-    const plan = searchParams.get('subscribe');
-    if (plan === 'monthly' || plan === 'yearly' || plan === 'lifetime') {
-      setSubInitialPlan(plan);
-      setSubDialogOpen(true);
-      const next = new URLSearchParams(searchParams);
-      next.delete('subscribe');
-      setSearchParams(next, { replace: true });
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
 
   const getIcon = (type: string) => {
     switch (type) {
@@ -286,7 +270,6 @@ export default function Wallet() {
           </div>
         </div>
       </div>
-      <SubscriptionCheckDialog open={subDialogOpen} onOpenChange={setSubDialogOpen} initialPlan={subInitialPlan} />
     </DashboardLayout>
   );
 }
