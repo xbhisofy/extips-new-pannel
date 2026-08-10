@@ -43,7 +43,7 @@ export function PlatformSelector({ selected, onSelect, availablePlatforms }: Pla
             className={cn(
               "flex items-center gap-2.5 px-6 py-3.5 rounded-full font-black text-xs uppercase tracking-widest transition-all duration-200",
               isSelected
-                ? `bg-gradient-to-r ${config.color} text-slate-900 shadow-[0_8px_24px_rgba(0,0,0,0.18)] scale-[1.02] ring-2 ring-white/60`
+                ? `bg-gradient-to-r ${config.color} text-slate-900 shadow-[0_8px_24px_rgba(0,0,0,0.18)] scale-[1.02] ring-2 ring-border`
                 : "bg-slate-100 text-slate-600 border border-slate-200 hover:bg-slate-200/70 hover:text-slate-800 hover:border-slate-300"
             )}
           >

@@ -521,7 +521,7 @@ export default function Orders() {
                                         ? 'bg-emerald-500/10 border border-emerald-500/30'
                                         : isFailed
                                           ? 'bg-green-500/10 border border-green-500/30'
-                                          : 'bg-violet-500/5 border border-violet-500/20'
+                                          : 'bg-primary/5 border border-primary/20'
                                   }`}
                                 >
                                   <div className="p-3">
@@ -535,7 +535,7 @@ export default function Orders() {
                                             ? 'bg-gradient-to-br from-emerald-500 to-teal-500 text-white'
                                             : isFailed
                                               ? 'bg-gradient-to-br from-green-500 to-red-500 text-white'
-                                              : 'bg-gradient-to-br from-violet-500 to-purple-500 text-white'
+                                              : 'bg-gradient-to-br from-primary to-primary text-white'
                                       }`}>
                                         #{run.run_number}
                                       </div>
@@ -551,7 +551,7 @@ export default function Orders() {
                                                 ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
                                                 : isFailed
                                                   ? 'bg-green-500/20 text-green-400 border border-green-500/30'
-                                                  : 'bg-violet-500/20 text-violet-400 border border-violet-500/30'
+                                                  : 'bg-primary/20 text-primary border border-primary/30'
                                           }`}>
                                             {isActive && <Loader2 className="h-3 w-3 animate-spin" />}
                                             {isCompleted && <CheckCircle2 className="h-3 w-3" />}
@@ -574,7 +574,7 @@ export default function Orders() {
                                           
                                           {/* Show scheduled total for pending - Purple */}
                                           {isPending && cumulativeDelivered === 0 && (
-                                            <span className="inline-flex items-center gap-1 text-xs bg-purple-500/20 text-purple-400 border border-purple-500/30 px-2 py-0.5 rounded-lg">
+                                            <span className="inline-flex items-center gap-1 text-xs bg-primary/20 text-primary border border-primary/30 px-2 py-0.5 rounded-lg">
                                               → {cumulativeScheduled.toLocaleString()} scheduled
                                             </span>
                                           )}
@@ -632,7 +632,7 @@ export default function Orders() {
                                         <Button
                                           variant="ghost"
                                           size="sm"
-                                          className="h-8 px-3 text-violet-400 hover:bg-violet-500/20"
+                                          className="h-8 px-3 text-primary hover:bg-primary/20"
                                           onClick={(e) => {
                                             e.stopPropagation();
                                             setEditingRun({

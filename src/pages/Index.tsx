@@ -48,30 +48,30 @@ const Index = () => {
       </div>
 
       {/* Nav */}
-      <header className="sticky top-0 z-40 backdrop-blur-md bg-background/70 border-b border-white/5">
+      <header className="sticky top-0 z-40 backdrop-blur-md bg-background/70 border-b border-border">
         <div className="max-w-6xl mx-auto px-5 sm:px-8 h-16 flex items-center justify-between">
           <Link to="/" className="flex items-center gap-2.5">
-            <img src={logo} alt="Extips Panel Pro" width={32} height={32} fetchPriority="high" decoding="async" className="h-8 w-8 rounded-md object-cover ring-1 ring-white/10" />
+            <img src={logo} alt="Extips Panel Pro" width={32} height={32} fetchPriority="high" decoding="async" className="h-8 w-8 rounded-md object-cover ring-1 ring-border" />
             <span className="text-[15px] font-semibold tracking-tight">Extips Panel Pro</span>
-            <span className="hidden sm:inline text-[10px] uppercase tracking-[0.18em] text-white/75 ml-2 px-1.5 py-0.5 rounded border border-white/10">v2</span>
+            <span className="hidden sm:inline text-[10px] uppercase tracking-[0.18em] text-muted-foreground ml-2 px-1.5 py-0.5 rounded border border-border">v2</span>
           </Link>
 
-          <nav className="hidden md:flex items-center gap-8 text-sm text-white/85">
-            <a href="#features" className="hover:text-white transition-colors">Features</a>
-            <a href="#platforms" className="hover:text-white transition-colors">Platforms</a>
-            <Link to="/support" className="hover:text-white transition-colors">Support</Link>
+          <nav className="hidden md:flex items-center gap-8 text-sm text-muted-foreground">
+            <a href="#features" className="hover:text-foreground transition-colors">Features</a>
+            <a href="#platforms" className="hover:text-foreground transition-colors">Platforms</a>
+            <Link to="/support" className="hover:text-foreground transition-colors">Support</Link>
           </nav>
 
           <div className="flex items-center gap-2.5">
             <Link
               to="/auth"
-              className="hidden sm:inline-flex text-sm text-white/70 hover:text-white px-3 py-2 rounded-lg transition-colors"
+              className="hidden sm:inline-flex text-sm text-muted-foreground hover:text-foreground px-3 py-2 rounded-lg transition-colors"
             >
               Sign in
             </Link>
             <Link
               to="/auth"
-              className="inline-flex items-center gap-1.5 text-sm font-semibold px-4 py-2 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 transition-all shadow-[0_0_24px_rgba(255,255,255,0.12)] active:scale-[0.98]"
+              className="inline-flex items-center gap-1.5 text-sm font-semibold px-4 py-2 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 transition-all shadow-[0_10px_24px_rgba(29,78,216,0.25)] active:scale-[0.98]"
             >
               Get started <ArrowRight className="h-3.5 w-3.5" />
             </Link>
@@ -83,7 +83,7 @@ const Index = () => {
       <section className="relative">
         <div className="max-w-5xl mx-auto px-5 sm:px-8 pt-20 sm:pt-28 pb-20 sm:pb-28 text-center">
           {/* Badge */}
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-white/10 bg-white/[0.04] backdrop-blur-sm mb-8">
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-border bg-card backdrop-blur-sm mb-8">
             <span className="relative flex h-2 w-2">
               <span className="absolute inline-flex h-full w-full rounded-full bg-primary opacity-75 animate-ping" />
               <span className="relative inline-flex rounded-full h-2 w-2 bg-primary" />
@@ -95,7 +95,7 @@ const Index = () => {
 
           {/* Headline */}
           <h1
-            className="!text-white text-5xl sm:text-7xl lg:text-[88px] font-extrabold tracking-tight leading-[1.02] mb-6"
+            className="!text-foreground text-5xl sm:text-7xl lg:text-[88px] font-extrabold tracking-tight leading-[1.02] mb-6"
             style={{ fontFamily: "'Inter', system-ui, sans-serif" }}
           >
             The Growth Engine
@@ -120,24 +120,24 @@ const Index = () => {
           <div className="flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-4">
             <Link
               to="/auth"
-              className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-7 py-3.5 bg-primary text-primary-foreground font-semibold rounded-xl hover:bg-primary/90 transition-all shadow-[0_0_24px_rgba(255,255,255,0.15)] active:scale-[0.98]"
+              className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-7 py-3.5 bg-primary text-primary-foreground font-semibold rounded-xl hover:bg-primary/90 transition-all shadow-[0_10px_24px_rgba(29,78,216,0.25)] active:scale-[0.98]"
             >
               Launch Dashboard <ArrowRight className="h-4 w-4" />
             </Link>
             <Link
               to="/wallet"
-              className="w-full sm:w-auto inline-flex items-center justify-center px-7 py-3.5 bg-white/5 border border-white/10 text-white font-semibold rounded-xl hover:bg-white/10 transition-all backdrop-blur-md"
+              className="w-full sm:w-auto inline-flex items-center justify-center px-7 py-3.5 bg-card border border-border text-white font-semibold rounded-xl hover:bg-card transition-all backdrop-blur-md"
             >
               Add funds
             </Link>
           </div>
 
           {/* Platforms strip */}
-          <div className="mt-20 pt-8 border-t border-white/5">
-            <p className="text-[10px] tracking-[0.24em] uppercase text-white/65 mb-5">
+          <div className="mt-20 pt-8 border-t border-border">
+            <p className="text-[10px] tracking-[0.24em] uppercase text-muted-foreground mb-5">
               Built for the platforms that matter
             </p>
-            <div className="flex flex-wrap items-center justify-center gap-x-10 gap-y-4 text-white/80">
+            <div className="flex flex-wrap items-center justify-center gap-x-10 gap-y-4 text-muted-foreground">
               {[
                 { Icon: Instagram, label: 'INSTAGRAM' },
                 { Icon: Sparkles, label: 'TIKTOK' },
@@ -145,7 +145,7 @@ const Index = () => {
                 { Icon: MessageCircle, label: 'TELEGRAM' },
                 { Icon: Globe, label: 'FACEBOOK' },
               ].map(({ Icon, label }) => (
-                <div key={label} className="flex items-center gap-2 hover:text-white/80 transition-colors">
+                <div key={label} className="flex items-center gap-2 hover:text-foreground/80 transition-colors">
                   <Icon className="h-4 w-4" />
                   <span className="text-xs font-semibold tracking-[0.18em]">{label}</span>
                 </div>
@@ -156,13 +156,13 @@ const Index = () => {
       </section>
 
       {/* Features */}
-      <section id="features" className="relative py-24 sm:py-32 border-t border-white/5">
+      <section id="features" className="relative py-24 sm:py-32 border-t border-border">
         <div className="max-w-6xl mx-auto px-5 sm:px-8">
           <div className="max-w-2xl mb-14">
             <p className="text-[11px] tracking-[0.22em] uppercase text-primary/70 mb-4">
               The Software
             </p>
-            <h2 className="!text-white text-3xl sm:text-5xl font-bold tracking-tight leading-[1.1]">
+            <h2 className="!text-foreground text-3xl sm:text-5xl font-bold tracking-tight leading-[1.1]">
               Engineered like infrastructure,
               <br />
               <span
@@ -209,7 +209,7 @@ const Index = () => {
             ].map(({ Icon, title, body }) => (
               <div
                 key={title}
-                className="group relative rounded-2xl border border-white/10 bg-white/[0.03] p-6 hover:bg-white/[0.06] hover:border-white/20 transition-all backdrop-blur-sm"
+                className="group relative rounded-2xl border border-border bg-card p-6 hover:bg-card hover:border-border transition-all backdrop-blur-sm"
               >
                 <div className="h-10 w-10 rounded-lg bg-primary/10 border border-primary/20 flex items-center justify-center mb-5">
                   <Icon className="h-5 w-5 text-primary" />
@@ -223,13 +223,13 @@ const Index = () => {
       </section>
 
       {/* Platforms */}
-      <section id="platforms" className="relative py-24 border-t border-white/5">
+      <section id="platforms" className="relative py-24 border-t border-border">
         <div className="max-w-6xl mx-auto px-5 sm:px-8 grid lg:grid-cols-2 gap-12 items-center">
           <div>
             <p className="text-[11px] tracking-[0.22em] uppercase text-primary/70 mb-4">
               Cross-platform
             </p>
-            <h2 className="!text-white text-3xl sm:text-5xl font-bold tracking-tight leading-[1.1] mb-5">
+            <h2 className="!text-foreground text-3xl sm:text-5xl font-bold tracking-tight leading-[1.1] mb-5">
               One control room for{' '}
               <span
                 className="italic text-primary"
@@ -262,12 +262,12 @@ const Index = () => {
 
           <div className="relative">
             <div className="absolute -inset-6 bg-primary/20 blur-[80px] rounded-full" />
-            <div className="relative rounded-2xl border border-white/10 bg-gradient-to-br from-white/[0.06] to-white/[0.02] p-6 backdrop-blur-md shadow-[0_30px_80px_-20px_rgba(124,58,237,0.4)]">
+            <div className="relative rounded-2xl border border-border bg-card p-6 backdrop-blur-md shadow-[0_20px_60px_-24px_rgba(20,50,110,0.18)]">
               <div className="flex items-center gap-1.5 mb-5">
-                <span className="h-2.5 w-2.5 rounded-full bg-white/20" />
-                <span className="h-2.5 w-2.5 rounded-full bg-white/20" />
-                <span className="h-2.5 w-2.5 rounded-full bg-white/20" />
-                <span className="ml-auto text-[10px] uppercase tracking-[0.18em] text-white/75">extipspanel.live</span>
+                <span className="h-2.5 w-2.5 rounded-full bg-card" />
+                <span className="h-2.5 w-2.5 rounded-full bg-card" />
+                <span className="h-2.5 w-2.5 rounded-full bg-card" />
+                <span className="ml-auto text-[10px] uppercase tracking-[0.18em] text-muted-foreground">extipspanel.live</span>
               </div>
               <div className="space-y-3">
                 {[
@@ -276,9 +276,9 @@ const Index = () => {
                   { p: 'YouTube', t: 'Subscribers', q: '850', s: 'Complete' },
                   { p: 'Instagram', t: 'Followers', q: '2,000', s: 'Running' },
                 ].map((r, i) => (
-                  <div key={i} className="flex items-center justify-between rounded-lg border border-white/5 bg-white/[0.03] px-3.5 py-3">
+                  <div key={i} className="flex items-center justify-between rounded-lg border border-border bg-card px-3.5 py-3">
                     <div>
-                      <div className="text-[10px] uppercase tracking-widest text-white/75 mb-0.5">{r.p}</div>
+                      <div className="text-[10px] uppercase tracking-widest text-muted-foreground mb-0.5">{r.p}</div>
                       <div className="text-sm font-medium">{r.t}</div>
                     </div>
                     <div className="text-right">
@@ -296,9 +296,9 @@ const Index = () => {
       </section>
 
       {/* CTA band */}
-      <section className="relative py-24 border-t border-white/5">
+      <section className="relative py-24 border-t border-border">
         <div className="max-w-4xl mx-auto px-5 sm:px-8 text-center">
-          <h2 className="!text-white text-3xl sm:text-5xl font-bold tracking-tight leading-[1.1] mb-5">
+          <h2 className="!text-foreground text-3xl sm:text-5xl font-bold tracking-tight leading-[1.1] mb-5">
             Ready to ship{' '}
             <span
               className="italic text-primary"
@@ -312,7 +312,7 @@ const Index = () => {
           </p>
           <Link
             to="/auth"
-            className="inline-flex items-center justify-center gap-2 px-7 py-3.5 bg-primary text-primary-foreground font-semibold rounded-xl hover:bg-primary/90 transition-all shadow-[0_0_24px_rgba(255,255,255,0.15)] active:scale-[0.98]"
+            className="inline-flex items-center justify-center gap-2 px-7 py-3.5 bg-primary text-primary-foreground font-semibold rounded-xl hover:bg-primary/90 transition-all shadow-[0_10px_24px_rgba(29,78,216,0.25)] active:scale-[0.98]"
           >
             Launch Dashboard <ArrowRight className="h-4 w-4" />
           </Link>
@@ -321,16 +321,16 @@ const Index = () => {
       </main>
 
       {/* Footer */}
-      <footer className="border-t border-white/5 py-10">
-        <div className="max-w-6xl mx-auto px-5 sm:px-8 flex flex-col sm:flex-row items-center justify-between gap-4 text-sm text-white/75">
+      <footer className="border-t border-border py-10">
+        <div className="max-w-6xl mx-auto px-5 sm:px-8 flex flex-col sm:flex-row items-center justify-between gap-4 text-sm text-muted-foreground">
           <div className="flex items-center gap-2.5">
-            <img src={logo} alt="Extips Panel Pro" className="h-6 w-6 rounded object-cover ring-1 ring-white/10" />
+            <img src={logo} alt="Extips Panel Pro" className="h-6 w-6 rounded object-cover ring-1 ring-border" />
             <span>© {new Date().getFullYear()} Extips Panel Pro. All rights reserved.</span>
           </div>
           <div className="flex items-center gap-6">
-            <Link to="/legal/terms" className="hover:text-white/70">Terms</Link>
-            <Link to="/legal/privacy" className="hover:text-white/70">Privacy</Link>
-            <Link to="/support" className="hover:text-white/70">Support</Link>
+            <Link to="/legal/terms" className="hover:text-foreground/70">Terms</Link>
+            <Link to="/legal/privacy" className="hover:text-foreground/70">Privacy</Link>
+            <Link to="/support" className="hover:text-foreground/70">Support</Link>
           </div>
         </div>
       </footer>

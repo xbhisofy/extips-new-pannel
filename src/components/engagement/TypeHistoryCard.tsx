@@ -209,7 +209,7 @@ export function TypeHistoryCard({
       <div className="p-4 border-b border-border">
         <div className="flex items-start justify-between gap-4 flex-wrap">
           <div className="flex items-start gap-3">
-            <div className={`flex items-center justify-center w-12 h-12 rounded-lg font-bold text-lg ${isPaused ? 'bg-amber-500/20 text-amber-500 border border-amber-500/30' : isCancelled ? 'bg-white/5 text-white/80 border border-white/10' : 'bg-primary/20 text-primary border border-primary/30'
+            <div className={`flex items-center justify-center w-12 h-12 rounded-lg font-bold text-lg ${isPaused ? 'bg-amber-500/20 text-amber-500 border border-amber-500/30' : isCancelled ? 'bg-card text-muted-foreground border border-border' : 'bg-primary/20 text-primary border border-primary/30'
               }`}>
               <Icon className="h-6 w-6 fill-current opacity-60" />
             </div>
@@ -225,7 +225,7 @@ export function TypeHistoryCard({
               </div>
               <a
                 href="#"
-                className="text-sm text-white/65 hover:text-white/80 flex items-center gap-1 mt-0.5"
+                className="text-sm text-muted-foreground hover:text-foreground/80 flex items-center gap-1 mt-0.5"
               >
                 https://www.instagram.com/reel/...
                 <ExternalLink className="h-3 w-3" />
@@ -300,7 +300,7 @@ export function TypeHistoryCard({
           <span className="relative flex h-2 w-2">
             <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500/60"></span>
           </span>
-          <Zap className="h-4 w-4 text-white/75" />
+          <Zap className="h-4 w-4 text-muted-foreground" />
           <span className="font-semibold text-sm uppercase tracking-wider">LIVE DELIVERY TRACKING</span>
         </div>
         <div className="flex items-center gap-3 text-xs text-muted-foreground">
@@ -325,19 +325,19 @@ export function TypeHistoryCard({
         </div>
         <div className="p-4 text-center">
           <p className="text-2xl font-black text-emerald-500/40">{completedCount}</p>
-          <p className="text-[10px] font-black text-white/75 uppercase tracking-[0.2em]">Completed</p>
+          <p className="text-[10px] font-black text-muted-foreground uppercase tracking-[0.2em]">Completed</p>
         </div>
         <div className="p-4 text-center">
           <p className="text-2xl font-black text-primary/40">{activeCount}</p>
-          <p className="text-[10px] font-black text-white/75 uppercase tracking-[0.2em]">Processing</p>
+          <p className="text-[10px] font-black text-muted-foreground uppercase tracking-[0.2em]">Processing</p>
         </div>
         <div className="p-4 text-center">
-          <p className="text-2xl font-black text-white/80">{pendingCount}</p>
-          <p className="text-[10px] font-black text-white/75 uppercase tracking-[0.2em]">Pending</p>
+          <p className="text-2xl font-black text-muted-foreground">{pendingCount}</p>
+          <p className="text-[10px] font-black text-muted-foreground uppercase tracking-[0.2em]">Pending</p>
         </div>
         <div className="p-4 text-center">
           <p className="text-2xl font-black text-emerald-500/60">{totalDelivered.toLocaleString()}</p>
-          <p className="text-[10px] font-black text-white/75 uppercase tracking-[0.2em]">Delivered</p>
+          <p className="text-[10px] font-black text-muted-foreground uppercase tracking-[0.2em]">Delivered</p>
         </div>
       </div>
 
@@ -376,7 +376,7 @@ export function TypeHistoryCard({
                     key={run.id}
                     className={`p-4 transition-colors ${isActive ? 'bg-amber-500/10' :
                       isFailed ? 'bg-green-500/5' :
-                        isPending ? 'hover:bg-violet-500/5 cursor-pointer' :
+                        isPending ? 'hover:bg-primary/5 cursor-pointer' :
                           isCompleted ? 'bg-emerald-500/5' : ''
                       }`}
                     onClick={() => isPending && onEditRun(run)}
@@ -386,7 +386,7 @@ export function TypeHistoryCard({
                       <div className={`flex items-center justify-center w-10 h-10 rounded-full font-bold text-sm ${isCompleted ? 'bg-gradient-to-br from-emerald-500 to-teal-500 text-white' :
                         isActive ? 'bg-gradient-to-br from-amber-500 to-orange-500 text-white animate-pulse' :
                           isFailed ? 'bg-gradient-to-br from-green-500 to-red-500 text-white' :
-                            'bg-gradient-to-br from-violet-500 to-purple-500 text-white'
+                            'bg-gradient-to-br from-primary to-primary text-white'
                         }`}>
                         #{run.run_number}
                       </div>
@@ -399,7 +399,7 @@ export function TypeHistoryCard({
                             isActive ? 'bg-amber-500/20 text-amber-400 border border-amber-500/40' :
                               isFailed ? 'bg-green-500/20 text-green-400 border border-green-500/40' :
                                 isUpcoming ? 'bg-sky-500/20 text-sky-400 border border-sky-500/40' :
-                                  'bg-violet-500/20 text-violet-400 border border-violet-500/40'
+                                  'bg-primary/20 text-primary border border-primary/40'
                             }`}>
                             {isCompleted && <CheckCircle2 className="h-3 w-3 mr-1" />}
                             {isActive && <Play className="h-3 w-3 mr-1" />}
@@ -460,7 +460,7 @@ export function TypeHistoryCard({
                         {!autoCompleted && run.provider_account_name && (
                           <div className="text-right">
                             <p className="text-xs text-muted-foreground uppercase">Provider</p>
-                            <p className="text-sm font-bold text-purple-400">{run.provider_account_name}</p>
+                            <p className="text-sm font-bold text-primary">{run.provider_account_name}</p>
                           </div>
                         )}
 

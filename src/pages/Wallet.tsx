@@ -36,7 +36,7 @@ export default function Wallet() {
       case 'deposit': return <ArrowDownLeft className="h-4 w-4 text-emerald-400" />;
       case 'order': return <ArrowUpRight className="h-4 w-4 text-rose-400" />;
       case 'refund': return <RefreshCw className="h-4 w-4 text-sky-300" />;
-      default: return <WalletIcon className="h-4 w-4 text-white/50" />;
+      default: return <WalletIcon className="h-4 w-4 text-muted-foreground" />;
     }
   };
   const getIconBg = (type: string) => {
@@ -44,7 +44,7 @@ export default function Wallet() {
       case 'deposit': return 'bg-emerald-500/10 border border-emerald-500/20';
       case 'order': return 'bg-rose-500/10 border border-rose-500/20';
       case 'refund': return 'bg-sky-500/10 border border-sky-500/20';
-      default: return 'bg-white/[0.04] border border-white/10';
+      default: return 'bg-card border border-border';
     }
   };
   const getAmountColor = (type: string) => {
@@ -52,7 +52,7 @@ export default function Wallet() {
       case 'deposit': return 'text-emerald-400';
       case 'order': return 'text-rose-400';
       case 'refund': return 'text-sky-300';
-      default: return 'text-white/80';
+      default: return 'text-muted-foreground';
     }
   };
   const fmtDate = (d: string) =>
@@ -91,52 +91,52 @@ export default function Wallet() {
       `}</style>
       <div className="min-h-full bg-[#f5f9ff] -mx-4 -my-6 md:-mx-6 md:-my-8 px-4 py-6 md:px-8 md:py-10 relative overflow-hidden">
         {/* Subtle ambient glow */}
-        <div aria-hidden className="pointer-events-none absolute top-0 left-1/2 -translate-x-1/2 w-[700px] h-[400px] bg-purple-500/10 blur-[120px] rounded-full" />
+        <div aria-hidden className="pointer-events-none absolute top-0 left-1/2 -translate-x-1/2 w-[700px] h-[400px] bg-primary/10 blur-[120px] rounded-full" />
 
         <div className="max-w-2xl mx-auto space-y-6 relative">
           {/* Page header */}
           <div className="flex items-center justify-between">
             <div>
               <div className="flex items-center gap-2 mb-1">
-                <div className="h-1.5 w-1.5 rounded-full bg-purple-300 shadow-[0_0_10px_rgba(216,180,254,0.7)]" style={{ animation: 'vault-pulse 2s ease-in-out infinite' }} />
-                <p className="text-[11px] font-medium tracking-[0.18em] uppercase text-purple-200/70">Vault</p>
+                <div className="h-1.5 w-1.5 rounded-full bg-primary shadow-[0_0_10px_rgba(216,180,254,0.7)]" style={{ animation: 'vault-pulse 2s ease-in-out infinite' }} />
+                <p className="text-[11px] font-medium tracking-[0.18em] uppercase text-primary/70">Vault</p>
               </div>
               <h1 className="text-3xl font-bold text-white tracking-tight">Wallet</h1>
             </div>
-            <div className="hidden md:flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/[0.04] border border-white/10">
+            <div className="hidden md:flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-card border border-border">
               <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" />
-              <span className="text-[11px] font-semibold text-white/70">Secure</span>
+              <span className="text-[11px] font-semibold text-muted-foreground">Secure</span>
             </div>
           </div>
 
           {/* Compact Balance Card — landing page style */}
-          <div className="relative rounded-2xl border border-white/10 bg-gradient-to-br from-white/[0.06] to-white/[0.02] backdrop-blur-md p-5 shadow-[0_0_40px_rgba(168,85,247,0.08)]">
+          <div className="relative rounded-2xl border border-border bg-card backdrop-blur-md p-5 shadow-[0_0_40px_rgba(168,85,247,0.08)]">
             <div className="flex items-center justify-between gap-4 flex-wrap">
               {/* Left: balance */}
               <div className="min-w-0">
                 <div className="flex items-center gap-1.5 mb-1.5">
                   <span className="h-1 w-1 rounded-full bg-emerald-400" style={{ animation: 'vault-pulse 1.8s ease-in-out infinite' }} />
-                  <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-white/50">Balance</p>
+                  <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">Balance</p>
                 </div>
                 <div className="flex items-baseline gap-2">
                   <h2 className="text-[28px] leading-none font-bold tracking-tight text-white">{formatPrice(wallet?.balance || 0)}</h2>
-                  <span className="text-[10px] font-medium text-white/40 uppercase tracking-widest">USD</span>
+                  <span className="text-[10px] font-medium text-muted-foreground uppercase tracking-widest">USD</span>
                 </div>
               </div>
 
               {/* Right: mini stats */}
               <div className="flex items-center gap-2">
-                <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-white/[0.03] border border-white/5">
+                <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-card border border-border">
                   <ArrowDownLeft className="w-3.5 h-3.5 text-emerald-400" />
                   <div className="leading-tight">
-                    <p className="text-[8px] font-semibold uppercase tracking-wider text-white/40">In</p>
+                    <p className="text-[8px] font-semibold uppercase tracking-wider text-muted-foreground">In</p>
                     <p className="text-[11px] font-semibold text-white">{formatPrice(wallet?.total_deposited || 0)}</p>
                   </div>
                 </div>
-                <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-white/[0.03] border border-white/5">
+                <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-card border border-border">
                   <ArrowUpRight className="w-3.5 h-3.5 text-rose-400" />
                   <div className="leading-tight">
-                    <p className="text-[8px] font-semibold uppercase tracking-wider text-white/40">Out</p>
+                    <p className="text-[8px] font-semibold uppercase tracking-wider text-muted-foreground">Out</p>
                     <p className="text-[11px] font-semibold text-white">{formatPrice(wallet?.total_spent || 0)}</p>
                   </div>
                 </div>
@@ -148,20 +148,20 @@ export default function Wallet() {
           <div className="relative">
             <div className="flex items-end justify-between mb-3 px-1">
               <div>
-                <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-white/50">Add Funds</p>
+                <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">Add Funds</p>
                 <h3 className="text-lg font-bold text-white mt-0.5">Choose payment method</h3>
               </div>
             </div>
 
             {/* Method switcher — minimal landing style */}
-            <div className="grid grid-cols-2 gap-1 p-1 rounded-xl bg-white/[0.03] border border-white/10 mb-4 backdrop-blur-sm">
+            <div className="grid grid-cols-2 gap-1 p-1 rounded-xl bg-card border border-border mb-4 backdrop-blur-sm">
               <button
                 onClick={() => setMethod('upi')}
                 className={
                   'relative flex items-center justify-center gap-2 py-2.5 rounded-lg font-medium text-sm transition-all ' +
                   (method === 'upi'
-                    ? 'bg-white/[0.08] text-white border border-white/10 shadow-sm'
-                    : 'text-white/50 hover:text-white/80')
+                    ? 'bg-card text-white border border-border shadow-sm'
+                    : 'text-muted-foreground hover:text-foreground/80')
                 }
               >
                 <Zap className="w-3.5 h-3.5" />
@@ -175,8 +175,8 @@ export default function Wallet() {
                 className={
                   'flex items-center justify-center gap-2 py-2.5 rounded-lg font-medium text-sm transition-all ' +
                   (method === 'crypto'
-                    ? 'bg-white/[0.08] text-white border border-white/10 shadow-sm'
-                    : 'text-white/50 hover:text-white/80')
+                    ? 'bg-card text-white border border-border shadow-sm'
+                    : 'text-muted-foreground hover:text-foreground/80')
                 }
               >
                 <Bitcoin className="w-3.5 h-3.5" />
@@ -188,16 +188,16 @@ export default function Wallet() {
           </div>
 
           {/* Transaction History */}
-          <div className="relative rounded-2xl bg-gradient-to-br from-white/[0.06] to-white/[0.02] border border-white/10 p-6 backdrop-blur-md">
+          <div className="relative rounded-2xl bg-card border border-border p-6 backdrop-blur-md">
             <div className="flex items-center justify-between mb-5">
               <div>
-                <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-white/50">Activity</p>
+                <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">Activity</p>
                 <h3 className="text-lg font-bold text-white mt-0.5">Transaction History</h3>
               </div>
-              <span className="text-[11px] text-white/40">{displayTransactions.length} total</span>
+              <span className="text-[11px] text-muted-foreground">{displayTransactions.length} total</span>
             </div>
 
-            <div className="flex gap-1 p-1 bg-white/[0.03] rounded-xl mb-5 border border-white/10">
+            <div className="flex gap-1 p-1 bg-card rounded-xl mb-5 border border-border">
               {(['all', 'deposit', 'order', 'refund'] as const).map((f) => (
                 <button
                   key={f}
@@ -205,8 +205,8 @@ export default function Wallet() {
                   className={
                     'flex-1 py-2 rounded-lg text-xs font-semibold transition-all ' +
                     (filter === f
-                      ? 'bg-white/[0.08] text-white border border-white/10'
-                      : 'text-white/40 hover:text-white/70')
+                      ? 'bg-card text-white border border-border'
+                      : 'text-muted-foreground hover:text-foreground/70')
                   }
                 >
                   {f === 'all' ? 'All' : f === 'deposit' ? 'Deposits' : f === 'order' ? 'Orders' : 'Refunds'}
@@ -219,28 +219,28 @@ export default function Wallet() {
                 {displayTransactions.map((tx) => (
                   <div
                     key={tx.id}
-                    className="flex items-center justify-between p-3.5 rounded-xl bg-white/[0.02] border border-white/5 hover:bg-white/[0.04] hover:border-white/10 transition-colors"
+                    className="flex items-center justify-between p-3.5 rounded-xl bg-card border border-border hover:bg-card hover:border-border transition-colors"
                   >
                     <div className="flex items-center gap-3 min-w-0">
                       <div className={'w-10 h-10 rounded-xl flex-shrink-0 flex items-center justify-center ' + getIconBg(tx.type)}>
                         {getIcon(tx.type)}
                       </div>
                       <div className="min-w-0">
-                        <p className="font-medium text-[13px] leading-tight truncate max-w-[240px] text-white/90">
+                        <p className="font-medium text-[13px] leading-tight truncate max-w-[240px] text-muted-foreground">
                           {tx.displayDescription}
                         </p>
                         <div className="flex items-center flex-wrap gap-x-2 gap-y-0.5 mt-1">
                           {tx.payment_method && (
-                            <span className="text-[9px] font-semibold px-1.5 py-0.5 rounded bg-white/[0.05] border border-white/10 text-white/60">
+                            <span className="text-[9px] font-semibold px-1.5 py-0.5 rounded bg-card border border-border text-muted-foreground">
                               {tx.payment_method.replace(/_/g, ' ').toUpperCase()}
                             </span>
                           )}
                           <span className={'text-[9px] font-semibold px-1.5 py-0.5 rounded ' + (tx.status === 'pending' ? 'bg-amber-500/10 text-amber-300 border border-amber-500/20' : tx.status === 'completed' ? 'bg-emerald-500/10 text-emerald-300 border border-emerald-500/20' : 'bg-rose-500/10 text-rose-300 border border-rose-500/20')}>
                             {tx.status}
                           </span>
-                          <span className="text-[11px] text-white/40">{fmtDate(tx.created_at!)}</span>
+                          <span className="text-[11px] text-muted-foreground">{fmtDate(tx.created_at!)}</span>
                           {tx.payment_reference && tx.payment_method === 'usdt_bep20' && (
-                            <a href={`https://bscscan.com/tx/${tx.payment_reference}`} target="_blank" rel="noopener noreferrer" className="text-[11px] flex items-center gap-0.5 hover:underline text-white/70 hover:text-white">
+                            <a href={`https://bscscan.com/tx/${tx.payment_reference}`} target="_blank" rel="noopener noreferrer" className="text-[11px] flex items-center gap-0.5 hover:underline text-muted-foreground hover:text-foreground">
                               BSCScan <ExternalLink className="h-3 w-3" />
                             </a>
                           )}
@@ -252,7 +252,7 @@ export default function Wallet() {
                         {tx.type === 'order' ? '−' : '+'}{formatPrice(Math.abs(Number(tx.displayAmount)))}
                       </p>
                       {tx.displayBalanceAfter != null && (
-                        <p className="text-[11px] mt-0.5 text-white/40">Bal: {formatPrice(Number(tx.displayBalanceAfter))}</p>
+                        <p className="text-[11px] mt-0.5 text-muted-foreground">Bal: {formatPrice(Number(tx.displayBalanceAfter))}</p>
                       )}
                     </div>
                   </div>
@@ -260,11 +260,11 @@ export default function Wallet() {
               </div>
             ) : (
               <div className="flex flex-col items-center justify-center py-14 text-center">
-                <div className="relative w-14 h-14 rounded-2xl bg-white/[0.04] flex items-center justify-center mb-4 border border-white/10">
-                  <WalletIcon className="w-6 h-6 text-white/40" />
+                <div className="relative w-14 h-14 rounded-2xl bg-card flex items-center justify-center mb-4 border border-border">
+                  <WalletIcon className="w-6 h-6 text-muted-foreground" />
                 </div>
-                <p className="text-white/80 text-sm font-medium">No transactions yet</p>
-                <p className="text-white/40 text-xs mt-1">Your deposits and spending will appear here</p>
+                <p className="text-muted-foreground text-sm font-medium">No transactions yet</p>
+                <p className="text-muted-foreground text-xs mt-1">Your deposits and spending will appear here</p>
               </div>
             )}
           </div>
