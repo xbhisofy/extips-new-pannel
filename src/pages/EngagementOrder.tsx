@@ -6,8 +6,6 @@ import { useAuth } from "@/hooks/useAuth";
 import { useCurrency } from "@/hooks/useCurrency";
 import { useGlobalMarkup } from "@/hooks/useGlobalMarkup";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
-import { useSubscription } from "@/hooks/useSubscription";
-import { SubscriptionCheckDialog } from "@/components/subscription/SubscriptionCheckDialog";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -67,7 +65,6 @@ const formatPriceRaw = (price: number): string => {
 export default function EngagementOrder() {
   const navigate = useNavigate();
   const { user, profile, isLoading: authLoading, isAdmin, wallet, refreshWallet } = useAuth();
-  const { hasActiveSubscription } = useSubscription();
   const [showSubDialog, setShowSubDialog] = useState(false);
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -743,11 +740,6 @@ export default function EngagementOrder() {
       return;
     }
 
-    // Subscription required for non-admin users
-    if (!hasActiveSubscription) {
-      setShowSubDialog(true);
-      return;
-    }
 
 
 
@@ -1103,11 +1095,6 @@ export default function EngagementOrder() {
                       <Loader2 className="h-4 w-4 sm:h-5 sm:w-5 animate-spin mr-2" />
                       Loading...
                     </>
-                  ) : !isAdmin && !hasActiveSubscription ? (
-                    <>
-                      <Lock className="h-4 w-4 sm:h-5 sm:w-5 mr-2" />
-                      Subscription Required
-                    </>
                   ) : (
                     <>
                       <Rocket className="h-4 w-4 sm:h-5 sm:w-5 mr-2" />
@@ -1121,7 +1108,6 @@ export default function EngagementOrder() {
         </Card>
       </div>
 
-      <SubscriptionCheckDialog open={showSubDialog} onOpenChange={setShowSubDialog} />
     </DashboardLayout>
   );
 }
