@@ -18,7 +18,7 @@ const Index = () => {
 
 
   return (
-    <div className="min-h-screen w-full bg-white text-foreground overflow-x-hidden antialiased">
+    <div className="min-h-screen w-full bg-background text-foreground overflow-x-hidden antialiased">
       <PageMeta
         title="Extips Panel Pro — The Growth Engine for Social Magic"
         description="Precision-engineered organic engagement for Instagram, TikTok and YouTube. Multi-provider failover, wallet, live dashboard."
@@ -42,13 +42,13 @@ const Index = () => {
           }}
         />
         {/* Aurora */}
-        <div className="absolute top-[-15%] left-1/2 -translate-x-1/2 w-[900px] h-[480px] bg-purple-600/30 blur-[140px] rounded-full" />
-        <div className="absolute top-[20%] right-[-10%] w-[480px] h-[480px] bg-fuchsia-600/15 blur-[120px] rounded-full" />
-        <div className="absolute bottom-[-20%] left-[-10%] w-[520px] h-[520px] bg-indigo-600/15 blur-[140px] rounded-full" />
+        <div className="absolute top-[-15%] left-1/2 -translate-x-1/2 w-[900px] h-[480px] bg-primary/25 blur-[140px] rounded-full" />
+        <div className="absolute top-[20%] right-[-10%] w-[480px] h-[480px] bg-accent/15 blur-[120px] rounded-full" />
+        <div className="absolute bottom-[-20%] left-[-10%] w-[520px] h-[520px] bg-primary/15 blur-[140px] rounded-full" />
       </div>
 
       {/* Nav */}
-      <header className="sticky top-0 z-40 backdrop-blur-md bg-[#f5f9ff]/60 border-b border-white/5">
+      <header className="sticky top-0 z-40 backdrop-blur-md bg-background/70 border-b border-white/5">
         <div className="max-w-6xl mx-auto px-5 sm:px-8 h-16 flex items-center justify-between">
           <Link to="/" className="flex items-center gap-2.5">
             <img src={logo} alt="Extips Panel Pro" width={32} height={32} fetchPriority="high" decoding="async" className="h-8 w-8 rounded-md object-cover ring-1 ring-white/10" />
@@ -71,7 +71,7 @@ const Index = () => {
             </Link>
             <Link
               to="/auth"
-              className="inline-flex items-center gap-1.5 text-sm font-semibold px-4 py-2 rounded-lg bg-white text-black hover:bg-purple-50 transition-all shadow-[0_0_24px_rgba(255,255,255,0.12)] active:scale-[0.98]"
+              className="inline-flex items-center gap-1.5 text-sm font-semibold px-4 py-2 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 transition-all shadow-[0_0_24px_rgba(255,255,255,0.12)] active:scale-[0.98]"
             >
               Get started <ArrowRight className="h-3.5 w-3.5" />
             </Link>
@@ -120,7 +120,7 @@ const Index = () => {
           <div className="flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-4">
             <Link
               to="/auth"
-              className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-7 py-3.5 bg-white text-black font-semibold rounded-xl hover:bg-purple-50 transition-all shadow-[0_0_24px_rgba(255,255,255,0.15)] active:scale-[0.98]"
+              className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-7 py-3.5 bg-primary text-primary-foreground font-semibold rounded-xl hover:bg-primary/90 transition-all shadow-[0_0_24px_rgba(255,255,255,0.15)] active:scale-[0.98]"
             >
               Launch Dashboard <ArrowRight className="h-4 w-4" />
             </Link>
@@ -312,7 +312,7 @@ const Index = () => {
           </p>
           <Link
             to="/auth"
-            className="inline-flex items-center justify-center gap-2 px-7 py-3.5 bg-white text-black font-semibold rounded-xl hover:bg-purple-50 transition-all shadow-[0_0_24px_rgba(255,255,255,0.15)] active:scale-[0.98]"
+            className="inline-flex items-center justify-center gap-2 px-7 py-3.5 bg-primary text-primary-foreground font-semibold rounded-xl hover:bg-primary/90 transition-all shadow-[0_0_24px_rgba(255,255,255,0.15)] active:scale-[0.98]"
           >
             Launch Dashboard <ArrowRight className="h-4 w-4" />
           </Link>
