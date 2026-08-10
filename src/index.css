@@ -19,47 +19,48 @@ input[type="number"] {
 
 @layer base {
   :root {
-    /* ════ EXTIPS BLUE — Bright Sky (crisp white bg, light-blue tint) ════ */
-    --background: 206 100% 99.5%;
-    --foreground: 222 60% 13%;
+    /* ════ EXTIPS BLUE — Deep Navy (dark blue canvas) ════ */
+    --background: 222 62% 8%;
+    --foreground: 210 40% 96%;
 
-    --card: 0 0% 100%;
-    --card-foreground: 222 60% 13%;
+    --card: 220 55% 12%;
+    --card-foreground: 210 40% 96%;
 
-    --popover: 0 0% 100%;
-    --popover-foreground: 222 60% 13%;
+    --popover: 220 55% 12%;
+    --popover-foreground: 210 40% 96%;
 
-    --primary: 218 90% 48%;
-    --primary-foreground: 0 0% 100%;
+    --primary: 214 95% 58%;
+    --primary-foreground: 222 62% 8%;
 
-    --secondary: 205 90% 97%;
-    --secondary-foreground: 220 60% 22%;
+    --secondary: 220 45% 17%;
+    --secondary-foreground: 210 40% 94%;
 
-    --muted: 205 80% 97%;
-    --muted-foreground: 217 22% 44%;
+    --muted: 220 40% 16%;
+    --muted-foreground: 213 25% 68%;
 
-    --accent: 200 92% 52%;
-    --accent-foreground: 0 0% 100%;
+    --accent: 199 92% 56%;
+    --accent-foreground: 222 62% 8%;
 
-    --success: 160 72% 34%;
-    --success-foreground: 0 0% 100%;
+    --success: 158 64% 46%;
+    --success-foreground: 222 62% 8%;
 
-    --warning: 32 92% 42%;
-    --warning-foreground: 0 0% 100%;
+    --warning: 38 92% 56%;
+    --warning-foreground: 222 62% 8%;
 
-    --destructive: 0 72% 47%;
+    --destructive: 0 72% 55%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 208 55% 91%;
-    --input: 208 55% 90%;
-    --ring: 226 78% 38%;
+    --border: 220 40% 22%;
+    --input: 220 40% 22%;
+    --ring: 214 95% 58%;
 
     --radius: 1rem;
 
-    --shadow-soft: 0 6px 24px rgba(15,30,70,.10);
-    --shadow-glow: 0 0 30px rgba(29,64,175,.22);
+    --shadow-soft: 0 10px 30px rgba(0,10,35,.45);
+    --shadow-glow: 0 0 34px rgba(56,132,255,.30);
   }
 }
+
 
 html {
   font-size: 16px;
