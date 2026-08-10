@@ -76,21 +76,17 @@ DELETE FROM merge_stage.raw WHERE tbl IN ('wallets','transactions');
 CREATE TABLE IF NOT EXISTS merge_stage.accepted (user_id uuid PRIMARY KEY);
 SQL
 
-  # base64-safe staging (JSON quoting issues se bachne ke liye)
+  # ndjson ko safely stage karo (CSV mode with non-printable quote/delimiter,
+  # taki JSON ke comma/quote/backslash kuch na todein)
   for t in wallets transactions; do
     [ -s "$WORK/$t.ndjson" ] || continue
-    base64 -w0 < "$WORK/$t.ndjson" > "$WORK/$t.b64"
-    docker compose exec -T db psql -U postgres -d postgres -q \
-      -c "CREATE TEMP TABLE _b (d text); \copy _b FROM PROGRAM 'cat' ;" </dev/null >/dev/null 2>&1 || true
-    # simple, reliable path: stream ndjson via COPY into a text table
-    docker compose exec -T db psql -U postgres -d postgres -v ON_ERROR_STOP=1 -q <<SQL
-CREATE TEMP TABLE _l (line text);
-\copy _l FROM STDIN
-$(cat "$WORK/$t.ndjson")
-\.
-INSERT INTO merge_stage.raw (tbl, j)
-SELECT '$t', line::jsonb FROM _l WHERE btrim(line) <> '';
-SQL
+    {
+      echo "CREATE TEMP TABLE _l (line text);"
+      printf '\\copy _l FROM STDIN WITH (FORMAT csv, DELIMITER E%s\\x02%s, QUOTE E%s\\x01%s)\n' "'" "'" "'" "'"
+      cat "$WORK/$t.ndjson"
+      echo '\.'
+      echo "INSERT INTO merge_stage.raw (tbl, j) SELECT '$t', line::jsonb FROM _l WHERE btrim(line) <> '';"
+    } | docker compose exec -T db psql -U postgres -d postgres -v ON_ERROR_STOP=1 -q
   done
 
   # accepted = jo users source me the aur yahan bhi hain
