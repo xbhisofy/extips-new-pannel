@@ -179,7 +179,7 @@ stage() { # $1=table $2=file $3=target(raw|users)
       -c "\copy merge_stage.raw(tbl,j) FROM STDIN" >/dev/null
   fi
 }
-stage "$SRC_AUTH_TABLE" "$WORK/$SRC_AUTH_TABLE.ndjson" users
+stage "_auth" "$AUTH_FILE" users
 for t in "${TABLES[@]}"; do
   [ -f "$WORK/$t.ndjson" ] && stage "$t" "$WORK/$t.ndjson" raw
 done
