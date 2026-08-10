@@ -78,6 +78,12 @@ CREATE TABLE IF NOT EXISTS merge_stage.user_map (
   source_user_id uuid PRIMARY KEY,
   target_user_id uuid NOT NULL
 );
+CREATE TABLE IF NOT EXISTS merge_stage.import_errors (
+  tbl text NOT NULL,
+  row_id text,
+  error_message text NOT NULL,
+  created_at timestamptz NOT NULL DEFAULT now()
+);
 SQL
 
   for t in "${ORDER_TABLES[@]}"; do
@@ -158,6 +164,7 @@ fi
 # 2. import (parents pehle, FK/trigger off)
 # ---------------------------------------------------------------------------
 log "2/4 Missing order history import kar raha hu"
+psql_run -c "CREATE TABLE IF NOT EXISTS merge_stage.import_errors (tbl text NOT NULL, row_id text, error_message text NOT NULL, created_at timestamptz NOT NULL DEFAULT now()); TRUNCATE merge_stage.import_errors;" >/dev/null
 
 for t in "${ORDER_TABLES[@]}"; do
   psql_q "SELECT to_regclass('public.$t') IS NOT NULL" | grep -q t || { warn "$t target me nahi — skip"; continue; }
@@ -167,20 +174,33 @@ for t in "${ORDER_TABLES[@]}"; do
   jexpr="s.j"
   [ "$has_user" = "t" ] && jexpr="jsonb_set(s.j, '{user_id}', to_jsonb((SELECT target_user_id FROM merge_stage.user_map WHERE source_user_id=(s.j->>'user_id')::uuid)))"
   before=$(psql_q "SELECT count(*) FROM public.$t")
-  # SET aur INSERT ek hi DB session me hone chahiye. Purana script alag session
-  # me SET karta tha, isliye child rows FK par fail hoke silently skip ho rahi thi.
+  # Har row apne exception block me import hoti hai. Ek malformed legacy row ab
+  # poore items/runs batch ko rollback nahi kar sakti.
   docker compose exec -T db psql -U postgres -d postgres -v ON_ERROR_STOP=1 -q -c "
     SET session_replication_role='replica';
-    INSERT INTO public.$t
-    SELECT r.* FROM (
-      SELECT $jexpr AS j FROM merge_stage.raw s
-      WHERE s.tbl='$t' AND $filter
-        AND NOT EXISTS (SELECT 1 FROM public.$t x WHERE x.id = (s.j->>'id')::uuid)
-    ) z, LATERAL jsonb_populate_record(NULL::public.$t, z.j) r
-    ON CONFLICT DO NOTHING;
-    SET session_replication_role='origin';" >/dev/null || warn "$t: kuch rows fail hui (upar DB error dekhein)"
+    DO \$do\$
+    DECLARE rec record; err text;
+    BEGIN
+      FOR rec IN
+        SELECT $jexpr AS j FROM merge_stage.raw s
+        WHERE s.tbl='$t' AND $filter
+          AND NOT EXISTS (SELECT 1 FROM public.$t x WHERE x.id=(s.j->>'id')::uuid)
+      LOOP
+        BEGIN
+          INSERT INTO public.$t
+          SELECT (jsonb_populate_record(NULL::public.$t, rec.j)).*
+          ON CONFLICT DO NOTHING;
+        EXCEPTION WHEN OTHERS THEN
+          GET STACKED DIAGNOSTICS err = MESSAGE_TEXT;
+          INSERT INTO merge_stage.import_errors(tbl,row_id,error_message)
+          VALUES ('$t', rec.j->>'id', err);
+        END;
+      END LOOP;
+    END \$do\$;
+    SET session_replication_role='origin';" >/dev/null || warn "$t: import statement fail hui"
   after=$(psql_q "SELECT count(*) FROM public.$t")
-  printf '  -> %-28s +%s rows (now %s)\n' "$t" "$((after-before))" "$after"
+  errors=$(psql_q "SELECT count(*) FROM merge_stage.import_errors WHERE tbl='$t'")
+  printf '  -> %-28s +%s rows (now %s, failed %s)\n' "$t" "$((after-before))" "$after" "$errors"
 done
 
 # Existing imported rows ko bhi correct current login UUID do. Sirf wahi rows
@@ -237,6 +257,11 @@ WHERE NOT EXISTS (
   SELECT 1 FROM public.engagement_order_items i
   WHERE i.engagement_order_id=eo.id
 );"
+
+psql_run -c "
+SELECT tbl, count(*) AS failed_rows, min(error_message) AS sample_error
+FROM merge_stage.import_errors
+GROUP BY tbl ORDER BY tbl;"
 
 psql_run -c "
 SELECT p.email,
