@@ -45,7 +45,6 @@ import {
   ShoppingCart,
   Bug,
   Settings,
-  Crown,
   ChevronDown
 } from "lucide-react";
 import { PageMeta } from "@/components/seo/PageMeta";

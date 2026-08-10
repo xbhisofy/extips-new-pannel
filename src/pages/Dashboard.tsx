@@ -8,7 +8,6 @@ import { Link, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { PageMeta } from '@/components/seo/PageMeta';
 import { Badge } from '@/components/ui/badge';
-import OxapaySubscriptionPoller from '@/components/subscription/OxapaySubscriptionPoller';
 
 export default function Dashboard() {
   const { user, wallet, profile } = useAuth();
@@ -69,7 +68,6 @@ export default function Dashboard() {
   return (
     <DashboardLayout>
       <PageMeta title="Dashboard" description="Manage your Extips Panel Pro social media growth orders, track wallet balance, monitor active engagement campaigns and view delivery progress." noIndex />
-      <OxapaySubscriptionPoller />
       <div className="space-y-6">
         {/* Header */}
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
