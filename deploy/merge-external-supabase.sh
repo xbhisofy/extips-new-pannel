@@ -261,7 +261,42 @@ WHERE NOT EXISTS (
   SELECT 1 FROM auth.identities i WHERE i.user_id = u.id AND i.provider = 'email'
 );
 
+-- GoTrue cannot scan NULL token columns -> login fails with an empty {} 500 error.
+DO $$
+DECLARE
+  c record;
+  fix jsonb := jsonb_build_object(
+    'confirmation_token', '''''', 'recovery_token', '''''',
+    'email_change_token_new', '''''', 'email_change_token_current', '''''',
+    'email_change', '''''', 'phone_change', '''''', 'phone_change_token', '''''',
+    'reauthentication_token', '''''',
+    'aud', '''authenticated''', 'role', '''authenticated''',
+    'raw_app_meta_data', '''{"provider":"email","providers":["email"]}''::jsonb',
+    'raw_user_meta_data', '''{}''::jsonb',
+    'email_confirmed_at', 'now()',
+    'is_sso_user', 'false', 'is_anonymous', 'false'
+  );
+BEGIN
+  FOR c IN
+    SELECT column_name, is_generated, identity_generation
+    FROM information_schema.columns
+    WHERE table_schema='auth' AND table_name='users'
+      AND column_name IN (SELECT jsonb_object_keys(fix))
+  LOOP
+    IF c.is_generated = 'ALWAYS' THEN CONTINUE; END IF;
+    EXECUTE format(
+      'UPDATE auth.users SET %1$I = %2$s WHERE %1$I IS NULL',
+      c.column_name, fix->>c.column_name
+    );
+  END LOOP;
+  -- blank aud/role are equally fatal
+  EXECUTE $q$UPDATE auth.users SET aud='authenticated' WHERE aud=''$q$;
+  EXECUTE $q$UPDATE auth.users SET role='authenticated' WHERE role=''$q$;
+END $$;
+
+
 SELECT count(*) AS users_now FROM auth.users;
+
 SQL
 
 # --- 5. insert data ----------------------------------------------------------
