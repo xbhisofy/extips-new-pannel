@@ -7,7 +7,6 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Checkbox } from '@/components/ui/checkbox';
 import {
   Dialog,
@@ -86,7 +85,6 @@ export default function AdminUsers() {
   const [selectedUser, setSelectedUser] = useState<UserProfile | null>(null);
   const [balanceAmount, setBalanceAmount] = useState('');
   const [balanceAction, setBalanceAction] = useState<'add' | 'subtract'>('add');
-  const [removeSubUser, setRemoveSubUser] = useState<UserProfile | null>(null);
   const [pauseUser, setPauseUser] = useState<UserProfile | null>(null);
   const [selfTestRunning, setSelfTestRunning] = useState(false);
   const [selfTestSteps, setSelfTestSteps] = useState<Array<{ label: string; ok: boolean | null; detail?: string }>>([]);
@@ -216,29 +214,6 @@ export default function AdminUsers() {
     },
     onSuccess: () => {
       toast.success('User role updated!');
-      queryClient.invalidateQueries({ queryKey: ['admin-all-users-with-subs'] });
-    },
-    onError: (error: Error) => {
-      toast.error(error.message);
-    },
-  });
-
-  const removeSubscriptionMutation = useMutation({
-    mutationFn: async (targetUser: UserProfile) => {
-      const { error } = await supabase
-        .from('subscriptions')
-        .update({
-          plan_type: 'none',
-          status: 'cancelled',
-          expires_at: null,
-        })
-        .eq('user_id', targetUser.user_id);
-
-      if (error) throw error;
-    },
-    onSuccess: () => {
-      toast.success('Subscription removed!');
-      setRemoveSubUser(null);
       queryClient.invalidateQueries({ queryKey: ['admin-all-users-with-subs'] });
     },
     onError: (error: Error) => {
@@ -502,32 +477,13 @@ export default function AdminUsers() {
       );
     }
 
-    // Tab filter
-    switch (activeTab) {
-      case 'normal':
-        return filtered.filter(
-          (u) => !u.subscription || u.subscription.status !== 'active'
-        );
-      case 'monthly':
-        return filtered.filter(
-          (u) => u.subscription?.status === 'active' && u.subscription?.plan_type === 'monthly'
-        );
-      case 'lifetime':
-        return filtered.filter(
-          (u) => u.subscription?.status === 'active' && u.subscription?.plan_type === 'lifetime'
-        );
-      default:
-        return filtered;
-    }
+    return filtered;
   };
 
   const filteredUsers = getFilteredUsers();
 
   // Stats
   const totalBalance = users?.reduce((sum, u) => sum + (u.wallet?.balance || 0), 0) || 0;
-  const normalCount = users?.filter((u) => !u.subscription || u.subscription.status !== 'active').length || 0;
-  const monthlyCount = users?.filter((u) => u.subscription?.status === 'active' && u.subscription?.plan_type === 'monthly').length || 0;
-  const lifetimeCount = users?.filter((u) => u.subscription?.status === 'active' && u.subscription?.plan_type === 'lifetime').length || 0;
 
   // Wait for auth to load before checking admin status
   if (authLoading) {
@@ -544,31 +500,6 @@ export default function AdminUsers() {
     return <Navigate to="/dashboard" replace />;
   }
 
-  const getSubscriptionBadge = (sub?: Subscription) => {
-    if (!sub || sub.status !== 'active') {
-      return (
-        <Badge variant="outline" className="text-[10px] h-5 border-muted-foreground/30 text-muted-foreground">
-          <UserX className="h-3 w-3 mr-1" />
-          No Plan
-        </Badge>
-      );
-    }
-    if (sub.plan_type === 'lifetime') {
-      return (
-        <Badge className="text-[10px] h-5 bg-amber-500/20 text-amber-500 border-amber-500/30">
-          <Crown className="h-3 w-3 mr-1" />
-          Lifetime
-        </Badge>
-      );
-    }
-    return (
-      <Badge className="text-[10px] h-5 bg-primary/20 text-primary border-primary/30">
-        <Zap className="h-3 w-3 mr-1" />
-        Monthly
-      </Badge>
-    );
-  };
-
   return (
     <DashboardLayout>
       <div className="space-y-6 px-2 sm:px-4 lg:px-6 pb-8">
@@ -583,7 +514,7 @@ export default function AdminUsers() {
           <div>
             <h1 className="text-2xl sm:text-3xl font-bold">User Management</h1>
             <p className="text-sm text-muted-foreground">
-              View and manage all user accounts & subscriptions
+              View and manage all user accounts
             </p>
           </div>
         </div>
@@ -603,69 +534,10 @@ export default function AdminUsers() {
               </div>
             </CardContent>
           </Card>
-          <Card className="glass-card">
-            <CardContent className="p-4">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-muted-foreground/10 flex items-center justify-center">
-                  <UserX className="h-5 w-5 text-muted-foreground" />
-                </div>
-                <div>
-                  <p className="text-2xl font-bold">{normalCount}</p>
-                  <p className="text-xs text-muted-foreground">No Plan</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-          <Card className="glass-card">
-            <CardContent className="p-4">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center">
-                  <Zap className="h-5 w-5 text-primary" />
-                </div>
-                <div>
-                  <p className="text-2xl font-bold">{monthlyCount}</p>
-                  <p className="text-xs text-muted-foreground">Monthly</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-          <Card className="glass-card">
-            <CardContent className="p-4">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-amber-500/10 flex items-center justify-center">
-                  <Crown className="h-5 w-5 text-amber-500" />
-                </div>
-                <div>
-                  <p className="text-2xl font-bold">{lifetimeCount}</p>
-                  <p className="text-xs text-muted-foreground">Lifetime</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
         </div>
 
         {/* Tabs & Search */}
         <div className="flex flex-col sm:flex-row gap-4">
-          <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as UserTab)} className="flex-1">
-            <TabsList className="h-10">
-              <TabsTrigger value="all" className="gap-1">
-                <Users className="h-3 w-3" />
-                All
-              </TabsTrigger>
-              <TabsTrigger value="normal" className="gap-1">
-                <UserX className="h-3 w-3" />
-                No Plan
-              </TabsTrigger>
-              <TabsTrigger value="monthly" className="gap-1">
-                <Zap className="h-3 w-3" />
-                Monthly
-              </TabsTrigger>
-              <TabsTrigger value="lifetime" className="gap-1">
-                <Crown className="h-3 w-3" />
-                Lifetime
-              </TabsTrigger>
-            </TabsList>
-          </Tabs>
           <div className="relative max-w-xs">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
@@ -711,20 +583,6 @@ export default function AdminUsers() {
                         {u.email}
                       </p>
                     </div>
-                  </div>
-
-                  {/* Subscription Status */}
-                  <div className="mt-3 p-2.5 rounded-lg bg-muted/50 flex items-center justify-between">
-                    {getSubscriptionBadge(u.subscription)}
-                    {u.subscription?.status === 'active' && u.subscription?.plan_type === 'monthly' && u.subscription?.expires_at && (
-                      <span className="text-[10px] text-muted-foreground flex items-center gap-1">
-                        <Clock className="h-3 w-3" />
-                        {formatDistanceToNow(new Date(u.subscription.expires_at), { addSuffix: true })}
-                      </span>
-                    )}
-                    {u.subscription?.status === 'active' && u.subscription?.plan_type === 'lifetime' && (
-                      <span className="text-[10px] text-amber-500">Forever</span>
-                    )}
                   </div>
 
                   <div className="grid grid-cols-3 gap-2 mt-3 p-3 rounded-xl bg-muted/50">
@@ -829,17 +687,6 @@ export default function AdminUsers() {
                           title="Cancel All Orders"
                         >
                           <Ban className="h-4 w-4" />
-                        </Button>
-                      )}
-                      {u.subscription?.status === 'active' && (
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => setRemoveSubUser(u)}
-                          className="h-8 w-8 rounded-lg text-destructive hover:text-destructive"
-                          title="Remove Subscription"
-                        >
-                          <XCircle className="h-4 w-4" />
                         </Button>
                       )}
                     </div>
@@ -1045,48 +892,6 @@ export default function AdminUsers() {
               >
                 {updateBalanceMutation.isPending && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
                 {balanceAction === 'add' ? 'Add' : 'Subtract'} ₹{balanceAmount || '0'}
-              </Button>
-            </div>
-          </DialogContent>
-        </Dialog>
-
-        {/* Remove Subscription Dialog */}
-        <Dialog
-          open={!!removeSubUser}
-          onOpenChange={(open) => !open && setRemoveSubUser(null)}
-        >
-          <DialogContent className="max-w-sm">
-            <DialogHeader>
-              <DialogTitle className="flex items-center gap-2 text-destructive">
-                <XCircle className="h-5 w-5" />
-                Remove Subscription
-              </DialogTitle>
-            </DialogHeader>
-            {removeSubUser && (
-              <div className="space-y-4 py-4">
-                <div className="p-4 rounded-xl bg-muted/50 text-center">
-                  <p className="font-medium">{removeSubUser.full_name || removeSubUser.email}</p>
-                  <p className="text-xs text-muted-foreground">{removeSubUser.email}</p>
-                  <div className="mt-2">
-                    {getSubscriptionBadge(removeSubUser.subscription)}
-                  </div>
-                </div>
-                <p className="text-sm text-muted-foreground text-center">
-                  This will remove the user's subscription. They will no longer be able to place orders until they subscribe again.
-                </p>
-              </div>
-            )}
-            <div className="flex flex-col-reverse sm:flex-row sm:justify-end gap-2 pt-4">
-              <Button variant="outline" onClick={() => setRemoveSubUser(null)}>
-                Cancel
-              </Button>
-              <Button
-                variant="destructive"
-                onClick={() => removeSubUser && removeSubscriptionMutation.mutate(removeSubUser)}
-                disabled={removeSubscriptionMutation.isPending}
-              >
-                {removeSubscriptionMutation.isPending && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
-                Remove Subscription
               </Button>
             </div>
           </DialogContent>
