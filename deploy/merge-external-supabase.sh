@@ -261,7 +261,34 @@ WHERE NOT EXISTS (
   SELECT 1 FROM auth.identities i WHERE i.user_id = u.id AND i.provider = 'email'
 );
 
+-- GoTrue cannot scan NULL token columns -> login returns empty 500 error.
+UPDATE auth.users SET
+  confirmation_token      = COALESCE(confirmation_token, ''),
+  recovery_token          = COALESCE(recovery_token, ''),
+  email_change_token_new  = COALESCE(email_change_token_new, ''),
+  email_change_token_current = COALESCE(email_change_token_current, ''),
+  email_change            = COALESCE(email_change, ''),
+  phone_change            = COALESCE(phone_change, ''),
+  phone_change_token      = COALESCE(phone_change_token, ''),
+  reauthentication_token  = COALESCE(reauthentication_token, ''),
+  aud                     = COALESCE(NULLIF(aud,''), 'authenticated'),
+  role                    = COALESCE(NULLIF(role,''), 'authenticated'),
+  raw_app_meta_data       = COALESCE(raw_app_meta_data, '{"provider":"email","providers":["email"]}'::jsonb),
+  raw_user_meta_data      = COALESCE(raw_user_meta_data, '{}'::jsonb),
+  email_confirmed_at      = COALESCE(email_confirmed_at, now()),
+  confirmed_at            = COALESCE(confirmed_at, email_confirmed_at, now()),
+  is_sso_user             = COALESCE(is_sso_user, false),
+  is_anonymous            = COALESCE(is_anonymous, false)
+WHERE confirmation_token IS NULL OR recovery_token IS NULL
+   OR email_change_token_new IS NULL OR email_change_token_current IS NULL
+   OR email_change IS NULL OR phone_change IS NULL OR phone_change_token IS NULL
+   OR reauthentication_token IS NULL OR aud IS NULL OR aud = ''
+   OR role IS NULL OR role = '' OR raw_app_meta_data IS NULL
+   OR raw_user_meta_data IS NULL OR email_confirmed_at IS NULL
+   OR confirmed_at IS NULL OR is_sso_user IS NULL OR is_anonymous IS NULL;
+
 SELECT count(*) AS users_now FROM auth.users;
+
 SQL
 
 # --- 5. insert data ----------------------------------------------------------
