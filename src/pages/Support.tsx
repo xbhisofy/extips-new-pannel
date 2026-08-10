@@ -54,7 +54,6 @@ import { format } from "date-fns";
 const CATEGORIES = [
   { value: 'order', label: 'Order Issue', icon: ShoppingCart },
   { value: 'payment', label: 'Payment/Wallet', icon: CreditCard },
-  { value: 'subscription', label: 'Subscription', icon: Crown },
   { value: 'technical', label: 'Technical Problem', icon: Bug },
   { value: 'account', label: 'Account Settings', icon: Settings },
   { value: 'other', label: 'Other', icon: HelpCircle },

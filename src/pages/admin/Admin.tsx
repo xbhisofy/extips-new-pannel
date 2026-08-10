@@ -426,24 +426,6 @@ export default function Admin() {
           </Link>
 
 
-          <Link to="/admin/subscriptions">
-            <Card className="glass-card h-full hover:border-primary/50 hover:shadow-lg hover:shadow-primary/10 transition-all cursor-pointer group border-2 border-primary/30">
-              <CardContent className="p-5">
-                <div className="flex items-center gap-4">
-                  <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-primary/30 to-primary/20 flex items-center justify-center group-hover:scale-110 transition-transform">
-                    <Sparkles className="h-6 w-6 text-primary" />
-                  </div>
-                  <div className="flex-1">
-                    <h3 className="font-semibold group-hover:text-primary transition-colors">
-                      Subscriptions
-                    </h3>
-                    <p className="text-xs text-muted-foreground">Add monthly / lifetime plans manually</p>
-                  </div>
-                  <ArrowUpRight className="h-4 w-4 text-muted-foreground group-hover:text-primary transition-colors" />
-                </div>
-              </CardContent>
-            </Card>
-          </Link>
         </div>
       </div>
     </DashboardLayout>

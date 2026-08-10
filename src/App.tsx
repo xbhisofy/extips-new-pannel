@@ -45,7 +45,6 @@ const AdminChat = lazy(() => import("./pages/admin/AdminChat"));
 const AdminDeposits = lazy(() => import("./pages/admin/AdminDeposits"));
 const AdminProviderAccounts = lazy(() => import("./pages/admin/AdminProviderAccounts"));
 const AdminServiceProviderMapping = lazy(() => import("./pages/admin/AdminServiceProviderMapping"));
-const AdminSubscriptions = lazy(() => import("./pages/admin/AdminSubscriptions"));
 const AdminTopupPlan = lazy(() => import("./pages/admin/AdminTopupPlan"));
 const AdminOxapayLog = lazy(() => import("./pages/admin/AdminOxapayLog"));
 const AdminSecurityAudit = lazy(() => import("./pages/admin/AdminSecurityAudit"));
@@ -172,7 +171,6 @@ const App = () => {
                     <Route path="/admin/deposits" element={<AdminGuard><AdminDeposits /></AdminGuard>} />
                     <Route path="/admin/provider-accounts" element={<AdminGuard><AdminProviderAccounts /></AdminGuard>} />
                     <Route path="/admin/service-provider-mapping" element={<AdminGuard><AdminServiceProviderMapping /></AdminGuard>} />
-                    <Route path="/admin/subscriptions" element={<AdminGuard><AdminSubscriptions /></AdminGuard>} />
                     <Route path="/admin/topup-plan" element={<AdminGuard><AdminTopupPlan /></AdminGuard>} />
                     <Route path="/admin/oxapay-log" element={<AdminGuard><AdminOxapayLog /></AdminGuard>} />
                     <Route path="/admin/security-audit" element={<AdminGuard><AdminSecurityAudit /></AdminGuard>} />
