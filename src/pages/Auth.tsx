@@ -68,14 +68,18 @@ export default function Auth() {
         if (!v.success) { setError(v.error.errors[0].message); setIsSubmitting(false); return; }
         const { error } = await signIn(email, password);
         if (error) {
-          const msg = error.message.toLowerCase();
+          const raw = (error.message || '').trim();
+          const msg = raw.toLowerCase();
+          const isEmpty = !raw || raw === '{}' || raw === '[object Object]';
           if (msg.includes('invalid login credentials') || msg.includes('invalid_credentials')) setError('Incorrect email or password. Please try again.');
           else if (msg.includes('email not confirmed')) setError('Please verify your email first, or sign up again.');
           else if (msg.includes('rate limit') || msg.includes('too many')) setError('Too many attempts. Please wait a few minutes and try again.');
           else if (msg.includes('user not found') || msg.includes('no user')) setError('No account found with this email. Please sign up first.');
-          else setError(error.message || 'Unable to sign in. Please try again.');
+          else if (isEmpty || msg.includes('unexpected') || msg.includes('database error')) setError('Sign-in service error. Please try again in a moment or contact support.');
+          else setError(raw);
           setIsSubmitting(false); return;
         }
+
         navigate(postAuthTarget, { replace: true });
       } else {
         const v = signupSchema.safeParse({ email, password, fullName });
