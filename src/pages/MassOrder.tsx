@@ -6,8 +6,6 @@ import { useAuth } from "@/hooks/useAuth";
 import { useCurrency } from "@/hooks/useCurrency";
 import { useGlobalMarkup } from "@/hooks/useGlobalMarkup";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
-import { useSubscription } from "@/hooks/useSubscription";
-import { SubscriptionCheckDialog } from "@/components/subscription/SubscriptionCheckDialog";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -94,8 +92,6 @@ const STATUS_BADGE: Record<string, { color: string; icon: any }> = {
 export default function MassOrder() {
   const navigate = useNavigate();
   const { user, wallet, refreshWallet, isAdmin } = useAuth();
-  const { hasActiveSubscription } = useSubscription();
-  const [showSubDialog, setShowSubDialog] = useState(false);
   const { formatPrice } = useCurrency();
   const { applyMarkup } = useGlobalMarkup();
   const { toast } = useToast();
@@ -279,10 +275,6 @@ export default function MassOrder() {
   // ---------- Submit ----------
   const handleSubmitAll = async () => {
     if (!user || !canSubmit || !bundle) return;
-    if (!isAdmin && !hasActiveSubscription) {
-      setShowSubDialog(true);
-      return;
-    }
     setSubmitting(true);
     setProgress({ done: 0, total: cards.length });
 
@@ -1012,7 +1004,6 @@ export default function MassOrder() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-      <SubscriptionCheckDialog open={showSubDialog} onOpenChange={setShowSubDialog} />
     </DashboardLayout>
   );
 }

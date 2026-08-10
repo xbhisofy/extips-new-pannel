@@ -3,8 +3,6 @@ import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
-import { useSubscription } from '@/hooks/useSubscription';
-import { SubscriptionCheckDialog } from '@/components/subscription/SubscriptionCheckDialog';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
 import { Instagram, Loader2, Plus, Trash2, CheckCircle2, ShieldAlert, Lock, RefreshCw } from 'lucide-react';
 import { toast } from 'sonner';
@@ -13,8 +11,6 @@ import { igQueryKeys, IG_CACHE_PREFIX } from '@/lib/instagramCache';
 
 export default function InstagramPage() {
   const { user } = useAuth();
-  const { subscription, hasActiveSubscription, isLoading: subLoading } = useSubscription();
-  const [showSubDialog, setShowSubDialog] = useState(false);
   const qc = useQueryClient();
   const [username, setUsername] = useState('');
 
@@ -130,64 +126,8 @@ export default function InstagramPage() {
           </div>
         </div>
 
-        {/* Subscription status banner */}
-        {!subLoading && (() => {
-          const plan = subscription?.plan_type ?? 'none';
-          const expiresAt = subscription?.expires_at ? new Date(subscription.expires_at) : null;
-          const expiresStr = expiresAt ? expiresAt.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }) : null;
-          const daysLeft = expiresAt ? Math.ceil((expiresAt.getTime() - Date.now()) / 86400000) : null;
-          const isLifetime = plan === 'lifetime' && hasActiveSubscription;
-          if (hasActiveSubscription) {
-            return (
-              <div className="rounded-2xl p-4 bg-gradient-to-r from-emerald-500/10 to-emerald-400/5 border border-emerald-400/30 flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-emerald-500/20 border border-emerald-400/30 flex items-center justify-center shrink-0">
-                  <CheckCircle2 className="w-5 h-5 text-emerald-300" />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <span className="text-sm font-semibold text-emerald-200">Subscription Active</span>
-                    <span className="text-[10px] uppercase tracking-wider px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-200 border border-emerald-400/30">
-                      {plan}
-                    </span>
-                  </div>
-                  <p className="text-xs text-white/85 mt-0.5">
-                    {isLifetime
-                      ? 'Lifetime access — never expires.'
-                      : expiresStr
-                        ? `Expires on ${expiresStr}${daysLeft !== null && daysLeft >= 0 ? ` · ${daysLeft} day${daysLeft === 1 ? '' : 's'} left` : ''}`
-                        : 'Active plan'}
-                  </p>
-                </div>
-              </div>
-            );
-          }
-          return (
-            <div className="rounded-2xl p-4 bg-gradient-to-r from-rose-500/10 to-amber-500/5 border border-rose-400/30 flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-rose-500/20 border border-rose-400/30 flex items-center justify-center shrink-0">
-                <Lock className="w-5 h-5 text-rose-300" />
-              </div>
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2 flex-wrap">
-                  <span className="text-sm font-semibold text-rose-200">Subscription Inactive</span>
-                  {subscription?.status === 'expired' && expiresStr && (
-                    <span className="text-[10px] uppercase tracking-wider px-2 py-0.5 rounded-full bg-rose-500/20 text-rose-200 border border-rose-400/30">
-                      Expired {expiresStr}
-                    </span>
-                  )}
-                </div>
-                <p className="text-xs text-white/85 mt-0.5">
-                  Linking Instagram accounts requires an active plan.
-                </p>
-              </div>
-              <button
-                onClick={() => setShowSubDialog(true)}
-                className="shrink-0 h-9 px-3 rounded-lg text-xs font-semibold bg-gradient-to-b from-purple-500 to-fuchsia-600 text-white shadow-md hover:shadow-purple-500/40"
-              >
-                Activate
-              </button>
-            </div>
-          );
-        })()}
+
+
 
         <div className="rounded-2xl p-5 bg-[#ffffff]/80 border border-white/10">
           <label className="block text-xs font-semibold uppercase tracking-wider text-white/80 mb-2">Add Instagram Username</label>
@@ -197,20 +137,17 @@ export default function InstagramPage() {
               <input
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
-                onKeyDown={(e) => { if (e.key === 'Enter' && username) { if (!hasActiveSubscription) { setShowSubDialog(true); } else { linkMut.mutate(username); } } }}
+                onKeyDown={(e) => { if (e.key === 'Enter' && username) { linkMut.mutate(username); } }}
                 placeholder="your_username"
                 className="w-full h-11 pl-8 pr-3 rounded-xl bg-black/40 border border-white/10 text-white placeholder:text-white/65 focus:outline-none focus:border-purple-400/40"
               />
             </div>
             <button
-              disabled={!username || linkMut.isPending || subLoading}
-              onClick={() => {
-                if (!hasActiveSubscription) { setShowSubDialog(true); return; }
-                linkMut.mutate(username);
-              }}
+              disabled={!username || linkMut.isPending}
+              onClick={() => linkMut.mutate(username)}
               className="h-11 px-5 rounded-xl font-semibold bg-gradient-to-b from-purple-500 to-fuchsia-600 text-white shadow-lg shadow-purple-500/30 hover:shadow-purple-500/50 transition-all disabled:opacity-50 flex items-center gap-2"
             >
-              {linkMut.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : (hasActiveSubscription ? <Plus className="w-4 h-4" /> : <Lock className="w-4 h-4" />)}
+              {linkMut.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />}
               Link
             </button>
           </div>
@@ -218,7 +155,8 @@ export default function InstagramPage() {
             <ShieldAlert className="w-3 h-3" /> Read-only. We only fetch public profile info & posts.
           </p>
 
-          {hasActiveSubscription && (() => {
+          {(() => {
+
             const cutoff = Date.now() - 30 * 24 * 60 * 60 * 1000;
             const recent = (linkEvents as any[]).filter(e => new Date(e.created_at).getTime() >= cutoff);
             const used = recent.length;
@@ -318,7 +256,6 @@ export default function InstagramPage() {
           ))}
         </div>
       </div>
-      <SubscriptionCheckDialog open={showSubDialog} onOpenChange={setShowSubDialog} />
     </DashboardLayout>
   );
 }
