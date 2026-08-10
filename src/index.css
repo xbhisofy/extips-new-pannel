@@ -177,20 +177,22 @@ html {
     box-shadow: 0 0 16px rgba(37,99,235, 0.20);
   }
 
-  /* Chrome autofill fix — light */
+  /* Chrome autofill fix — dark */
   input:-webkit-autofill,
   input:-webkit-autofill:hover,
   input:-webkit-autofill:focus,
   input:-webkit-autofill:active {
-    -webkit-box-shadow: 0 0 0 100px hsl(0 0% 100%) inset !important;
-    -webkit-text-fill-color: hsl(224 64% 12%) !important;
-    caret-color: hsl(224 64% 12%) !important;
+    -webkit-box-shadow: 0 0 0 100px hsl(220 55% 12%) inset !important;
+    -webkit-text-fill-color: hsl(210 40% 96%) !important;
+    caret-color: hsl(210 40% 96%) !important;
     transition: background-color 5000s ease-in-out 0s;
   }
 
-  /* Light-theme polish for inner dashboard pages */
+  /* Dark-theme polish for inner dashboard pages */
   main .bg-white { background-color: hsl(var(--card)) !important; }
   main .text-black { color: hsl(var(--foreground)) !important; }
+  main .bg-gray-50, main .bg-slate-50, main .bg-blue-50 { background-color: hsl(var(--secondary)) !important; }
+
 }
 
 
