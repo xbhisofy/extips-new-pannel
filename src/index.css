@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800;900&family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500&display=swap&font-display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700;800;900&family=Outfit:wght@400;500;600;700;800;900&family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500&display=swap&font-display=swap');
 
 @tailwind base;
 @tailwind components;
@@ -72,7 +72,11 @@ html {
   }
 
   body {
-    @apply bg-background text-foreground;
+    @apply text-foreground;
+    /* Landing-page canvas: soft sky-blue wash on white */
+    background-color: hsl(var(--background));
+    background-image: linear-gradient(180deg, hsl(215 100% 96%) 0%, hsl(210 100% 98%) 40%, hsl(0 0% 100%) 100%);
+    background-attachment: fixed;
     font-family: 'Inter', system-ui, -apple-system, sans-serif;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
@@ -80,9 +84,9 @@ html {
   }
 
   h1, h2, h3, h4, h5, h6 {
-    font-family: 'Outfit', system-ui, sans-serif;
+    font-family: 'Playfair Display', Georgia, serif;
     font-weight: 800;
-    letter-spacing: -0.03em;
+    letter-spacing: -0.015em;
     color: hsl(var(--foreground));
     text-shadow: none;
   }
@@ -103,10 +107,10 @@ html {
 @layer components {
 
   .glass-card {
-    @apply relative overflow-hidden rounded-2xl border;
-    background: rgba(255,255,255,.96);
-    border-color: hsl(var(--border));
-    box-shadow: 0 8px 28px rgba(15,23,42,.07), inset 0 1px 0 rgba(255,255,255,.6);
+    @apply relative overflow-hidden rounded-3xl border;
+    background: #ffffff;
+    border-color: hsl(208 60% 93%);
+    box-shadow: 0 10px 30px rgba(20,50,110,.08);
     backdrop-filter: blur(12px);
     color: hsl(var(--foreground));
   }
@@ -115,7 +119,7 @@ html {
   .glass-premium { @apply glass-card; }
 
   .glass-panel {
-    @apply rounded-2xl bg-card border border-border;
+    @apply rounded-3xl bg-card border border-border;
     box-shadow: var(--shadow-soft);
   }
 
