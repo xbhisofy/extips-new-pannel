@@ -3,8 +3,6 @@ import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
-import { useSubscription } from '@/hooks/useSubscription';
-import { SubscriptionCheckDialog } from '@/components/subscription/SubscriptionCheckDialog';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
 import { Instagram, Loader2, Plus, Trash2, CheckCircle2, ShieldAlert, Lock, RefreshCw } from 'lucide-react';
 import { toast } from 'sonner';
@@ -13,8 +11,6 @@ import { igQueryKeys, IG_CACHE_PREFIX } from '@/lib/instagramCache';
 
 export default function InstagramPage() {
   const { user } = useAuth();
-  const { subscription, hasActiveSubscription, isLoading: subLoading } = useSubscription();
-  const [showSubDialog, setShowSubDialog] = useState(false);
   const qc = useQueryClient();
   const [username, setUsername] = useState('');
 
@@ -260,7 +256,6 @@ export default function InstagramPage() {
           ))}
         </div>
       </div>
-      <SubscriptionCheckDialog open={showSubDialog} onOpenChange={setShowSubDialog} />
     </DashboardLayout>
   );
 }
