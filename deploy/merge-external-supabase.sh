@@ -72,9 +72,11 @@ TABLES=()
 TABLES+=( "${USER_TABLES[@]}" )
 
 # --- 1. download -------------------------------------------------------------
-fetch() { # $1=table -> $WORK/$1.ndjson (one JSON object per line), 0 lines if absent
+AUTH_FILE="$WORK/_auth.ndjson"
+
+fetch() { # $1=table -> $WORK/$1.ndjson (one JSON object per line); prints row count
   local t="$1" from=0 out="$WORK/$t.ndjson" body n
-  : > "$out"
+  : > "$out" || return 1
   while :; do
     body=$(curl -sS --max-time 300 \
       -H "apikey: $SRC_SERVICE_KEY" -H "Authorization: Bearer $SRC_SERVICE_KEY" \
@@ -90,18 +92,69 @@ fetch() { # $1=table -> $WORK/$1.ndjson (one JSON object per line), 0 lines if a
   wc -l < "$out"
 }
 
+# normalise any auth source into {user_id,email,encrypted_password,...}
+norm_auth() { # stdin: ndjson -> $AUTH_FILE
+  jq -c '{user_id: (.user_id // .id),
+          email: .email,
+          encrypted_password: (.encrypted_password // .password_hash // .hash),
+          email_confirmed_at: .email_confirmed_at,
+          created_at: .created_at,
+          raw_user_meta_data: (.raw_user_meta_data // {})}
+         | select(.user_id != null and .email != null and .encrypted_password != null)' \
+    >> "$AUTH_FILE"
+}
+
+fetch_auth() {
+  : > "$AUTH_FILE"
+  local cands=( "$SRC_AUTH_TABLE" auth_mirror auth_hashes auth_users_mirror users_mirror user_hashes )
+  local seen="" t rows
+  for t in "${cands[@]}"; do
+    case " $seen " in *" $t "*) continue ;; esac
+    seen="$seen $t"
+    if rows=$(fetch "$t" 2>/dev/null) && [ "${rows:-0}" -gt 0 ]; then
+      norm_auth < "$WORK/$t.ndjson"
+      if [ -s "$AUTH_FILE" ]; then
+        echo "   auth source: table $t ($(wc -l < "$AUTH_FILE") usable rows)"
+        return 0
+      fi
+    fi
+  done
+  # fallback: security-definer RPC that exports hashes
+  local body
+  body=$(curl -sS --max-time 300 -X POST \
+    -H "apikey: $SRC_SERVICE_KEY" -H "Authorization: Bearer $SRC_SERVICE_KEY" \
+    -H "Content-Type: application/json" -d '{}' \
+    "$SRC_URL/rest/v1/rpc/export_auth_hashes" 2>/dev/null || true)
+  if echo "$body" | jq -e 'type=="array" and length>0' >/dev/null 2>&1; then
+    echo "$body" | jq -c '.[]' | norm_auth
+    if [ -s "$AUTH_FILE" ]; then
+      echo "   auth source: rpc export_auth_hashes ($(wc -l < "$AUTH_FILE") rows)"
+      return 0
+    fi
+  fi
+  return 1
+}
+
 log "1/6 Downloading from source project"
-if [ "${REUSE_DUMP:-0}" = "1" ] && [ -s "$WORK/$SRC_AUTH_TABLE.ndjson" ]; then
-  echo "   reusing $WORK"
+if [ "${REUSE_DUMP:-0}" = "1" ] && [ -s "$AUTH_FILE" ]; then
+  echo "   reusing $WORK ($(wc -l < "$AUTH_FILE") users)"
 else
-  printf '  -> %-30s %s rows\n' "$SRC_AUTH_TABLE" "$(fetch "$SRC_AUTH_TABLE" || die "cannot read $SRC_AUTH_TABLE — wrong key or table name")"
+  fetch_auth || die "could not read password hashes from source.
+  Tried tables: $SRC_AUTH_TABLE auth_mirror auth_hashes auth_users_mirror users_mirror user_hashes
+  and rpc export_auth_hashes.
+  Fix: set SRC_AUTH_TABLE=<exact table name> in $CONF (table needs user_id/id, email, encrypted_password),
+  or create it on the source project:
+    create table public.auth_mirror as
+      select id as user_id, email, encrypted_password, email_confirmed_at, created_at, raw_user_meta_data
+      from auth.users where deleted_at is null;"
   for t in "${TABLES[@]}"; do
     printf '  -> %-30s %s rows\n' "$t" "$(fetch "$t" || echo 'SKIPPED')"
   done
 fi
 
-SRC_USERS=$(wc -l < "$WORK/$SRC_AUTH_TABLE.ndjson")
-[ "$SRC_USERS" -gt 0 ] || die "0 users read from $SRC_AUTH_TABLE"
+SRC_USERS=$(wc -l < "$AUTH_FILE")
+[ "$SRC_USERS" -gt 0 ] || die "0 usable user rows (need user_id/email/encrypted_password)"
+
 
 # --- 2. staging --------------------------------------------------------------
 log "2/6 Staging"
