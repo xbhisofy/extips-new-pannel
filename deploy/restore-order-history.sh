@@ -35,7 +35,9 @@ psql_run() { docker compose exec -T db psql -U postgres -d postgres -v ON_ERROR_
 psql_q()   { docker compose exec -T db psql -U postgres -d postgres -At -c "$1"; }
 docker compose exec -T db pg_isready -U postgres >/dev/null 2>&1 || die "Postgres not running"
 
-ORDER_TABLES=( orders engagement_orders engagement_order_items organic_run_schedule engagement_health_history )
+# profiles is staged too because it provides a reliable source UUID -> email
+# map for accounts whose current login UUID differs after a duplicate merge.
+ORDER_TABLES=( profiles orders engagement_orders engagement_order_items organic_run_schedule engagement_health_history )
 
 # ---------------------------------------------------------------------------
 # 0. staging ready karo (agar khali hai to source se dobara fetch)
@@ -137,6 +139,18 @@ BEGIN
       SET target_user_id=EXCLUDED.target_user_id
     $q$;
   END IF;
+
+  -- The order-history restore always stages profiles, so email mapping does
+  -- not depend on an old merge_stage.users table still being present.
+  INSERT INTO merge_stage.user_map (source_user_id, target_user_id)
+  SELECT (s.j->>'user_id')::uuid, a.id
+  FROM merge_stage.raw s
+  JOIN auth.users a ON lower(a.email)=lower(s.j->>'email')
+  WHERE s.tbl='profiles'
+    AND s.j->>'user_id' IS NOT NULL
+    AND s.j->>'email' IS NOT NULL
+  ON CONFLICT (source_user_id) DO UPDATE
+  SET target_user_id=EXCLUDED.target_user_id;
 END $$;
 
 INSERT INTO merge_stage.accepted (user_id)
@@ -166,7 +180,12 @@ fi
 log "2/4 Missing order history import kar raha hu"
 psql_run -c "CREATE TABLE IF NOT EXISTS merge_stage.import_errors (tbl text NOT NULL, row_id text, error_message text NOT NULL, created_at timestamptz NOT NULL DEFAULT now()); TRUNCATE merge_stage.import_errors;" >/dev/null
 
-for t in "${ORDER_TABLES[@]}"; do
+# Current runtime/RLS already supports engagement-item-owned runs. Older VPS
+# schemas kept legacy order_id NOT NULL, which rejects imported organic runs
+# that correctly contain only engagement_order_item_id.
+psql_run -c "ALTER TABLE public.organic_run_schedule ALTER COLUMN order_id DROP NOT NULL;" >/dev/null
+
+for t in orders engagement_orders engagement_order_items organic_run_schedule engagement_health_history; do
   psql_q "SELECT to_regclass('public.$t') IS NOT NULL" | grep -q t || { warn "$t target me nahi — skip"; continue; }
   has_user=$(psql_q "SELECT EXISTS(SELECT 1 FROM information_schema.columns WHERE table_schema='public' AND table_name='$t' AND column_name='user_id')")
   filter="TRUE"
@@ -352,6 +371,17 @@ FROM public.profiles p
 WHERE (SELECT count(*) FROM public.engagement_orders eo WHERE eo.user_id=p.user_id) > 0
    OR (SELECT count(*) FROM public.orders o WHERE o.user_id=p.user_id) > 0
 ORDER BY 2 DESC, 3 DESC LIMIT 25;"
+
+psql_run -c "
+SELECT count(*) AS source_users_without_current_account
+FROM (
+  SELECT DISTINCT (j->>'user_id')::uuid AS source_user_id
+  FROM merge_stage.raw
+  WHERE tbl='profiles' AND j->>'user_id' IS NOT NULL
+) s
+WHERE NOT EXISTS (
+  SELECT 1 FROM merge_stage.user_map m WHERE m.source_user_id=s.source_user_id
+);"
 
 echo
 echo "[done] Order history wapas import ho gayi. Kuch bhi delete nahi hua."
