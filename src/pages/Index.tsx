@@ -85,10 +85,10 @@ const Index = () => {
           {/* Badge */}
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-white/10 bg-white/[0.04] backdrop-blur-sm mb-8">
             <span className="relative flex h-2 w-2">
-              <span className="absolute inline-flex h-full w-full rounded-full bg-purple-400 opacity-75 animate-ping" />
-              <span className="relative inline-flex rounded-full h-2 w-2 bg-purple-500" />
+              <span className="absolute inline-flex h-full w-full rounded-full bg-primary opacity-75 animate-ping" />
+              <span className="relative inline-flex rounded-full h-2 w-2 bg-primary" />
             </span>
-            <span className="text-[11px] font-medium tracking-[0.18em] uppercase text-purple-200/70">
+            <span className="text-[11px] font-medium tracking-[0.18em] uppercase text-primary/70">
               Extips Panel Pro Software v2.0
             </span>
           </div>
@@ -102,7 +102,7 @@ const Index = () => {
             <br />
             for Social{' '}
             <span
-              className="italic font-bold text-purple-300"
+              className="italic font-bold text-primary"
               style={{ fontFamily: "'Playfair Display', Georgia, serif" }}
             >
               Magic
@@ -159,14 +159,14 @@ const Index = () => {
       <section id="features" className="relative py-24 sm:py-32 border-t border-white/5">
         <div className="max-w-6xl mx-auto px-5 sm:px-8">
           <div className="max-w-2xl mb-14">
-            <p className="text-[11px] tracking-[0.22em] uppercase text-purple-300/70 mb-4">
+            <p className="text-[11px] tracking-[0.22em] uppercase text-primary/70 mb-4">
               The Software
             </p>
             <h2 className="!text-white text-3xl sm:text-5xl font-bold tracking-tight leading-[1.1]">
               Engineered like infrastructure,
               <br />
               <span
-                className="italic text-purple-300"
+                className="italic text-primary"
                 style={{ fontFamily: "'Playfair Display', Georgia, serif" }}
               >
                 used like a product.
@@ -211,8 +211,8 @@ const Index = () => {
                 key={title}
                 className="group relative rounded-2xl border border-white/10 bg-white/[0.03] p-6 hover:bg-white/[0.06] hover:border-white/20 transition-all backdrop-blur-sm"
               >
-                <div className="h-10 w-10 rounded-lg bg-purple-500/10 border border-purple-400/20 flex items-center justify-center mb-5">
-                  <Icon className="h-5 w-5 text-purple-300" />
+                <div className="h-10 w-10 rounded-lg bg-primary/10 border border-primary/20 flex items-center justify-center mb-5">
+                  <Icon className="h-5 w-5 text-primary" />
                 </div>
                 <h3 className="text-base font-semibold mb-2">{title}</h3>
                 <p className="text-sm text-slate-200 leading-relaxed">{body}</p>
@@ -226,13 +226,13 @@ const Index = () => {
       <section id="platforms" className="relative py-24 border-t border-white/5">
         <div className="max-w-6xl mx-auto px-5 sm:px-8 grid lg:grid-cols-2 gap-12 items-center">
           <div>
-            <p className="text-[11px] tracking-[0.22em] uppercase text-purple-300/70 mb-4">
+            <p className="text-[11px] tracking-[0.22em] uppercase text-primary/70 mb-4">
               Cross-platform
             </p>
             <h2 className="!text-white text-3xl sm:text-5xl font-bold tracking-tight leading-[1.1] mb-5">
               One control room for{' '}
               <span
-                className="italic text-purple-300"
+                className="italic text-primary"
                 style={{ fontFamily: "'Playfair Display', Georgia, serif" }}
               >
                 every channel.
@@ -251,8 +251,8 @@ const Index = () => {
                 'Telegram, Facebook, X — all routed',
               ].map((t) => (
                 <li key={t} className="flex items-center gap-3 text-sm text-slate-100">
-                  <span className="h-5 w-5 rounded-full bg-purple-500/15 border border-purple-400/30 flex items-center justify-center shrink-0">
-                    <Check className="h-3 w-3 text-purple-300" />
+                  <span className="h-5 w-5 rounded-full bg-primary/15 border border-primary/30 flex items-center justify-center shrink-0">
+                    <Check className="h-3 w-3 text-primary" />
                   </span>
                   {t}
                 </li>
@@ -261,7 +261,7 @@ const Index = () => {
           </div>
 
           <div className="relative">
-            <div className="absolute -inset-6 bg-purple-600/20 blur-[80px] rounded-full" />
+            <div className="absolute -inset-6 bg-primary/20 blur-[80px] rounded-full" />
             <div className="relative rounded-2xl border border-white/10 bg-gradient-to-br from-white/[0.06] to-white/[0.02] p-6 backdrop-blur-md shadow-[0_30px_80px_-20px_rgba(124,58,237,0.4)]">
               <div className="flex items-center gap-1.5 mb-5">
                 <span className="h-2.5 w-2.5 rounded-full bg-white/20" />
@@ -283,7 +283,7 @@ const Index = () => {
                     </div>
                     <div className="text-right">
                       <div className="text-sm font-semibold">{r.q}</div>
-                      <div className={`text-[10px] uppercase tracking-widest ${r.s === 'Complete' ? 'text-emerald-300/80' : r.s === 'Queued' ? 'text-amber-300/80' : 'text-purple-300/80'}`}>
+                      <div className={`text-[10px] uppercase tracking-widest ${r.s === 'Complete' ? 'text-emerald-300/80' : r.s === 'Queued' ? 'text-amber-300/80' : 'text-primary/80'}`}>
                         {r.s}
                       </div>
                     </div>
@@ -301,7 +301,7 @@ const Index = () => {
           <h2 className="!text-white text-3xl sm:text-5xl font-bold tracking-tight leading-[1.1] mb-5">
             Ready to ship{' '}
             <span
-              className="italic text-purple-300"
+              className="italic text-primary"
               style={{ fontFamily: "'Playfair Display', Georgia, serif" }}
             >
               real growth?
