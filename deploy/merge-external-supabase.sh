@@ -162,8 +162,12 @@ psql_run <<'SQL' >/dev/null
 CREATE SCHEMA IF NOT EXISTS merge_stage;
 DROP TABLE IF EXISTS merge_stage.raw;
 CREATE TABLE merge_stage.raw(tbl text, j jsonb);
+DROP TABLE IF EXISTS merge_stage.raw_load;
+CREATE TABLE merge_stage.raw_load(tbl text, payload text);
 DROP TABLE IF EXISTS merge_stage.users;
 CREATE TABLE merge_stage.users(j jsonb);
+DROP TABLE IF EXISTS merge_stage.users_load;
+CREATE TABLE merge_stage.users_load(payload text);
 DROP TABLE IF EXISTS merge_stage.accepted;
 CREATE TABLE merge_stage.accepted(user_id uuid PRIMARY KEY);
 SQL
@@ -171,12 +175,22 @@ SQL
 stage() { # $1=table $2=file $3=target(raw|users)
   local rows; rows=$(wc -l < "$2"); [ "$rows" -gt 0 ] || return 0
   if [ "$3" = "users" ]; then
-    sed 's/\\/\\\\/g' "$2" | docker compose exec -T db psql -U postgres -d postgres \
-      -c "\copy merge_stage.users(j) FROM STDIN" >/dev/null
+    jq -Rr '@base64' "$2" | docker compose exec -T db psql -U postgres -d postgres \
+      -c "\copy merge_stage.users_load(payload) FROM STDIN" >/dev/null
+    psql_run -c "
+      INSERT INTO merge_stage.users(j)
+      SELECT convert_from(decode(payload, 'base64'), 'UTF8')::jsonb
+      FROM merge_stage.users_load;
+      TRUNCATE merge_stage.users_load;" >/dev/null
   else
-    jq -c --arg t "$1" '{t:$t,j:.}' "$2" | jq -r '[.t,(.j|tostring)]|@tsv' \
-      | sed 's/\\/\\\\/g' | docker compose exec -T db psql -U postgres -d postgres \
-      -c "\copy merge_stage.raw(tbl,j) FROM STDIN" >/dev/null
+    jq -Rr --arg t "$1" '[$t, @base64] | @tsv' "$2" \
+      | docker compose exec -T db psql -U postgres -d postgres \
+      -c "\copy merge_stage.raw_load(tbl,payload) FROM STDIN" >/dev/null
+    psql_run -c "
+      INSERT INTO merge_stage.raw(tbl,j)
+      SELECT tbl, convert_from(decode(payload, 'base64'), 'UTF8')::jsonb
+      FROM merge_stage.raw_load;
+      TRUNCATE merge_stage.raw_load;" >/dev/null
   fi
 }
 stage "_auth" "$AUTH_FILE" users
