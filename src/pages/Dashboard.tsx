@@ -75,7 +75,7 @@ export default function Dashboard() {
             <p className="text-[12px] font-medium mb-0.5" style={{ color: MUTED }}>
               Good {new Date().getHours() < 12 ? 'morning' : new Date().getHours() < 18 ? 'afternoon' : 'evening'},
             </p>
-            <h1 className="text-2xl font-extrabold tracking-tight" style={{ color: TEXT, fontFamily: "'Outfit', system-ui, sans-serif" }}>
+            <h1 className="text-2xl font-extrabold tracking-tight" style={{ color: TEXT, fontFamily: "'Playfair Display', Georgia, serif" }}>
               {profile?.full_name || 'User'}
             </h1>
           </div>
