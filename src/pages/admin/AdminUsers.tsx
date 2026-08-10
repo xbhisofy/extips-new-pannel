@@ -42,15 +42,6 @@ import { Link, Navigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import { format, formatDistanceToNow } from 'date-fns';
 
-interface Subscription {
-  id: string;
-  user_id: string;
-  plan_type: 'none' | 'monthly' | 'lifetime';
-  status: 'inactive' | 'active' | 'expired' | 'cancelled';
-  activated_at: string | null;
-  expires_at: string | null;
-}
-
 interface OrderCounts {
   singleActive: number;
   singlePaused: number;
@@ -71,17 +62,14 @@ interface UserProfile {
     total_spent: number;
   };
   role?: string;
-  subscription?: Subscription;
   orderCounts?: OrderCounts;
 }
 
-type UserTab = 'all' | 'normal' | 'monthly' | 'lifetime';
 
 export default function AdminUsers() {
   const { user, isAdmin, isLoading: authLoading } = useAuth();
   const queryClient = useQueryClient();
   const [searchQuery, setSearchQuery] = useState('');
-  const [activeTab, setActiveTab] = useState<UserTab>('all');
   const [selectedUser, setSelectedUser] = useState<UserProfile | null>(null);
   const [balanceAmount, setBalanceAmount] = useState('');
   const [balanceAction, setBalanceAction] = useState<'add' | 'subtract'>('add');
@@ -120,11 +108,6 @@ export default function AdminUsers() {
           total_deposited: u.total_deposited,
           total_spent: u.total_spent
         },
-        subscription: u.subscription_plan !== 'none' ? {
-          plan_type: u.subscription_plan,
-          status: u.subscription_status,
-          expires_at: u.subscription_expires
-        } : null,
         orderCounts: {
           singleActive: u.active_single_orders,
           singlePaused: u.paused_single_orders,
