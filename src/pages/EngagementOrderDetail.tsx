@@ -114,6 +114,7 @@ export default function EngagementOrderDetail() {
           )
         `)
         .eq('order_number', parseInt(orderNumber))
+        .eq('user_id', user?.id)
         .single();
       if (error) throw error;
       return data;
