@@ -272,16 +272,15 @@ INSERT INTO public.organic_run_schedule (
 SELECT gen_random_uuid(), id, 1, COALESCE(created_at, now()), quantity,
        quantity,
        CASE
-         WHEN lower(COALESCE(status, '')) IN ('completed','complete','partial') THEN 'completed'
+         WHEN lower(COALESCE(status, '')) IN ('completed','complete') THEN 'completed'
          WHEN lower(COALESCE(status, '')) IN ('processing','started','active') THEN 'started'
-         WHEN lower(COALESCE(status, '')) IN ('failed','cancelled','canceled') THEN 'failed'
-         ELSE 'pending'
+         ELSE 'failed'
        END,
-       CASE WHEN lower(COALESCE(status, '')) IN ('completed','complete','partial') THEN 'completed' ELSE NULL END,
-       CASE WHEN lower(COALESCE(status, '')) IN ('completed','complete','partial') THEN 0 ELSE NULL END,
+       CASE WHEN lower(COALESCE(status, '')) IN ('completed','complete') THEN 'completed' ELSE NULL END,
+       CASE WHEN lower(COALESCE(status, '')) IN ('completed','complete') THEN 0 ELSE NULL END,
        created_at,
-       CASE WHEN lower(COALESCE(status, '')) IN ('processing','started','active','completed','complete','partial') THEN created_at ELSE NULL END,
-       CASE WHEN lower(COALESCE(status, '')) IN ('completed','complete','partial') THEN COALESCE(updated_at, created_at) ELSE NULL END
+       CASE WHEN lower(COALESCE(status, '')) IN ('processing','started','active','completed','complete') THEN created_at ELSE NULL END,
+       CASE WHEN lower(COALESCE(status, '')) IN ('completed','complete') THEN COALESCE(updated_at, created_at) ELSE NULL END
   FROM inserted;
 SQL
 
