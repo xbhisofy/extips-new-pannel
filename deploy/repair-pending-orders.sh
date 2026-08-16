@@ -152,7 +152,7 @@ docker compose exec -T db psql -U postgres -d postgres -P pager=off -c \
     LIMIT 8;" 2>/dev/null || true
 
 echo "   admin retry endpoint (before/after counts):"
-curl -sS --max-time 300 "http://127.0.0.1:${PORT:-8000}/functions/v1/retry-pending-dispatch" \
+curl -sS --max-time 300 -X POST "http://127.0.0.1:${PORT:-8000}/functions/v1/retry-pending-dispatch" \
   -H "Authorization: Bearer $SERVICE_KEY" -H "apikey: $SERVICE_KEY" \
   -H 'Content-Type: application/json' --data '{}' | head -c 1200
 echo

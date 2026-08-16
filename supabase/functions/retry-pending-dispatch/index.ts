@@ -47,10 +47,23 @@ Deno.serve(async (req) => {
     : { data: [], error: null }
   const { data: rows, error } = update
   if (error) return json({ error: error.message }, 500)
-  const response = await fetch(`${url}/functions/v1/execute-all-runs`, {
+  // Prefer the internal gateway on self-hosted installations. Besides avoiding
+  // an unnecessary public round-trip, this prevents proxy request-line limits
+  // from surfacing as an opaque "URI too long" admin-retry error.
+  const internalBase = Deno.env.get('INTERNAL_FUNCTIONS_URL') ||
+    (url.includes('kong') ? url : 'http://kong:8000')
+  let response: Response
+  try {
+    response = await fetch(`${internalBase.replace(/\/$/, '')}/functions/v1/execute-all-runs`, {
+      method: 'POST', headers: { Authorization: `Bearer ${serviceKey}`, apikey: serviceKey, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ instant: true }),
+    })
+  } catch {
+    response = await fetch(`${url.replace(/\/$/, '')}/functions/v1/execute-all-runs`, {
     method: 'POST', headers: { Authorization: `Bearer ${serviceKey}`, apikey: serviceKey, 'Content-Type': 'application/json' },
     body: JSON.stringify({ instant: true }),
-  })
+    })
+  }
   const text = await response.text()
   let dispatch: unknown = text
   try { dispatch = JSON.parse(text) } catch { /* keep raw body */ }
