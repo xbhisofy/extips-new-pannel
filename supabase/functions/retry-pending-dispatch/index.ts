@@ -5,6 +5,23 @@ const json = (body: unknown, status = 200) => new Response(JSON.stringify(body),
   status, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
 })
 
+const UPDATE_BATCH_SIZE = 50
+
+async function queueRetryBatches(admin: ReturnType<typeof createClient>, retryIds: string[], now: string) {
+  const queuedIds: string[] = []
+  for (let offset = 0; offset < retryIds.length; offset += UPDATE_BATCH_SIZE) {
+    const batch = retryIds.slice(offset, offset + UPDATE_BATCH_SIZE)
+    const { data, error } = await admin.from('organic_run_schedule').update({
+      status: 'pending', scheduled_at: now, started_at: null, completed_at: null,
+      provider_account_id: null, provider_account_name: null, provider_status: null,
+      error_message: '[Admin retry] queued for provider dispatch', last_status_check: now,
+    }).in('id', batch).in('status', ['pending', 'failed']).is('provider_order_id', null).select('id')
+    if (error) return { queuedIds, error }
+    queuedIds.push(...(data ?? []).map((row) => row.id))
+  }
+  return { queuedIds, error: null }
+}
+
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders })
   if (req.method !== 'POST') return json({ error: 'Method not allowed' }, 405)
@@ -39,13 +56,12 @@ Deno.serve(async (req) => {
     return !message.includes('[dispatch uncertain]') && !message.includes('[awaiting provider confirmation]')
   }).map((row) => row.id)
   const now = new Date().toISOString()
-  const update = retryIds.length > 0 ? await admin.from('organic_run_schedule').update({
-    status: 'pending', scheduled_at: now, started_at: null, completed_at: null,
-    provider_account_id: null, provider_account_name: null, provider_status: null,
-    error_message: '[Admin retry] queued for provider dispatch', last_status_check: now,
-  }).in('id', retryIds).in('status', ['pending', 'failed']).is('provider_order_id', null).select('id')
-    : { data: [], error: null }
-  const { data: rows, error } = update
+  // PostgREST encodes `.in(id, [...])` in the request URL. Sending hundreds of
+  // UUIDs in one update exceeds Kong's request-line limit even though this edge
+  // endpoint itself is POST. Keep each internal update URL safely bounded.
+  const { queuedIds, error } = retryIds.length > 0
+    ? await queueRetryBatches(admin, retryIds, now)
+    : { queuedIds: [], error: null }
   if (error) return json({ error: error.message }, 500)
   // Prefer the internal gateway on self-hosted installations. Besides avoiding
   // an unnecessary public round-trip, this prevents proxy request-line limits
@@ -71,6 +87,6 @@ Deno.serve(async (req) => {
     .in('status', ['pending', 'failed']).is('provider_order_id', null)
   if (runId) afterQuery = afterQuery.eq('id', runId)
   const after = await afterQuery
-  return json({ success: response.ok, before: before.count ?? 0, queued: rows?.length ?? 0,
+  return json({ success: response.ok, before: before.count ?? 0, queued: queuedIds.length,
     after: after.count ?? 0, run_id: runId, dispatch_http_status: response.status, dispatch }, response.ok ? 200 : 502)
 })

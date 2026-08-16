@@ -151,6 +151,26 @@ docker compose exec -T db psql -U postgres -d postgres -P pager=off -c \
     ORDER BY coalesce(ors.last_status_check, ors.created_at) DESC NULLS LAST
     LIMIT 8;" 2>/dev/null || true
 
+echo "   provider rotation coverage for unresolved services:"
+docker compose exec -T db psql -U postgres -d postgres -P pager=off -c \
+  "SELECT eoi.engagement_type,
+          left(s.name, 42) AS service,
+          count(DISTINCT spm.provider_account_id) FILTER (
+            WHERE spm.is_active AND pa.is_active
+          ) AS active_panels,
+          string_agg(DISTINCT pa.name, ', ') FILTER (
+            WHERE spm.is_active AND pa.is_active
+          ) AS panels
+     FROM public.organic_run_schedule ors
+     JOIN public.engagement_order_items eoi ON eoi.id = ors.engagement_order_item_id
+     LEFT JOIN public.services s ON s.id = eoi.service_id
+     LEFT JOIN public.service_provider_mapping spm ON spm.service_id = eoi.service_id
+     LEFT JOIN public.provider_accounts pa ON pa.id = spm.provider_account_id
+    WHERE ors.status IN ('pending','started','failed')
+    GROUP BY eoi.engagement_type, s.id, s.name
+    ORDER BY active_panels, eoi.engagement_type
+    LIMIT 30;" 2>/dev/null || true
+
 echo "   admin retry endpoint (before/after counts):"
 curl -sS --max-time 300 -X POST "http://127.0.0.1:${PORT:-8000}/functions/v1/retry-pending-dispatch" \
   -H "Authorization: Bearer $SERVICE_KEY" -H "apikey: $SERVICE_KEY" \
