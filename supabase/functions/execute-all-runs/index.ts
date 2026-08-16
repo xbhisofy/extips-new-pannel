@@ -62,6 +62,10 @@ const MAX_RUN_RETRIES = 9999
 // self-sustaining postpone loop, so use a real cooldown before asking again.
 const ACTIVE_ORDER_RETRY_MS = 3 * 60 * 1000
 const TEMPORARY_RETRY_MS = 60 * 1000
+// A local provider lock is only a cache of the last status check. Re-probe stale
+// locks instead of allowing an old Pending/In-progress response to block one
+// link forever. The provider API remains authoritative and may reject the add.
+const STALE_PROVIDER_LOCK_MS = 10 * 60 * 1000
 
 const TEMPORARY_ERRORS = [
   'balance', 'not have enough', 'processing another transaction',
@@ -487,7 +491,7 @@ async function getProvidersBusyOnLink(
 
   const { data, error } = await supabase
     .from('organic_run_schedule')
-    .select('id, provider_account_id, provider_status, provider_remains, engagement_order_item:engagement_order_items!inner(engagement_type, engagement_order:engagement_orders!inner(link))')
+    .select('id, provider_account_id, provider_status, provider_remains, last_status_check, started_at, engagement_order_item:engagement_order_items!inner(engagement_type, engagement_order:engagement_orders!inner(link))')
     .not('provider_order_id', 'is', null)
     .not('provider_account_id', 'is', null)
     .limit(1000)
@@ -506,6 +510,8 @@ async function getProvidersBusyOnLink(
     if (rowLink !== normalizedLink || rowType !== type) continue
     if (isTerminalProviderStatus(row.provider_status)) continue
     if (typeof row.provider_remains === 'number' && row.provider_remains <= 0) continue
+    const checkedAt = new Date(row.last_status_check || row.started_at || 0).getTime()
+    if (checkedAt > 0 && Date.now() - checkedAt >= STALE_PROVIDER_LOCK_MS) continue
     busy.add(row.provider_account_id)
   }
   return busy
@@ -1714,6 +1720,49 @@ async function processAllRuns(supabase: any, executionId: string, startTime: num
             if (lastError === null || lastError === undefined) lastError = 'Unknown provider error'
             if (typeof lastError !== 'string') lastError = JSON.stringify(lastError)
             providerResult = result
+
+            // Provider minimums sometimes change without the imported service
+            // catalogue being refreshed (for example: "minimal 50"). Learn the
+            // real minimum from the response, merge future schedule rows, and
+            // retry the consolidated run on the next executor tick.
+            const minimumMatch = lastError.match(/(?:minimal|minimum|min(?:imum)?\s+quantity)[^0-9]{0,20}(\d+)/i)
+            const reportedMinimum = minimumMatch ? Number(minimumMatch[1]) : 0
+            if (reportedMinimum > effectiveQty) {
+              const { data: futureMinimumRuns } = await supabase
+                .from('organic_run_schedule')
+                .select('id, quantity_to_send')
+                .eq('engagement_order_item_id', item.id)
+                .eq('status', 'pending')
+                .gt('run_number', run.run_number)
+                .order('run_number', { ascending: true })
+
+              let consolidatedQty = effectiveQty
+              const mergedIds: string[] = []
+              for (const pendingRun of futureMinimumRuns || []) {
+                consolidatedQty += Number(pendingRun.quantity_to_send || 0)
+                mergedIds.push(pendingRun.id)
+                if (consolidatedQty >= reportedMinimum) break
+              }
+              consolidatedQty = Math.max(consolidatedQty, reportedMinimum)
+
+              if (mergedIds.length > 0) {
+                await supabase.from('organic_run_schedule').update({
+                  status: 'cancelled', completed_at: new Date().toISOString(),
+                  error_message: `Merged into run #${run.run_number} after provider reported min ${reportedMinimum}`,
+                  last_status_check: new Date().toISOString(),
+                }).in('id', mergedIds)
+              }
+              await supabase.from('organic_run_schedule').update({
+                quantity_to_send: consolidatedQty, base_quantity: consolidatedQty,
+                error_message: `Provider minimum updated ${effectiveQty} → ${reportedMinimum}; consolidated for retry`,
+                last_status_check: new Date().toISOString(),
+              }).eq('id', run.id)
+              effectiveQty = consolidatedQty
+              quantityToSend = consolidatedQty
+              lastError = `Provider minimum ${reportedMinimum} learned; run consolidated to ${consolidatedQty}`
+              console.log(`🧩 Run #${run.run_number}: learned provider min ${reportedMinimum}, consolidated to ${consolidatedQty}`)
+              break
+            }
             
             const isActiveOrderError = lastError.toLowerCase().includes('active order') || 
               lastError.toLowerCase().includes('wait until order')
