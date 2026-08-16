@@ -8,7 +8,7 @@
 #   1. cron jobs verify + missing hone par dobara schedule
 #   2. purane overdue "queued" runs ka diagnosis
 #   3. dead runs cleanup (parent already completed/cancelled)
-#   4. execute-all-runs ko loop me instant maar kar saare overdue runs bhejna
+#   4. execute-all-runs ko controlled loop me chala kar overdue runs bhejna
 #   5. final report (kitne bache, kitne bhej diye)
 # Safe hai: koi run duplicate dispatch nahi hota, executor khud lock leta hai.
 # ============================================================================
@@ -17,6 +17,7 @@ set -euo pipefail
 SUPA_DIR="${SUPA_DIR:-/opt/supabase}"
 REPO_DIR="${REPO_DIR:-/opt/smmpanel}"
 MAX_LOOPS="${MAX_LOOPS:-40}"
+PASS_PAUSE="${PASS_PAUSE:-5}"
 ENVF="$SUPA_DIR/.env"
 
 fail() { echo "[error] $*" >&2; exit 1; }
@@ -87,18 +88,23 @@ for i in $(seq 1 "$MAX_LOOPS"); do
   DUE="${DUE:-0}"
   echo "   pass $i: overdue=$DUE"
   [ "$DUE" = "0" ] && break
-  CODE="$(curl -sS --max-time 600 -o /tmp/exec-all-runs.json -w '%{http_code}' \
+  CODE="$(curl -sS --max-time 75 -o /tmp/exec-all-runs.json -w '%{http_code}' \
     "http://127.0.0.1:${PORT}/functions/v1/execute-all-runs" \
     -H "Authorization: Bearer $SRK" -H "apikey: $SRK" \
     -H 'Content-Type: application/json' --data '{"instant":true}' || true)"
   if [ "$CODE" != "200" ] && [ "$CODE" != "202" ]; then
     echo "[warn] execute-all-runs HTTP ${CODE:-000}: $(head -c 300 /tmp/exec-all-runs.json 2>/dev/null || true)" >&2
   fi
-  if [ "$DUE" = "$LAST" ]; then
-    echo "   koi progress nahi hui — provider busy ya mapping missing (neeche errors dekhein)"
+  AFTER="$(scalar "SELECT count(*) FROM public.organic_run_schedule WHERE status='pending' AND scheduled_at <= now()")"
+  AFTER="${AFTER:-0}"
+  echo "   pass $i result: HTTP ${CODE:-000}, remaining=$AFTER"
+  if [ "$DUE" = "$LAST" ] && [ "$AFTER" = "$DUE" ]; then
+    echo "   do passes me progress nahi hui — provider busy ya mapping missing (neeche errors dekhein)"
     break
   fi
   LAST="$DUE"
+  [ "$AFTER" = "0" ] && break
+  sleep "$PASS_PAUSE"
 done
 
 echo "==> 5/5 final report"
