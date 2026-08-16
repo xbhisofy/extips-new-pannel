@@ -30,7 +30,6 @@ psql_run -v ON_ERROR_STOP=1 <<SQL
 DO \$\$
 DECLARE
   jobs text[][] := ARRAY[
-    ARRAY['execute-organic-runs-every-minute','* * * * *',    'execute-organic-runs'],
     ARRAY['execute-all-runs-every-minute',    '* * * * *',    'execute-all-runs'],
     ARRAY['check-order-status-every-5-min',   '*/5 * * * *',  'check-order-status'],
     ARRAY['auto-refill-check-every-15-min',   '*/15 * * * *', 'auto-refill-check'],
@@ -46,6 +45,15 @@ BEGIN
     PERFORM cron.unschedule(jobid) FROM cron.job WHERE command LIKE '%supabase.co%';
   EXCEPTION WHEN OTHERS THEN
     RAISE NOTICE 'legacy hosted cron cleanup skipped: %', SQLERRM;
+  END;
+  -- Retire the old single-provider executor. execute-all-runs is the only
+  -- scheduler with multi-account rotation, fallback, locking and safe retry.
+  BEGIN
+    PERFORM cron.unschedule(jobid) FROM cron.job
+      WHERE jobname = 'execute-organic-runs-every-minute'
+         OR command LIKE '%/execute-organic-runs%';
+  EXCEPTION WHEN OTHERS THEN
+    RAISE NOTICE 'legacy organic executor cleanup skipped: %', SQLERRM;
   END;
   FOREACH j SLICE 1 IN ARRAY jobs LOOP
     BEGIN

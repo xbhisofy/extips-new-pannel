@@ -159,6 +159,12 @@ const supabaseModule = createClient(
 // ==========================================
 class MappingCache {
   private cache = new Map<string, { account: ProviderAccount; providerServiceId: string; minQuantity: number; isBackup: boolean }[]>()
+
+  markUsed(serviceId: string, accountId: string) {
+    const entries = this.cache.get(serviceId)
+    const used = entries?.find((entry) => entry.account.id === accountId)
+    if (used) used.account.last_used_at = new Date().toISOString()
+  }
   
   async getForService(supabase: any, serviceId: string, excludeIds: string[], executionId: string): Promise<{ account: ProviderAccount; providerServiceId: string; minQuantity: number; isBackup: boolean }[]> {
     // Fetch once per service per invocation
@@ -249,7 +255,13 @@ class MappingCache {
     
     // Return filtered copy (excluding busy accounts)
     const all = this.cache.get(serviceId) || []
-    return all.filter(a => !excludeIds.includes(a.account.id))
+    return all
+      .filter(a => !excludeIds.includes(a.account.id))
+      .sort((a, b) => {
+        const aTime = a.account.last_used_at ? new Date(a.account.last_used_at).getTime() : 0
+        const bTime = b.account.last_used_at ? new Date(b.account.last_used_at).getTime() : 0
+        return aTime - bTime
+      })
   }
   
   hasAnyForService(serviceId: string): boolean {
@@ -1767,6 +1779,7 @@ async function processAllRuns(supabase: any, executionId: string, startTime: num
             successAccount = selectedAccount
             success = true
             await updateAccountLastUsed(supabase, selectedAccount.id)
+            mappingCache.markUsed(item.service.id, selectedAccount.id)
             console.log(`✅ Run #${run.run_number} placed + verified via ${selectedAccount.name}! Order ID: ${providerOrderId}, status: ${verifiedStatus}`)
             if (isBackup) {
               alertFallbackUsed(lastPrimaryName, selectedAccount, item.service?.name || item.engagement_type || 'unknown').catch(() => {})
