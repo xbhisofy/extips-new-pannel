@@ -159,6 +159,12 @@ const supabaseModule = createClient(
 // ==========================================
 class MappingCache {
   private cache = new Map<string, { account: ProviderAccount; providerServiceId: string; minQuantity: number; isBackup: boolean }[]>()
+
+  markUsed(serviceId: string, accountId: string) {
+    const entries = this.cache.get(serviceId)
+    const used = entries?.find((entry) => entry.account.id === accountId)
+    if (used) used.account.last_used_at = new Date().toISOString()
+  }
   
   async getForService(supabase: any, serviceId: string, excludeIds: string[], executionId: string): Promise<{ account: ProviderAccount; providerServiceId: string; minQuantity: number; isBackup: boolean }[]> {
     // Fetch once per service per invocation
@@ -177,13 +183,16 @@ class MappingCache {
         console.error(`❌ No active service_provider_mapping for service ${serviceId} [${executionId}]`)
         this.cache.set(serviceId, [])
       } else {
+        // Rotate mapped accounts by least-recently-used first. `sort_order` is
+        // only a deterministic tie-breaker; treating it as a permanent primary
+        // priority made every run return to panel #1 even when 2/3 were mapped.
         const sorted = [...mappings].sort((a: any, b: any) => {
-          const aPriority = a.sort_order || 0
-          const bPriority = b.sort_order || 0
-          if (aPriority !== bPriority) return aPriority - bPriority
           const aTime = a.provider_account?.last_used_at ? new Date(a.provider_account.last_used_at).getTime() : 0
           const bTime = b.provider_account?.last_used_at ? new Date(b.provider_account.last_used_at).getTime() : 0
-          return aTime - bTime
+          if (aTime !== bTime) return aTime - bTime
+          const aPriority = a.sort_order || 0
+          const bPriority = b.sort_order || 0
+          return aPriority - bPriority
         })
         
         const providerServiceIds = sorted
@@ -246,7 +255,13 @@ class MappingCache {
     
     // Return filtered copy (excluding busy accounts)
     const all = this.cache.get(serviceId) || []
-    return all.filter(a => !excludeIds.includes(a.account.id))
+    return all
+      .filter(a => !excludeIds.includes(a.account.id))
+      .sort((a, b) => {
+        const aTime = a.account.last_used_at ? new Date(a.account.last_used_at).getTime() : 0
+        const bTime = b.account.last_used_at ? new Date(b.account.last_used_at).getTime() : 0
+        return aTime - bTime
+      })
   }
   
   hasAnyForService(serviceId: string): boolean {
@@ -1199,7 +1214,7 @@ async function processAllRuns(supabase: any, executionId: string, startTime: num
 
       // FALLBACK: Exclude every provider already attempted for this run
       // (tracked in provider_response.tried_providers by check-order-status).
-      const triedProviders: string[] = Array.isArray(run.provider_response?.tried_providers)
+      const triedProviders: string[] = isRetry && Array.isArray(run.provider_response?.tried_providers)
         ? run.provider_response.tried_providers : []
       for (const tp of triedProviders) {
         addBusyAccount(tp)
@@ -1372,9 +1387,12 @@ async function processAllRuns(supabase: any, executionId: string, startTime: num
       }
       
       if (accountsToTry.length === 0) {
-          const fallbackAccounts = hardBusyAccountIds.length > 0 || busyAccountIds.length > 0
-          ? []
-          : await mappingCache.getForService(supabase, item.service.id, [], executionId)
+        // Soft exclusions (recent attempt/LRU history) must never turn into an
+        // endless "all providers busy" loop. Re-open every mapped account except
+        // providers with a real active order on this exact link+type.
+        const fallbackAccounts = await mappingCache.getForService(
+          supabase, item.service.id, hardBusyAccountIds, executionId
+        )
 
         if (fallbackAccounts.length > 0) {
           console.log(`⚠️ Run #${run.run_number}: soft busy filters removed all providers; forcing retry on ${fallbackAccounts.length} mapped provider(s)`)
@@ -1761,6 +1779,7 @@ async function processAllRuns(supabase: any, executionId: string, startTime: num
             successAccount = selectedAccount
             success = true
             await updateAccountLastUsed(supabase, selectedAccount.id)
+            mappingCache.markUsed(item.service.id, selectedAccount.id)
             console.log(`✅ Run #${run.run_number} placed + verified via ${selectedAccount.name}! Order ID: ${providerOrderId}, status: ${verifiedStatus}`)
             if (isBackup) {
               alertFallbackUsed(lastPrimaryName, selectedAccount, item.service?.name || item.engagement_type || 'unknown').catch(() => {})
