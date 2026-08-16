@@ -2114,8 +2114,12 @@ async function processAllRuns(supabase: any, executionId: string, startTime: num
 
     const totalTime = Date.now() - startTime
 
+    // Do not recursively invoke another synchronous worker here. A large
+    // imported backlog can otherwise create a chain of 50-second requests
+    // until the edge-runtime kills them with WorkerRequestCancelled. The
+    // every-minute cron safely picks up the next fair batch instead.
     if (shouldContinue) {
-      await triggerContinuation(executionId, continuationReason || 'time-slice-exhausted')
+      console.log(`⏭️ More runs remain (${continuationReason || 'time-slice-exhausted'}); next cron cycle will continue`)
     }
 
     console.log(`\n=== EXECUTION COMPLETE [${executionId}] in ${totalTime}ms ===`)
